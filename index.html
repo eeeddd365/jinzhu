@@ -12,8 +12,7 @@
         .bg-p-green { background-color: var(--p-green); }
         .text-p-green { color: var(--p-green); }
         .opt-selected { border: 3px solid var(--p-gold) !important; background-color: #fdf6e9; color: var(--p-gold); font-weight: bold; }
-        /* 確保照片完整顯示不裁切 */
-        .img-full { object-fit: contain; background-color: #fff; width: 100%; height: 100%; }
+        .img-contain { object-fit: contain; background-color: #fff; width: 100%; height: 100%; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
@@ -33,32 +32,32 @@
                     
                     <div class="space-y-3">
                         <label class="block text-center font-bold text-p-green">用餐人數</label>
-                        <div class="flex items-center justify-between bg-stone-50 p-3 rounded-2xl border">
+                        <div class="flex items-center justify-between bg-stone-50 p-4 rounded-2xl border">
                             <span class="font-bold ml-4">大人</span>
                             <div class="flex items-center gap-4">
-                                <button onclick="changeNum('adults', -1)" class="w-10 h-10 bg-white border rounded-full text-xl shadow-sm">-</button>
-                                <input type="number" id="adults" value="2" class="w-10 text-center font-bold text-xl bg-transparent" readonly>
-                                <button onclick="changeNum('adults', 1)" class="w-10 h-10 bg-white border rounded-full text-xl shadow-sm">+</button>
+                                <button onclick="changeNum('adults', -1)" class="w-12 h-12 bg-white border rounded-full text-2xl shadow-sm">-</button>
+                                <input type="number" id="adults" value="2" class="w-10 text-center font-bold text-2xl bg-transparent" readonly>
+                                <button onclick="changeNum('adults', 1)" class="w-12 h-12 bg-white border rounded-full text-2xl shadow-sm">+</button>
                             </div>
                         </div>
-                        <div class="flex items-center justify-between bg-red-50 p-3 rounded-2xl border border-red-100">
+                        <div class="flex items-center justify-between bg-red-50 p-4 rounded-2xl border border-red-100">
                             <span class="font-bold ml-4 text-red-700">兒童 (需安全椅)</span>
                             <div class="flex items-center gap-4">
-                                <button onclick="changeNum('kids_chair', -1)" class="w-10 h-10 bg-white border rounded-full text-xl shadow-sm">-</button>
-                                <input type="number" id="kids_chair" value="0" class="w-10 text-center font-bold text-xl bg-transparent text-red-700" readonly>
-                                <button onclick="changeNum('kids_chair', 1)" class="w-10 h-10 bg-white border rounded-full text-xl shadow-sm">+</button>
+                                <button onclick="changeNum('kids_chair', -1)" class="w-12 h-12 bg-white border rounded-full text-2xl shadow-sm">-</button>
+                                <input type="number" id="kids_chair" value="0" class="w-10 text-center font-bold text-2xl bg-transparent text-red-700" readonly>
+                                <button onclick="changeNum('kids_chair', 1)" class="w-12 h-12 bg-white border rounded-full text-2xl shadow-sm">+</button>
                             </div>
                         </div>
-                        <div class="flex items-center justify-between bg-stone-50 p-3 rounded-2xl border">
-                            <span class="font-bold ml-4">孩童 (不需椅)</span>
+                        <div class="flex items-center justify-between bg-stone-50 p-4 rounded-2xl border">
+                            <span class="font-bold ml-4 text-emerald-700">孩童 (不需椅)</span>
                             <div class="flex items-center gap-4">
-                                <button onclick="changeNum('toddlers', -1)" class="w-10 h-10 bg-white border rounded-full text-xl shadow-sm">-</button>
-                                <input type="number" id="toddlers" value="0" class="w-10 text-center font-bold text-xl bg-transparent" readonly>
-                                <button onclick="changeNum('toddlers', 1)" class="w-10 h-10 bg-white border rounded-full text-xl shadow-sm">+</button>
+                                <button onclick="changeNum('toddlers', -1)" class="w-12 h-12 bg-white border rounded-full text-2xl shadow-sm">-</button>
+                                <input type="number" id="toddlers" value="0" class="w-10 text-center font-bold text-2xl bg-transparent" readonly>
+                                <button onclick="changeNum('toddlers', 1)" class="w-12 h-12 bg-white border rounded-full text-2xl shadow-sm">+</button>
                             </div>
                         </div>
                     </div>
-                    <button onclick="startOrder()" class="w-full bg-p-green text-white py-4 rounded-2xl font-bold shadow-lg text-lg transition active:scale-95">開始點餐</button>
+                    <button onclick="startOrder()" class="w-full bg-p-green text-white py-5 rounded-2xl font-bold shadow-lg text-lg transition active:scale-95">開始點餐</button>
                 </div>
             </div>
         </section>
@@ -68,18 +67,19 @@
             <div id="menu-grid" class="grid grid-cols-1 gap-4"></div>
         </section>
 
-        <section id="step-3" class="hidden text-center py-20 bg-white rounded-3xl shadow-lg mt-10">
-            <div class="text-6xl mb-4">🥢</div>
+        <section id="step-3" class="hidden text-center py-20 bg-white rounded-3xl shadow-lg mt-10 mx-2">
+            <div class="text-6xl mb-4">✅</div>
             <h2 class="text-2xl font-bold text-p-green mb-2">訂單傳送廚房</h2>
+            <p class="text-gray-500">感謝您的點餐，請稍候片刻。</p>
             <button onclick="location.reload()" class="mt-8 text-p-gold underline font-bold">返回首頁</button>
         </section>
     </main>
 
     <div id="detail-modal" class="fixed inset-0 bg-black/90 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
             <div class="w-full h-64 bg-white relative">
-                <img id="detail-img" src="" class="img-full">
-                <button onclick="closeDetail()" class="absolute top-4 right-4 bg-black/20 text-white w-10 h-10 rounded-full text-2xl">&times;</button>
+                <img id="detail-img" src="" class="img-contain">
+                <button onclick="closeDetail()" class="absolute top-4 right-4 bg-black/20 text-white w-10 h-10 rounded-full text-2xl flex items-center justify-center">&times;</button>
             </div>
             <div class="p-6 overflow-y-auto flex-1">
                 <h3 id="detail-title" class="text-2xl font-bold text-p-green mb-2"></h3>
@@ -95,7 +95,7 @@
 
     <div class="fixed bottom-6 left-4 right-4 max-w-xl mx-auto z-50 hidden" id="cart-bar">
         <button onclick="submitFinal()" class="w-full bg-p-green text-white p-2 rounded-full shadow-2xl flex justify-between items-center pr-2 pl-8 border border-white/20">
-            <span class="font-bold tracking-widest">送出訂單</span>
+            <span class="font-bold tracking-widest text-lg">送出訂單</span>
             <div class="bg-p-gold text-white w-12 h-12 rounded-full flex items-center justify-center font-black text-xl" id="cart-count">0</div>
         </button>
     </div>
@@ -107,6 +107,7 @@
 
         let menuData = [], cart = [], guest = {}, tempSet = {};
 
+        // 初始化 Logo
         (async function init() {
             const { data } = await _s.from('store_settings').select('logo_url').eq('id', 1).single();
             if (data?.logo_url) {
@@ -117,6 +118,7 @@
             }
         })();
 
+        // 人數加減
         function changeNum(id, val) {
             const el = document.getElementById(id);
             let cur = parseInt(el.value) + val;
@@ -125,7 +127,13 @@
         }
 
         async function startOrder() {
-            guest = { name: document.getElementById('custName').value, phone: document.getElementById('custPhone').value, adults: document.getElementById('adults').value, kids_chair: document.getElementById('kids_chair').value, toddlers: document.getElementById('toddlers').value };
+            guest = { 
+                name: document.getElementById('custName').value, 
+                phone: document.getElementById('custPhone').value, 
+                adults: document.getElementById('adults').value, 
+                kids_chair: document.getElementById('kids_chair').value, 
+                toddlers: document.getElementById('toddlers').value 
+            };
             if(!guest.name || !guest.phone) return alert("請輸入完整資料");
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
@@ -139,7 +147,7 @@
             menuData = items;
             const nav = document.getElementById('cat-nav');
             nav.innerHTML = cats.map(c => `<button class="px-6 py-2 bg-white rounded-full text-sm font-bold shadow-sm whitespace-nowrap border border-transparent hover:border-p-gold" onclick="filterMenu('${c.id}', this)">${c.name}</button>`).join('');
-            filterMenu(cats[0]?.id, nav.firstChild);
+            if(cats.length > 0) filterMenu(cats[0].id, nav.firstChild);
         }
 
         function filterMenu(cid, el) {
@@ -149,7 +157,7 @@
             const filtered = menuData.filter(i => i.category_id === cid);
             grid.innerHTML = filtered.map(i => `
                 <div class="bg-white rounded-2xl overflow-hidden shadow-sm flex h-28 border border-stone-100" onclick="openDetail('${i.id}')">
-                    <div class="w-28 bg-white"><img src="${i.image_url || ''}" class="img-full"></div>
+                    <div class="w-28 bg-white"><img src="${i.image_url || ''}" class="img-contain"></div>
                     <div class="p-3 flex flex-col justify-between flex-1">
                         <h3 class="font-bold text-p-green">${i.name}</h3>
                         <div class="flex justify-between items-center"><span class="text-p-gold font-bold font-serif">$${i.price}</span><span class="text-[10px] text-gray-400">點擊選擇</span></div>
@@ -163,14 +171,16 @@
             document.getElementById('detail-img').src = item.image_url || '';
             document.getElementById('detail-title').innerText = item.name;
             document.getElementById('detail-desc').innerText = item.description || "經典真珠美味，邀您一同品嚐。";
+            
             const optArea = document.getElementById('set-options-area');
             optArea.innerHTML = "";
+            
             if(item.is_set_menu) {
                 tempSet = { item, selections: {} };
                 optArea.innerHTML = item.set_menu_groups.map(g => {
                     tempSet.selections[g.id] = [];
-                    return `<div><p class="font-bold text-p-green mb-2">${g.group_name} (必選 ${g.selection_limit})</p>
-                            <div class="grid grid-cols-2 gap-2">${g.set_menu_options.map(o => `<div onclick="toggleOpt(this, '${g.id}', '${o.option_name}', ${g.selection_limit})" class="p-2 border rounded-xl text-center text-sm cursor-pointer transition">${o.option_name}</div>`).join('')}</div></div>`;
+                    return `<div><p class="font-bold text-p-green mb-2">${g.group_name} (必選 ${g.selection_limit} 項)</p>
+                            <div class="grid grid-cols-2 gap-2">${g.set_menu_options.map(o => `<div onclick="toggleOpt(this, '${g.id}', '${o.option_name}', ${g.selection_limit})" class="p-2 border rounded-xl text-center text-sm cursor-pointer transition active:scale-95">${o.option_name}</div>`).join('')}</div></div>`;
                 }).join('');
                 document.getElementById('add-btn').onclick = () => {
                     for(let g of item.set_menu_groups) if(tempSet.selections[g.id].length < g.selection_limit) return alert(`【${g.group_name}】未選滿`);
@@ -189,14 +199,32 @@
             tempSet.selections[gid] = sel;
         }
 
-        function pushCart(n, p) { cart.push({ name: n, price: p }); document.getElementById('cart-count').innerText = cart.length; }
+        function pushCart(n, p) { 
+            cart.push({ name: n, price: p }); 
+            document.getElementById('cart-count').innerText = cart.length; 
+        }
+
         function closeDetail() { document.getElementById('detail-modal').classList.add('hidden'); }
 
         async function submitFinal() {
-            if(cart.length === 0) return alert("購物車空空如也");
+            if(cart.length === 0) return alert("購物車目前空空的喔");
             const total = cart.reduce((s, i) => s + Number(i.price), 0);
-            const { error } = await _s.from('orders').insert([{ customer_name: guest.name, phone: guest.phone, adults: guest.adults, kids_chair: guest.kids_chair, toddlers: guest.toddlers, order_content: cart, total_price: total, status: 'pending' }]);
-            if(!error) { document.getElementById('step-2').classList.add('hidden'); document.getElementById('cart-bar').classList.add('hidden'); document.getElementById('step-3').classList.remove('hidden'); }
+            const { error } = await _s.from('orders').insert([{ 
+                customer_name: guest.name, 
+                phone: guest.phone, 
+                adults: guest.adults, 
+                kids_chair: guest.kids_chair, 
+                toddlers: guest.toddlers, 
+                order_content: cart, 
+                total_price: total, 
+                status: 'pending' 
+            }]);
+            if(!error) { 
+                document.getElementById('step-2').classList.add('hidden'); 
+                document.getElementById('cart-bar').classList.add('hidden'); 
+                document.getElementById('step-3').classList.remove('hidden'); 
+                window.scrollTo(0, 0);
+            }
         }
     </script>
 </body>
