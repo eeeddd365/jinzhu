@@ -12,13 +12,17 @@
         body { background-color: var(--p-cream); font-family: 'Noto Sans TC', sans-serif; -webkit-tap-highlight-color: transparent; }
         .font-serif { font-family: 'Noto Serif TC', serif; }
         
-        /* 選單按鈕樣式修正 - 確保文字顏色清晰 */
+        /* 選單導覽按鈕 */
         .cat-btn { border: 1.5px solid var(--p-green); color: var(--p-green); background-color: white; transition: all 0.2s; }
         .cat-active { background-color: var(--p-green) !important; color: #ffffff !important; border-color: var(--p-gold) !important; font-weight: bold; }
         
+        /* 開始點餐 & 送出預定 按鈕強化 - 強制白色文字 */
+        .btn-primary { background-color: var(--p-green); color: #ffffff !important; box-shadow: 0 4px 12px rgba(0, 77, 64, 0.3); }
+        .btn-primary:active { transform: scale(0.96); }
+
         /* 選擇狀態樣式 */
         .opt-selected { border: 3px solid var(--p-gold) !important; background-color: #fdf6e9; color: var(--p-green); font-weight: bold; transform: scale(1.02); }
-        .flavor-selected { border-color: var(--p-gold) !important; background-color: var(--p-green) !important; color: white !important; font-weight: bold; }
+        .flavor-selected { border-color: var(--p-gold) !important; background-color: var(--p-green) !important; color: #ffffff !important; font-weight: bold; }
 
         .img-contain { width: 100%; height: 100%; object-fit: contain; background: white; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -38,10 +42,10 @@
         <section id="step-1" class="mt-8">
             <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-stone-100">
                 <h2 class="text-2xl font-bold text-p-green text-center mb-8 font-serif">顧客預定登記</h2>
-                <div class="space-y-5">
+                <div class="space-y-6">
                     <input type="text" id="custName" placeholder="訂位人姓名" class="w-full border-2 p-4 rounded-2xl bg-stone-50 outline-none focus:border-p-green text-lg">
                     <input type="tel" id="custPhone" placeholder="聯絡電話" class="w-full border-2 p-4 rounded-2xl bg-stone-50 focus:border-p-green text-lg">
-                    <button onclick="startOrder()" class="w-full bg-p-green text-white py-5 rounded-2xl font-bold text-xl shadow-lg active:scale-95 transition">開始點餐</button>
+                    <button onclick="startOrder()" class="w-full btn-primary py-5 rounded-2xl font-bold text-xl transition">開始點餐</button>
                 </div>
             </div>
         </section>
@@ -55,7 +59,7 @@
             <div class="bg-white p-10 rounded-[3rem] shadow-2xl border-t-8 border-p-green">
                 <div class="text-7xl mb-6">🥢</div>
                 <h2 class="text-2xl font-bold text-p-green mb-4 font-serif">已收到您的預定餐點</h2>
-                <p class="text-stone-500 mb-8 font-medium">如有任何問題歡迎致電：<br><b class="text-p-gold text-2xl">04-3702-7538</b><br>真珠台中文心 誠摯歡迎您</p>
+                <p class="text-stone-500 mb-8 font-medium leading-relaxed">如有任何問題歡迎致電：<br><b class="text-p-gold text-2xl tracking-tighter">04-3702-7538</b><br>真珠台中文心 誠摯歡迎您</p>
                 <button onclick="location.reload()" class="bg-p-green text-white px-12 py-4 rounded-full font-bold shadow-lg">返回首頁</button>
             </div>
         </section>
@@ -79,13 +83,13 @@
 
             <div class="p-5 bg-stone-50 flex gap-4 border-t flex-shrink-0">
                 <button onclick="closeDetail()" class="flex-1 py-4 text-stone-400 font-bold text-lg">取消</button>
-                <button id="add-btn" class="flex-1 py-4 bg-p-green text-white rounded-full font-bold shadow-md text-lg active:scale-95 transition">確認加入點餐</button>
+                <button id="add-btn" class="flex-1 btn-primary py-4 rounded-full font-bold text-lg shadow-md transition">確認加入點餐</button>
             </div>
         </div>
     </div>
 
     <div id="cart-bar" class="fixed bottom-6 left-4 right-4 max-w-xl mx-auto z-50 hidden">
-        <button onclick="submitOrder()" class="w-full bg-p-green text-white p-2 rounded-full shadow-2xl flex justify-between items-center pr-2 pl-8 border-2 border-white/20 active:scale-95 transition">
+        <button onclick="submitOrder()" class="w-full btn-primary p-2 rounded-full shadow-2xl flex justify-between items-center pr-2 pl-8 border-2 border-white/20 transition">
             <span class="font-bold tracking-widest text-lg font-serif">送出預定清單</span>
             <div id="cart-count" class="bg-p-gold text-white w-12 h-12 rounded-full flex items-center justify-center font-black text-xl shadow-inner">0</div>
         </button>
@@ -133,8 +137,8 @@
                 <div class="bg-white rounded-3xl overflow-hidden shadow-sm flex h-36 border border-stone-100 clickable" onclick="openDetail('${i.id}')">
                     <div class="w-36 h-full bg-white flex-shrink-0"><img src="${i.image_url || ''}" class="img-contain"></div>
                     <div class="p-4 flex flex-col justify-between flex-1 overflow-hidden">
-                        <div><h3 class="font-bold text-p-green text-lg font-serif truncate">${i.name}</h3><p class="text-[11px] text-stone-400 line-clamp-2 mt-1">${i.description || ''}</p></div>
-                        <div class="flex justify-between items-end"><span class="text-p-gold font-bold font-serif text-lg">$${i.price}</span><span class="text-[10px] bg-stone-100 text-stone-400 px-3 py-1 rounded-full">選購</span></div>
+                        <div><h3 class="font-bold text-p-green text-lg font-serif truncate">${i.name}</h3><p class="text-[11px] text-stone-400 line-clamp-2 mt-1 leading-relaxed">${i.description || ''}</p></div>
+                        <div class="flex justify-between items-end"><span class="text-p-gold font-bold font-serif text-lg">$${i.price}</span><span class="text-[10px] bg-stone-100 text-stone-400 px-3 py-1 rounded-full font-bold">選購</span></div>
                     </div>
                 </div>`).join('');
         }
@@ -184,7 +188,6 @@
             el.classList.add('flavor-selected');
             if(type === 'main') sels.flavors[gid] = name;
             else {
-                // 修正：在正確的選中項目中存入口味
                 for(let g in sels.groups) {
                     const target = sels.groups[g].find(x => x.id === optId);
                     if(target) target.flavorNote = name;
@@ -215,7 +218,7 @@
         function confirmAdd() {
             if(tempItem.is_set_menu) {
                 for(let g of tempItem.set_menu_groups) {
-                    if(sels.groups[g.id].length < g.selection_limit) return alert(`【${g.group_name}】尚未選滿！`);
+                    if(sels.groups[g.id].length < g.selection_limit) return alert(`【${g.group_name}】組別尚未選滿！`);
                     for(let p of sels.groups[g.id]) {
                         const original = tempItem.set_menu_contents.find(c => c.menu_items.id === p.id).menu_items;
                         if(original.item_flavor_relation?.length > 0 && !p.flavorNote) return alert(`請為【${p.name}】選擇口味。`);
@@ -225,7 +228,7 @@
             if(tempItem.item_flavor_relation?.length > 0 && Object.keys(sels.flavors).length < tempItem.item_flavor_relation.length) return alert("請選擇客製化選項。");
             
             const fn = Object.values(sels.flavors).join('/');
-            const sn = Object.values(sels.groups).flat().map(x => x.name + (x.flavorNote ? `[${x.flavorNote}]` : '')).join('、');
+            const sn = Object.values(sels.groups).flat().map(x => x.name + (x.flavorNote ? ` [${x.flavorNote}]` : '')).join('、');
             cart.push({ name: `${tempItem.name}${fn ? ` [${fn}]` : ''}${sn ? ` (${sn})` : ''}`, price: tempItem.price });
             document.getElementById('cart-count').innerText = cart.length;
             closeDetail();
@@ -235,7 +238,8 @@
 
         async function submitOrder() {
             if(!cart.length) return alert("購物車是空的喔！");
-            const { error } = await _s.from('orders').insert([{ customer_name: guest.name, phone: guest.phone, order_content: cart, total_price: cart.reduce((s,i) => s + Number(i.price), 0) }]);
+            const total = cart.reduce((s,i) => s + Number(i.price), 0);
+            const { error } = await _s.from('orders').insert([{ customer_name: guest.name, phone: guest.phone, order_content: cart, total_price: total }]);
             if(!error) { document.getElementById('step-2').classList.add('hidden'); document.getElementById('cart-bar').classList.add('hidden'); document.getElementById('step-3').classList.remove('hidden'); window.scrollTo(0,0); }
         }
     </script>
