@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>真珠 台灣佳味 JIN-ZHU | 線上點餐</title>
+    <title>真珠|文心店線上預點餐</title>
     
     <link rel="stylesheet" href="https://www.jinzhu.com.tw/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://www.jinzhu.com.tw/css/animate.css">
@@ -86,7 +86,7 @@
     <main id="main-content" class="max-w-xl mx-auto p-4 relative z-20 transition-all duration-500">
         <section id="step-1" class="animate__animated animate__slideInUp">
             <div class="order-card p-7 md:p-10 border border-white">
-                <h2 class="text-xl font-bold text-p-green text-center mb-8 font-serif tracking-widest">顧客預定登記</h2>
+                <h2 class="text-xl font-bold text-p-green text-center mb-8 font-serif tracking-widest"真珠文心店預點系統</h2>
                 <div class="space-y-6">
                     <div class="group">
                         <label class="text-[10px] font-bold text-stone-400 ml-1 mb-1 block uppercase tracking-widest">Customer Name</label>
@@ -94,10 +94,10 @@
                     </div>
                     <div class="group">
                         <label class="text-[10px] font-bold text-stone-400 ml-1 mb-1 block uppercase tracking-widest">Phone Number</label>
-                        <input type="tel" id="custPhone" placeholder="請輸入聯絡電話" class="w-full border-b border-stone-200 py-2 bg-transparent outline-none focus:border-p-green text-base transition">
+                        <input type="tel" id="custPhone" placeholder="請輸入訂位電話" class="w-full border-b border-stone-200 py-2 bg-transparent outline-none focus:border-p-green text-base transition">
                     </div>
                     <button onclick="startOrder()" class="w-full btn-primary py-3.5 rounded-full font-bold text-lg transition mt-4 active:scale-95 shadow-md">
-                        進入選單
+                        進入點餐
                     </button>
                 </div>
             </div>
@@ -113,7 +113,7 @@
                 <div class="text-6xl mb-6">🥢</div>
                 <h2 class="text-xl font-bold text-p-green mb-4 font-serif">預定成功</h2>
                 <p class="text-stone-500 text-sm mb-10 leading-relaxed">
-                    您的美味餐點已在準備中<br>
+                    我們已收到您的預定餐點<br>
                     如有調整請撥打：<b class="text-p-gold">04-3702-7538</b>
                 </p>
                 <button onclick="location.reload()" class="w-full max-w-xs mx-auto btn-outline py-2.5 rounded-full font-bold text-sm transition">返回首頁</button>
@@ -147,7 +147,7 @@
                 <div id="preview-list" class="space-y-3"></div>
                 <div class="mt-5 border-t pt-4">
                     <label class="block text-xs font-bold text-p-green mb-2 tracking-widest">備註需求</label>
-                    <textarea id="order-note" class="w-full border rounded-lg p-3 bg-stone-50 text-xs outline-none h-16 resize-none" placeholder="例如：去蔥、慶生用途..."></textarea>
+                    <textarea id="order-note" class="w-full border rounded-lg p-3 bg-stone-50 text-xs outline-none h-16 resize-none" placeholder="例如：不需要餐具等(特殊需求須依現場人員確認為主) ..."></textarea>
                 </div>
             </div>
             <div class="p-4 bg-white border-t">
