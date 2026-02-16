@@ -19,31 +19,34 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--p-cream); }
         .font-serif { font-family: 'Noto Serif TC', serif; }
         
-        /* 品牌導覽 */
+        /* 導覽列：強制改為純白背景 */
+        .navbar-custom { background-color: #ffffff !important; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .navbar-brand img { max-height: 40px; }
         .btn-primary { background-color: var(--p-green) !important; border-color: var(--p-green) !important; color: #fff !important; }
         
-        /* 全屏背景與文字優化 */
+        /* 全屏背景 KV */
         .kv-section { position: relative; height: 100vh; width: 100%; overflow: hidden; transition: all 0.7s ease-in-out; }
         .kv-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.35); z-index: 1; }
         #kv-bg { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.8s ease; }
         .kv-hidden { height: 0px !important; }
 
-        /* 首頁標題：白色、精緻、適中大小 */
+        /* 首頁標題文字 */
         .main-title { font-size: 2.2rem; letter-spacing: 0.15em; text-shadow: 0 2px 10px rgba(0,0,0,0.3); font-weight: 700; color: #ffffff; }
         .sub-title { font-size: 1rem; letter-spacing: 0.4em; color: rgba(255,255,255,0.9); font-weight: 300; margin-top: 0.5rem; }
 
-        /* 登記卡片優化 - 提高位置快速看到 */
+        /* 登記卡片 */
         .order-card { margin-top: -160px; position: relative; z-index: 10; background: rgba(255,255,255,0.98); box-shadow: 0 20px 50px rgba(0,0,0,0.15); border-radius: 2rem; }
         
-        /* 彈窗內縮小與內容專注 */
+        /* 彈窗優化 */
         .modal-btn-small { padding: 0.6rem !important; font-size: 0.9rem !important; border-radius: 10px !important; }
         .flavor-selected { border-color: var(--p-gold) !important; background-color: var(--p-green) !important; color: white !important; font-weight: bold; }
         .opt-selected { border: 2px solid var(--p-gold) !important; background-color: #fdf6e9 !important; font-weight: bold; }
 
         .img-contain { width: 100%; height: 100%; object-fit: contain; background: white; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .sticky-nav { position: sticky; top: 60px; z-index: 40; background-color: rgba(249, 245, 240, 0.95); backdrop-filter: blur(5px); border-bottom: 1px solid #ddd; }
+        
+        /* 分類導覽：進入點餐後緊貼白色 Header */
+        .sticky-nav { position: sticky; top: 56px; z-index: 40; background-color: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); border-bottom: 1px solid #eee; }
         
         .cat-btn { border: 1px solid var(--p-green); color: var(--p-green); background-color: white; transition: all 0.2s; font-size: 0.85rem; }
         .cat-active { background-color: var(--p-green) !important; color: #ffffff !important; border-color: var(--p-gold) !important; }
@@ -53,7 +56,7 @@
 </head>
 <body class="pb-24 text-slate-800">
 
-    <header class="header_wrap fixed-top bg-white/90 backdrop-blur-sm shadow-sm" style="z-index: 100;">
+    <header class="header_wrap fixed-top navbar-custom shadow-sm" style="z-index: 100;">
         <div class="container flex justify-center py-2">
             <a class="navbar-brand" href="#" onclick="location.reload()">
                 <img src="https://www.jinzhu.com.tw/images/Jinzhu_logo.svg" alt="logo">
@@ -65,7 +68,7 @@
         <div class="kv-overlay"></div>
         <img id="kv-bg" src="" class="opacity-0 w-full h-full">
         <div class="absolute inset-0 z-10 flex flex-col items-center justify-center px-4">
-            <div class="mb-20 text-center">
+            <div class="mb-24 text-center">
                 <h2 class="main-title font-serif animate__animated animate__fadeIn">台灣佳味 JIN-ZHU</h2>
                 <p class="sub-title font-serif animate__animated animate__fadeIn animate__delay-1s">傳承心意．玩味新意</p>
             </div>
@@ -100,7 +103,7 @@
         <section id="step-3" class="hidden py-16 text-center px-4 mt-10">
             <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl border-t-4 border-p-green text-center">
                 <div class="text-6xl mb-6">🥢</div>
-                <h2 class="text-xl font-bold text-p-green mb-4 font-serif">預定已送出</h2>
+                <h2 class="text-xl font-bold text-p-green mb-4 font-serif">預定成功</h2>
                 <p class="text-stone-500 text-sm mb-10 leading-relaxed">
                     您的美味餐點已在準備中<br>
                     如有調整請撥打：<b class="text-p-gold">04-3702-7538</b>
@@ -166,6 +169,7 @@
 
         let menuData = [], cart = [], guest = {}, tempItem = null, sels = { flavors: {}, groups: {} };
 
+        // 自動辨識背景
         function setKV() {
             const isMobile = window.innerWidth <= 768;
             const baseUrl = "https://www.jinzhu.com.tw/storage/website/kv/jinzhu20230904143032_";
@@ -182,12 +186,12 @@
             }
         })();
 
+        // 開始點餐
         async function startOrder() {
             guest = { name: document.getElementById('custName').value, phone: document.getElementById('custPhone').value };
             if(!guest.name || !guest.phone) return alert("請填寫姓名與電話");
             
             document.getElementById('kv-area').classList.add('kv-hidden');
-            document.getElementById('main-content').classList.remove('p-4'); // 優化間距
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
             document.getElementById('cart-bar').classList.remove('hidden');
@@ -225,7 +229,7 @@
             sels = { flavors: {}, groups: {} };
             document.getElementById('detail-img').src = tempItem.image_url || '';
             document.getElementById('detail-title').innerText = tempItem.name;
-            document.getElementById('detail-desc').innerText = tempItem.description || "真切滋味，誠摯款待。";
+            document.getElementById('detail-desc').innerText = tempItem.description || "傳承心意，誠摯款待。";
             renderFlavorList(tempItem.item_flavor_relation, 'flavor-container', 'main');
             const setArea = document.getElementById('set-group-container');
             setArea.innerHTML = tempItem.is_set_menu ? tempItem.set_menu_groups.map(g => {
@@ -240,7 +244,7 @@
         function renderFlavorList(relations, targetId, parentType, optId = '') {
             const container = document.getElementById(targetId);
             if(parentType === 'main') container.innerHTML = '';
-            container.innerHTML += relations.map(r => `<div><p class="text-[10px] font-bold text-stone-300 mb-2 uppercase tracking-tighter">【調整 ${r.flavor_groups.name}】</p>
+            container.innerHTML += relations.map(r => `<div><p class="text-[10px] font-bold text-stone-300 mb-2 uppercase">【調整 ${r.flavor_groups.name}】</p>
                 <div class="flex flex-wrap gap-2">${r.flavor_groups.flavor_options.map(o => `<div onclick="selectFlavor(this, '${r.flavor_groups.id}', '${o.option_name}', '${parentType}', '${optId}')" class="px-4 py-1.5 border border-stone-200 rounded-full text-[11px] cursor-pointer bg-stone-50 transition">${o.option_name}</div>`).join('')}</div></div>`).join('');
         }
 
@@ -304,9 +308,9 @@
             if(!cart.length) return;
             const list = document.getElementById('preview-list');
             list.innerHTML = cart.map((item, idx) => `
-                <div class="flex justify-between items-start bg-stone-50 p-4 rounded-xl border border-stone-100">
+                <div class="flex justify-between items-start bg-stone-50 p-3 rounded-xl border">
                     <div class="flex-1 text-left"><p class="font-bold text-p-green text-xs">${item.name}</p><p class="text-p-gold font-serif text-xs mt-1">$${item.price}</p></div>
-                    <button onclick="removeItem(${idx})" class="text-red-300 p-2">✕</button>
+                    <button onclick="removeItem(${idx})" class="text-red-300 p-2 text-xl">✕</button>
                 </div>`).join('');
             document.getElementById('preview-total').innerText = `$${cart.reduce((s, i) => s + i.price, 0)}`;
             document.getElementById('preview-modal').classList.remove('hidden');
