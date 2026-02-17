@@ -65,13 +65,15 @@
                 <div class="space-y-6">
                     <div class="group">
                         <label class="text-[10px] font-bold text-stone-400 ml-1 mb-1 block uppercase">Customer Name</label>
-                        <input type="text" id="custName" placeholder="請輸入訂位姓名" class="w-full border-b border-stone-200 py-2 bg-transparent outline-none focus:border-p-green text-base">
+                        <input type="text" id="custName" placeholder="請輸入訂位姓名" class="w-full border-b border-stone-200 py-2 bg-transparent outline-none focus:border-p-green text-base transition">
                     </div>
                     <div class="group">
                         <label class="text-[10px] font-bold text-stone-400 ml-1 mb-1 block uppercase">Phone Number</label>
-                        <input type="tel" id="custPhone" placeholder="請輸入聯絡電話" class="w-full border-b border-stone-200 py-2 bg-transparent outline-none focus:border-p-green text-base">
+                        <input type="tel" id="custPhone" placeholder="請輸入聯絡電話" class="w-full border-b border-stone-200 py-2 bg-transparent outline-none focus:border-p-green text-base transition">
                     </div>
-                    <button onclick="startOrder()" class="w-full btn-primary py-3.5 rounded-full font-bold text-lg shadow-md transition active:scale-95">進入選單</button>
+                    <button onclick="startOrder()" class="w-full btn-primary py-3.5 rounded-full font-bold text-lg transition mt-4 active:scale-95 shadow-md">
+                        進入選單
+                    </button>
                 </div>
             </div>
         </section>
@@ -195,7 +197,7 @@
             if(tempItem.is_set_menu && tempItem.set_menu_groups) {
                 setArea.innerHTML = tempItem.set_menu_groups.map(g => {
                     sels.groups[g.id] = []; 
-                    return `<div><div class="flex justify-between items-center mb-3 text-sm font-serif"><p class="font-bold text-p-green border-l-3 border-p-gold pl-2">${g.group_name}</p><span class="text-[9px] bg-stone-100 px-2 py-0.5 rounded text-stone-400">必選 ${g.selection_limit}</span></div><div class="grid grid-cols-2 gap-2">${g.set_menu_contents.map(c => renderSetOptionUI(c.menu_items, g.id, g.selection_limit)).join('')}</div></div>`;
+                    return `<div><div class="flex justify-between items-center mb-3 text-sm font-serif"><p class="font-bold text-p-green border-l-3 border-p-gold pl-2">${g.group_name}</p><span class="text-[9px] bg-stone-100 px-2 py-0.5 rounded text-stone-400">必選 ${g.selection_limit}</span></div><div class="grid grid-cols-2 gap-2">${g.set_menu_contents.map((c, index) => renderSetOptionUI(c.menu_items, g.id, g.selection_limit, index)).join('')}</div></div>`;
                 }).join('');
             }
             document.getElementById('detail-modal').classList.remove('hidden');
@@ -208,11 +210,11 @@
             container.innerHTML += relations.map(r => `<div><p class="text-[10px] font-bold text-stone-300 mb-2 uppercase">【調整 ${r.flavor_groups.name}】</p><div class="flex flex-wrap gap-2">${r.flavor_groups.flavor_options.map(o => `<div onclick="selectFlavor(this, '${r.flavor_groups.id}', '${o.option_name}', '${parentType}', '${uniqueKey}')" class="px-4 py-1.5 border border-stone-200 rounded-full text-[11px] cursor-pointer bg-stone-50 transition">${o.option_name}</div>`).join('')}</div></div>`).join('');
         }
 
-        function renderSetOptionUI(item, groupId, limit) {
+        function renderSetOptionUI(item, groupId, limit, idx) {
             const hasFlavor = item.item_flavor_relation?.length > 0;
-            const uniqueKey = `${groupId}-${item.id}`;
+            const uniqueKey = `${groupId}-${item.id}-${idx}`; // 核心修正：加入 idx 確保唯一性
             return `<div class="set-option-card border rounded-xl overflow-hidden" id="card-${uniqueKey}">
-                    <div onclick="handleSetPick(this, '${groupId}', '${item.id}', '${item.name}', ${limit}, ${hasFlavor})" class="p-3 bg-stone-50 flex justify-between items-center cursor-pointer">
+                    <div onclick="handleSetPick(this, '${groupId}', '${item.id}', '${item.name}', ${limit}, ${hasFlavor}, ${idx})" class="p-3 bg-stone-50 flex justify-between items-center cursor-pointer">
                         <span class="font-bold text-stone-700 text-[12px]">${item.name}</span>
                         ${hasFlavor ? '<span class="text-[8px] text-p-gold">● 可調</span>' : ''}
                     </div>
@@ -225,28 +227,28 @@
             el.classList.add('flavor-selected');
             if(type === 'main') sels.flavors[gid] = name;
             else { 
-                const [gId, iId] = uniqueKey.split('-');
+                const gId = uniqueKey.split('-')[0];
                 if (!sels.groups[gId]) sels.groups[gId] = [];
-                // 修正：在該分組中精確找到「目前選中」的這個品項實體進行更新
+                // 核心修正：精確找到該位置的實體（匹配 uKey）
                 const target = sels.groups[gId].find(x => x.uKey === uniqueKey);
                 if(target) target.flavorNote = name; 
             }
         }
 
-        function handleSetPick(el, gid, itemId, itemName, limit, hasFlavor) {
+        function handleSetPick(el, gid, itemId, itemName, limit, hasFlavor, idx) {
             const card = el.parentElement;
-            const uniqueKey = `${gid}-${itemId}`;
+            const uniqueKey = `${gid}-${itemId}-${idx}`;
             const subArea = document.getElementById(`flavor-sub-${uniqueKey}`);
             if (!sels.groups[gid]) sels.groups[gid] = [];
 
             if(limit === 1) {
+                // 單選邏輯
                 Array.from(card.parentElement.children).forEach(s => { 
                     s.classList.remove('opt-selected'); 
                     const sub = s.querySelector('div[id^="flavor-sub-"]'); 
                     if(sub) sub.classList.add('hidden'); 
                 });
                 card.classList.add('opt-selected');
-                // 存入 uKey 供 selectFlavor 比對
                 sels.groups[gid] = [{ id: itemId, name: itemName, flavorNote: '', hasFlavor: hasFlavor, uKey: uniqueKey }];
                 if(hasFlavor) { 
                     const original = menuData.find(m => m.id === itemId); 
@@ -255,10 +257,13 @@
                     subArea.classList.remove('hidden'); 
                 }
             } else {
+                // 多選邏輯
                 let groupSels = sels.groups[gid];
-                const idx = groupSels.findIndex(x => x.uKey === uniqueKey);
-                if(idx > -1) { 
-                    groupSels.splice(idx, 1); card.classList.remove('opt-selected'); subArea.classList.add('hidden'); 
+                const foundIdx = groupSels.findIndex(x => x.uKey === uniqueKey);
+                if(foundIdx > -1) { 
+                    groupSels.splice(foundIdx, 1); 
+                    card.classList.remove('opt-selected'); 
+                    subArea.classList.add('hidden'); 
                 } else if(groupSels.length < limit) {
                     groupSels.push({ id: itemId, name: itemName, flavorNote: '', hasFlavor: hasFlavor, uKey: uniqueKey });
                     card.classList.add('opt-selected');
