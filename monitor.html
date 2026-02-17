@@ -2,116 +2,180 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>真珠 | 現場訂單監控</title>
+    <title>真珠 | 訂單即時監控系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        :root { --p-gold: #b89150; --p-green: #004d40; }
         body { background-color: #00251a; color: #e0e0e0; font-family: 'Noto Sans TC', sans-serif; }
         .font-serif { font-family: 'Noto Serif TC', serif; }
-        .new-order-anim { animation: pulse-gold 2s infinite; }
-        @keyframes pulse-gold { 
-            0% { box-shadow: 0 0 0 0 rgba(184, 145, 80, 0.7); }
-            70% { box-shadow: 0 0 0 20px rgba(184, 145, 80, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(184, 145, 80, 0); }
+        
+        /* 訂單卡片進入動畫 */
+        .order-card { animation: slideIn 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
+        @keyframes slideIn {
+            from { opacity: 0; transform: scale(0.9) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
         }
+
+        /* 已處理消失動畫 */
+        .fade-out { 
+            opacity: 0 !important; 
+            transform: scale(0.8) !important; 
+            transition: all 0.5s ease; 
+            pointer-events: none;
+        }
+
+        .gold-glow { box-shadow: 0 0 20px rgba(184, 145, 80, 0.2); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1a4d3a; border-radius: 10px; }
     </style>
 </head>
-<body class="p-4">
-    <div class="max-w-6xl mx-auto">
-        <div class="flex justify-between items-center mb-8 border-b border-emerald-900 pb-6">
-            <div>
-                <h1 class="text-3xl font-bold text-[#b89150] font-serif">真珠文心店 | 現場訂單監控</h1>
-                <p id="conn-status" class="text-amber-500 text-sm mt-2">● 正在連線至伺服器...</p>
-            </div>
-            <div id="clock" class="text-2xl font-mono text-white">00:00:00</div>
-        </div>
+<body class="p-4 md:p-8 min-h-screen">
 
-        <div id="notice-overlay" onclick="enableAudio()" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center cursor-pointer">
-            <div class="text-center bg-white text-black p-10 rounded-[3rem] shadow-2xl">
-                <div class="text-7xl mb-4">🔔</div>
-                <h2 class="text-3xl font-bold mb-2 text-[#004d40]">開啟監控系統</h2>
-                <p class="text-gray-500 mb-6">點擊此處啟動即時訂單接收與音效</p>
-                <div class="animate-bounce bg-[#b89150] text-white py-3 px-8 rounded-full font-bold">START MONITORING</div>
-            </div>
+    <div id="notice-overlay" onclick="enableSystem()" class="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center cursor-pointer backdrop-blur-md">
+        <div class="text-center bg-white p-12 rounded-[3rem] shadow-2xl max-w-sm">
+            <div class="text-7xl mb-6">📢</div>
+            <h2 class="text-3xl font-black mb-3 text-[#004d40] font-serif">監控系統啟動</h2>
+            <p class="text-gray-400 mb-8">點擊後開始接收即時訂單<br>並啟用語音廣播功能</p>
+            <div class="bg-[#b89150] text-white py-4 px-10 rounded-full font-bold text-lg animate-pulse">開啟語音監控</div>
         </div>
-
-        <div id="order-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            </div>
     </div>
 
-    <audio id="order-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+    <div class="max-w-7xl mx-auto">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+            <div class="text-center md:text-left">
+                <div class="flex items-center gap-3 justify-center md:justify-start">
+                    <img src="https://www.jinzhu.com.tw/images/Jinzhu_logo.svg" class="h-10 brightness-200" style="filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(10deg);">
+                    <h1 class="text-3xl font-black text-[#b89150] font-serif tracking-widest">訂單監控中心</h1>
+                </div>
+                <p id="conn-status" class="text-amber-500 text-xs mt-3 font-bold tracking-widest uppercase">Initializing System...</p>
+            </div>
+            <div class="flex items-center gap-6">
+                <div id="clock" class="text-3xl font-mono font-bold text-white bg-black/30 px-6 py-2 rounded-2xl border border-white/10 tracking-tighter">00:00:00</div>
+            </div>
+        </header>
+
+        <div id="order-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+
+        <div id="no-order-hint" class="text-center py-40 text-emerald-900/30">
+            <div class="text-8xl mb-4">🥢</div>
+            <p class="text-xl font-serif">目前尚無待處理預定</p>
+        </div>
+    </div>
 
     <script>
         const SUPABASE_URL = 'https://pydlnqriztpzgxbjuohm.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_ISKUWOXUR9A-1y81xCOUXg_8-zNle3v'; // 請確認此 Key 是否正確
+        const SUPABASE_KEY = 'sb_publishable_ISKUWOXUR9A-1y81xCOUXg_8-zNle3v';
         const _s = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        function enableAudio() {
+        let systemActive = false;
+
+        // 啟動系統並預熱語音
+        function enableSystem() {
+            systemActive = true;
             document.getElementById('notice-overlay').classList.add('hidden');
-            const sound = document.getElementById('order-sound');
-            // 瀏覽器解鎖音效
-            sound.play().then(() => {
-                sound.pause();
-                sound.currentTime = 0;
-            }).catch(e => console.log("Audio unlock failed", e));
-            console.log("Realtime監控啟動...");
+            speak("系統已啟動");
+        }
+
+        // 語音廣播功能
+        function speak(text) {
+            if (!window.speechSynthesis || !systemActive) return;
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = 'zh-TW';
+            utter.rate = 1.0;
+            utter.pitch = 1.0;
+            window.speechSynthesis.speak(utter);
         }
 
         // 監聽新訂單
-        const channel = _s.channel('db-changes')
-          .on('postgres_changes', { 
-              event: 'INSERT', 
-              schema: 'public', 
-              table: 'orders' 
-          }, payload => {
-              console.log('收到新訂單!', payload.new);
-              playAlert();
-              renderCard(payload.new);
+        _s.channel('orders_realtime')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
+              console.log('New Order:', payload.new);
+              speak("有一筆新預定"); // 語音通知
+              renderOrder(payload.new);
           })
-          .subscribe((status) => {
-              const statusEl = document.getElementById('conn-status');
-              if (status === 'SUBSCRIBED') {
-                  statusEl.innerText = "🟢 系統已同步，即時監控中";
-                  statusEl.className = "text-emerald-500 text-sm mt-2 font-bold";
-              } else {
-                  statusEl.innerText = "🔴 連線異常: " + status;
-                  statusEl.className = "text-red-500 text-sm mt-2";
+          .subscribe(status => {
+              const el = document.getElementById('conn-status');
+              if(status === 'SUBSCRIBED') {
+                  el.innerText = "🟢 系統已同步 | 實時點餐監控中";
+                  el.className = "text-emerald-400 text-xs mt-3 font-bold tracking-widest";
               }
           });
 
-        function playAlert() {
-            const sound = document.getElementById('order-sound');
-            sound.currentTime = 0;
-            sound.play().catch(e => console.log("播放失敗，請確認是否點擊頁面解鎖", e));
-        }
-
-        function renderCard(order) {
+        function renderOrder(order) {
+            document.getElementById('no-order-hint').classList.add('hidden');
             const grid = document.getElementById('order-grid');
+            
             const card = document.createElement('div');
-            card.className = "bg-white text-slate-800 p-6 rounded-[2rem] shadow-2xl border-t-8 border-[#b89150] new-order-anim transition-all duration-500";
+            card.id = `order-${order.id}`;
+            card.className = "order-card bg-white rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col gold-glow";
             
             const time = new Date(order.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            // 處理訂單內容，如果 order_content 是字串則 parse，如果是陣列直接用
-            const itemsArray = typeof order.order_content === 'string' ? JSON.parse(order.order_content) : order.order_content;
-            const items = itemsArray.map(i => `<div class="py-2 border-b border-gray-100 last:border-0 text-sm font-medium">• ${i.name}</div>`).join('');
-
+            const items = typeof order.order_content === 'string' ? JSON.parse(order.order_content) : order.order_content;
+            
             card.innerHTML = `
-                <div class="flex justify-between items-start mb-4">
-                    <b class="text-2xl font-serif text-[#004d40]">${order.customer_name}</b>
-                    <span class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold shadow-sm">$${order.total_price}</span>
+                <div class="p-6 bg-stone-50 border-b border-stone-100 flex justify-between items-center">
+                    <div>
+                        <span class="text-[10px] bg-[#b89150] text-white px-2 py-0.5 rounded-md font-bold uppercase mb-1 inline-block">New Order</span>
+                        <h3 class="text-2xl font-black text-[#004d40] font-serif">${order.customer_name}</h3>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xl font-black text-[#b89150] font-mono">$${order.total_price}</p>
+                        <p class="text-[10px] text-stone-400 font-bold">${time}</p>
+                    </div>
                 </div>
-                <div class="text-xs text-stone-400 mb-4 font-bold">${time} | ${order.phone}</div>
-                <div class="bg-gray-50 p-4 rounded-2xl mb-4 shadow-inner">${items}</div>
-                ${order.note ? `<div class="bg-amber-50 text-amber-800 p-3 rounded-xl text-xs border border-amber-100"><b>顧客備註：</b>${order.note}</div>` : ''}
-                <div class="mt-4 text-right text-[10px] text-gray-300 italic">Order ID: ${order.id.substring(0,8)}</div>
+                
+                <div class="p-6 flex-1 custom-scrollbar overflow-y-auto max-h-60">
+                    <div class="space-y-3">
+                        ${items.map(i => `
+                            <div class="flex gap-3 items-start">
+                                <div class="w-1.5 h-1.5 bg-[#b89150] rounded-full mt-2 flex-shrink-0"></div>
+                                <p class="text-stone-700 text-base font-bold leading-tight">${i.name}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                ${order.note ? `
+                <div class="px-6 pb-2">
+                    <div class="bg-amber-50 border border-amber-100 p-3 rounded-2xl">
+                        <p class="text-[10px] text-amber-600 font-black uppercase mb-1">特別備註</p>
+                        <p class="text-amber-900 text-xs font-medium">${order.note}</p>
+                    </div>
+                </div>` : ''}
+
+                <div class="p-6 pt-4 flex flex-col gap-3">
+                    <div class="flex items-center justify-between text-stone-400 text-[11px] font-bold px-1">
+                        <span>TEL: ${order.phone}</span>
+                    </div>
+                    <button onclick="markAsDone('${order.id}')" class="w-full bg-[#004d40] text-white py-4 rounded-2xl font-black text-sm tracking-widest hover:bg-emerald-800 transition shadow-lg active:scale-95">
+                        確認已處理
+                    </button>
+                </div>
             `;
+            
             grid.prepend(card);
         }
 
-        // 時鐘功能
-        setInterval(() => { 
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString(); 
+        // 已處理動作 (僅前端移除)
+        function markAsDone(id) {
+            const el = document.getElementById(`order-${id}`);
+            if(el) {
+                el.classList.add('fade-out');
+                setTimeout(() => {
+                    el.remove();
+                    if(document.getElementById('order-grid').children.length === 0) {
+                        document.getElementById('no-order-hint').classList.remove('hidden');
+                    }
+                }, 500);
+            }
+        }
+
+        // 時鐘
+        setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString([], {hour12: false});
         }, 1000);
     </script>
 </body>
