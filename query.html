@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>真珠 | 訂單進度查詢</title>
+    <link rel="stylesheet" href="https://www.jinzhu.com.tw/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://www.jinzhu.com.tw/css/animate.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --p-green: #004d40; --p-gold: #b89150; --p-cream: #f9f5f0; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--p-cream); min-height: 100vh; }
+        .font-serif { font-family: 'Noto Serif TC', serif; }
+        .navbar-custom { background-color: #ffffff; height: 60px; display: flex; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .navbar-brand img { max-height: 40px; image-rendering: -webkit-optimize-contrast; object-fit: contain; }
+        
+        .query-card { background: #fff; border-radius: 2rem; box-shadow: 0 15px 35px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.8); }
+        .order-item-box { border-left: 3px solid var(--p-gold); background: #fcfcfc; }
+        .status-badge { font-size: 10px; padding: 4px 12px; border-radius: 999px; font-weight: bold; }
+        .status-pending { background-color: #fff4e5; color: #b89150; }
+        .status-synced { background-color: #e6f4f1; color: #004d40; }
+        
+        input::placeholder { color: #ccc; }
+        .btn-query { background-color: var(--p-green); color: white; transition: all 0.3s; }
+        .btn-query:active { scale: 0.95; }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="pt-20">
+
+    <header class="fixed-top navbar-custom px-4 justify-center">
+        <a class="navbar-brand" href="index.html">
+            <img id="main-logo" src="https://www.jinzhu.com.tw/images/Jinzhu_logo.svg" alt="logo">
+        </a>
+    </header>
+
+    <main class="max-w-xl mx-auto p-4">
+        <section id="search-section" class="animate__animated animate__fadeIn">
+            <div class="query-card p-8 md:p-10 mb-8">
+                <h2 class="text-2xl font-bold text-p-green text-center mb-2 font-serif tracking-widest">訂單查詢</h2>
+                <p class="text-stone-400 text-center text-xs mb-8 uppercase tracking-tighter">Order Tracking System</p>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="text-[10px] font-bold text-stone-400 block mb-1 tracking-widest">姓名 NAME</label>
+                        <input type="text" id="queryName" placeholder="請輸入訂位姓名" class="w-full border-b py-2 bg-transparent outline-none focus:border-p-green text-lg">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-stone-400 block mb-1 tracking-widest">電話 PHONE</label>
+                        <input type="tel" id="queryPhone" placeholder="請輸入聯絡電話" class="w-full border-b py-2 bg-transparent outline-none focus:border-p-green text-lg">
+                    </div>
+                    <button onclick="fetchOrders()" class="w-full btn-query py-4 rounded-full font-bold shadow-lg mt-4">
+                        立即查詢
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="results-section" class="hidden space-y-6 animate__animated animate__fadeInUp">
+            <div class="flex justify-between items-center px-2">
+                <h3 class="font-bold text-p-green font-serif text-lg">查詢結果</h3>
+                <button onclick="location.reload()" class="text-xs text-stone-400 underline">重新查詢</button>
+            </div>
+            
+            <div id="order-results-list" class="space-y-6">
+                </div>
+        </section>
+
+        <section id="empty-section" class="hidden py-20 text-center">
+            <div class="text-5xl mb-4 opacity-20">🔍</div>
+            <p class="text-stone-400 font-medium">找不到相關訂單內容<br><span class="text-xs">請檢查輸入的姓名與電話是否正確</span></p>
+        </section>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://pydlnqriztpzgxbjuohm.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_ISKUWOXUR9A-1y81xCOUXg_8-zNle3v';
+        const _s = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 初始化 Logo
+        async function initLogo() {
+            const { data } = await _s.from('store_settings').select('logo_url').eq('id', 1).single();
+            if (data?.logo_url) document.getElementById('main-logo').src = `${data.logo_url}?t=${Date.now()}`;
+        }
+        initLogo();
+
+        async function fetchOrders() {
+            const name = document.getElementById('queryName').value.trim();
+            const phone = document.getElementById('queryPhone').value.trim();
+
+            if (!name || !phone) return alert("請輸入姓名與電話以進行查詢");
+
+            // 顯示 Loading (可選)
+            const btn = document.querySelector('.btn-query');
+            btn.innerText = "查詢中...";
+            btn.disabled = true;
+
+            const { data, error } = await _s
+                .from('orders')
+                .select('*')
+                .eq('customer_name', name)
+                .eq('phone', phone)
+                .order('created_at', { ascending: false });
+
+            btn.innerText = "立即查詢";
+            btn.disabled = false;
+
+            if (error) {
+                console.error(error);
+                return alert("查詢出錯，請稍後再試");
+            }
+
+            const resultsSec = document.getElementById('results-section');
+            const emptySec = document.getElementById('empty-section');
+            const list = document.getElementById('order-results-list');
+
+            if (data.length === 0) {
+                resultsSec.classList.add('hidden');
+                emptySec.classList.remove('hidden');
+            } else {
+                emptySec.classList.add('hidden');
+                resultsSec.classList.remove('hidden');
+                
+                list.innerHTML = data.map(order => {
+                    const time = new Date(order.created_at).toLocaleString('zh-TW', {
+                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    });
+                    
+                    const isSynced = order.status === 'synced';
+                    
+                    return `
+                        <div class="query-card overflow-hidden animate__animated animate__fadeIn">
+                            <div class="p-5 bg-stone-50 border-b flex justify-between items-center">
+                                <div>
+                                    <p class="text-[10px] text-stone-400 font-bold uppercase mb-1">Order Time: ${time}</p>
+                                    <div class="flex items-center gap-3">
+                                        <span class="status-badge ${isSynced ? 'status-synced' : 'status-pending'}">
+                                            ${isSynced ? '● 已處理' : '● 準備中'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-p-gold font-black font-serif text-xl">$${order.total_price}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="p-6 space-y-4">
+                                ${order.order_content.map(item => `
+                                    <div class="order-item-box p-3 rounded-r-xl">
+                                        <p class="text-sm font-bold text-p-green leading-relaxed">${item.name}</p>
+                                        <p class="text-[10px] text-stone-400 mt-1 font-serif">單項金額: $${item.price}</p>
+                                    </div>
+                                `).join('')}
+                                
+                                ${order.note ? `
+                                    <div class="mt-4 pt-4 border-t border-dashed">
+                                        <p class="text-[10px] font-black text-stone-300 uppercase mb-1">您的備註 Note</p>
+                                        <p class="text-xs text-stone-500 italic">${order.note}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            // 滾動到結果區
+            resultsSec.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
