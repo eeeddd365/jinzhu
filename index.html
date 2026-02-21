@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>真珠 | 文心店線上預點餐</title>
     <link rel="stylesheet" href="https://www.jinzhu.com.tw/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://www.jinzhu.com.tw/css/animate.css">
@@ -11,12 +11,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { --p-green: #004d40; --p-gold: #b89150; --p-cream: #f9f5f0; }
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--p-cream); }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--p-cream); -webkit-tap-highlight-color: transparent; }
         .font-serif { font-family: 'Noto Serif TC', serif; }
         
         .navbar-custom { background-color: #ffffff; height: 60px; display: flex; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: fixed; top: 0; width: 100%; z-index: 1000; }
         .navbar-brand img { max-height: 40px; image-rendering: -webkit-optimize-contrast; object-fit: contain; }
         
+        /* 側邊選單 */
         .side-menu { position: fixed; top: 0; right: -280px; width: 280px; height: 100%; background: var(--p-green); z-index: 2000; transition: 0.4s; padding: 80px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.2); }
         .side-menu.active { right: 0; }
         .menu-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1500; display: none; }
@@ -28,26 +29,36 @@
         .main-title { font-size: 2.2rem; letter-spacing: 0.15em; text-shadow: 0 2px 10px rgba(0,0,0,0.3); font-weight: 700; color: #fff; }
         .order-card { margin-top: -160px; position: relative; z-index: 10; background: #fff; border-radius: 2rem; box-shadow: 0 20px 50px rgba(0,0,0,0.1); }
         
-        .cat-btn { border: 1px solid var(--p-green); color: var(--p-green); padding: 6px 18px; border-radius: 999px; white-space: nowrap; font-weight: bold; }
+        .cat-btn { border: 1px solid var(--p-green); color: var(--p-green); padding: 6px 18px; border-radius: 999px; white-space: nowrap; font-weight: bold; font-size: 0.9rem; }
         .cat-active { background-color: var(--p-green) !important; color: #fff !important; }
         .flavor-selected { border-color: var(--p-gold) !important; background-color: var(--p-green) !important; color: white !important; font-weight: bold; }
-        .opt-selected { border: 2.5px solid var(--p-gold) !important; background-color: #fdf6e9 !important; font-weight: bold; }
+        .opt-selected { border: 2px solid var(--p-gold) !important; background-color: #fdf6e9 !important; font-weight: bold; }
         .sticky-nav { position: sticky; top: 60px; z-index: 40; background: rgba(249, 245, 240, 0.95); padding: 12px 8px; backdrop-filter: blur(8px); }
         .img-contain { width: 100%; height: 100%; object-fit: contain; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-
-        /* 詳情彈窗極簡化 */
+        
+        /* 彈窗 UI 深度優化 */
         .btn-close-custom { 
-            position: absolute; top: 10px; right: 10px; 
-            background: rgba(0,0,0,0.3); color: white; 
-            width: 28px; height: 28px; border-radius: 50%; 
+            position: absolute; top: 12px; right: 12px; 
+            background: rgba(0,0,0,0.6); color: white; 
+            width: 32px; height: 32px; border-radius: 50%; 
             display: flex; align-items: center; justify-content: center; 
-            z-index: 2100; font-size: 12px;
+            z-index: 2200; font-size: 16px; border: none;
         }
+        
+        /* 防止手機版彈窗內容過長被遮擋 */
         #detail-modal .bg-white { 
-            max-width: 95% !important;
-            border-radius: 1.25rem !important;
+            margin-top: 10vh; 
+            border-radius: 1.5rem 1.5rem 0 0 !important;
+            max-height: 85vh; /* 限制高度，預留頂部空間 */
         }
+
+        .scroll-area { 
+            overflow-y: auto; 
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="pb-24 text-slate-800">
@@ -94,11 +105,10 @@
         </section>
 
         <section id="step-3" class="hidden py-10 px-4 mt-10 text-center">
-            <div class="bg-white p-10 rounded-[3rem] shadow-2xl border-t-8 border-[#004d40] animate__animated animate__fadeInUp">
-                <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">🥢</div>
+            <div class="bg-white p-10 rounded-[3rem] shadow-2xl border-t-8 border-[#004d40] animate__animated animate__fadeInUp text-center">
+                <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 font-serif">🥢</div>
                 <h2 class="text-2xl font-black text-[#004d40] mb-3 font-serif">已收到您的預定</h2>
-                <div class="w-12 h-1 bg-[#b89150] mx-auto mb-6 rounded-full"></div>
-                <p class="text-stone-600 mb-2 leading-relaxed font-bold">真心款待，誠摯準備。</p>
+                <p class="text-stone-600 mb-2 font-bold">真心款待，誠摯準備。</p>
                 <p class="text-stone-500 text-sm mb-10 leading-relaxed">
                     如需異動內容請致電給我們：<br>
                     <a href="tel:0437027538" class="text-p-gold font-bold text-xl block mt-2 underline">04-3702-7538</a>
@@ -108,30 +118,31 @@
         </section>
     </main>
 
-    <div id="detail-modal" class="fixed inset-0 bg-black/80 z-[110] hidden flex items-center justify-center p-2 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh] relative">
+    <div id="detail-modal" class="fixed inset-0 bg-black/80 z-[110] hidden flex items-end justify-center backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md overflow-hidden flex flex-col relative animate__animated animate__slideInUp animate__faster">
             <button onclick="closeDetail()" class="btn-close-custom">✕</button>
             
-            <div class="bg-white flex-shrink-0 flex items-center justify-center" style="max-height: 35vh; overflow: hidden;">
+            <div class="flex-shrink-0 bg-white border-b" style="height: 30vh;">
                 <img id="detail-img" src="" class="w-full h-full object-contain">
             </div>
             
-            <div class="p-4 overflow-y-auto flex-1 custom-scrollbar text-left">
-                <h3 id="detail-title" class="text-lg font-bold text-p-green mb-1 font-serif"></h3>
+            <div class="p-4 scroll-area flex-1 text-left no-scrollbar">
+                <h3 id="detail-title" class="text-xl font-bold text-p-green mb-1 font-serif"></h3>
                 <p id="detail-desc" class="text-stone-400 text-[10px] mb-4"></p>
+                
                 <div id="flavor-container" class="space-y-4"></div>
                 <div id="set-group-container" class="space-y-5 border-t mt-4 pt-4"></div>
-            </div>
+                <div class="h-4"></div> </div>
             
             <div class="p-3 bg-stone-50 border-t flex-shrink-0">
                 <div class="flex items-center gap-2">
                     <div class="flex items-center gap-2 bg-white border rounded-lg p-1 px-2 shadow-sm">
-                        <button onclick="changeQty(-1)" class="text-base text-stone-300 px-1">-</button>
+                        <button onclick="changeQty(-1)" class="text-lg text-stone-300 px-1 font-bold">－</button>
                         <span id="item-qty" class="w-4 text-center font-bold text-p-green text-sm">1</span>
-                        <button onclick="changeQty(1)" class="text-base text-p-green px-1">+</button>
+                        <button onclick="changeQty(1)" class="text-lg text-p-green px-1 font-bold">＋</button>
                     </div>
-                    <button onclick="closeDetail()" class="flex-1 py-2 border rounded-lg text-stone-400 font-bold text-xs bg-white">取消</button>
-                    <button id="add-btn" class="flex-[2] bg-[#004d40] text-white py-2 rounded-lg font-bold shadow-md text-xs">加入預點</button>
+                    <button onclick="closeDetail()" class="flex-1 py-2.5 border rounded-lg text-stone-400 font-bold text-xs bg-white">取消</button>
+                    <button id="add-btn" class="flex-[2] bg-[#004d40] text-white py-2.5 rounded-lg font-bold shadow-md text-xs">加入預點清單</button>
                 </div>
             </div>
         </div>
@@ -139,29 +150,29 @@
 
     <div id="preview-modal" class="fixed inset-0 bg-black/80 z-[120] hidden flex items-center justify-center p-4 backdrop-blur-sm text-left">
         <div class="bg-white w-full max-w-md rounded-[2rem] overflow-hidden flex flex-col max-h-[85vh]">
-            <div class="p-4 bg-stone-50 border-b font-bold text-center font-serif text-p-green">您的點餐明細</div>
-            <div class="flex-1 overflow-y-auto p-4 space-y-3" id="preview-list"></div>
+            <div class="p-3 bg-stone-50 border-b font-bold text-center font-serif text-p-green text-sm">您的點餐明細</div>
+            <div class="flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar" id="preview-list"></div>
             <div class="p-4 border-t bg-white">
-                <textarea id="order-note" class="w-full border rounded-xl p-3 bg-stone-50 text-xs mb-4 outline-none focus:border-p-gold h-20" placeholder="訂單備註 (例: 去蔥、慶生...)"></textarea>
-                <div class="flex justify-between items-end mb-4 px-2">
+                <textarea id="order-note" class="w-full border rounded-xl p-2 bg-stone-50 text-xs mb-3 outline-none focus:border-p-gold h-16" placeholder="訂單備註 (例: 去蔥、慶生...)"></textarea>
+                <div class="flex justify-between items-end mb-3 px-1">
                     <div class="text-left">
-                        <span class="text-xs text-stone-400 font-bold block uppercase tracking-widest">Total Amount</span>
-                        <span class="text-[9px] text-p-gold font-bold leading-tight">* 不包含服務費，總金額依現場點單為主謝謝</span>
+                        <span class="text-[10px] text-stone-400 font-bold block uppercase">Total Amount</span>
+                        <span class="text-[8px] text-p-gold font-bold leading-tight">* 不含服務費，金額以現場為主</span>
                     </div>
-                    <span id="preview-total" class="text-2xl font-black text-p-green font-serif">$0</span>
+                    <span id="preview-total" class="text-xl font-black text-p-green font-serif">$0</span>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="closePreview()" class="w-20 py-4 border rounded-2xl text-stone-400 font-bold">返回</button>
-                    <button onclick="finalSubmit()" class="flex-1 bg-[#004d40] text-white py-4 rounded-2xl font-bold">確認送出預定</button>
+                    <button onclick="closePreview()" class="w-20 py-3 border rounded-xl text-stone-400 font-bold text-xs">返回</button>
+                    <button onclick="finalSubmit()" class="flex-1 bg-[#004d40] text-white py-3 rounded-xl font-bold text-xs">確認送出預定</button>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="cart-bar" class="fixed bottom-6 left-4 right-4 max-w-xl mx-auto z-50 hidden animate__animated animate__fadeInUp">
-        <button onclick="openPreview()" class="w-full bg-[#004d40] p-2 pl-6 pr-2 rounded-full flex justify-between items-center shadow-2xl active:scale-95 transition">
-            <span class="text-white font-bold tracking-widest text-sm font-serif">查看明細項目</span>
-            <div id="cart-count" class="bg-[#b89150] text-white w-10 h-10 rounded-full flex items-center justify-center font-black shadow-inner">0</div>
+        <button onclick="openPreview()" class="w-full bg-[#004d40] p-1.5 pl-6 pr-1.5 rounded-full flex justify-between items-center shadow-2xl active:scale-95 transition">
+            <span class="text-white font-bold tracking-widest text-xs font-serif">查看明細項目</span>
+            <div id="cart-count" class="bg-[#b89150] text-white w-9 h-9 rounded-full flex items-center justify-center font-black shadow-inner">0</div>
         </button>
     </div>
 
@@ -187,7 +198,7 @@
 
         async function startOrder() {
             guest = { name: document.getElementById('custName').value, phone: document.getElementById('custPhone').value };
-            if(!guest.name || !guest.phone) return alert("請完整填寫姓名與聯絡電話");
+            if(!guest.name || !guest.phone) return alert("請填寫姓名與電話");
             document.getElementById('kv-area').classList.add('kv-hidden');
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
@@ -207,11 +218,11 @@
             document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('cat-active'));
             el.classList.add('cat-active');
             document.getElementById('menu-grid').innerHTML = menuData.filter(i => i.category_id === cid).map(i => `
-                <div class="bg-white rounded-3xl p-4 shadow-sm flex h-36 gap-4 border border-white" onclick="openDetail('${i.id}')">
-                    <div class="w-32 flex-shrink-0"><img src="${i.image_url || ''}" class="img-contain"></div>
-                    <div class="flex-1 flex flex-col justify-between py-1 overflow-hidden">
-                        <div><h3 class="font-bold text-p-green text-lg truncate font-serif">${i.name}</h3><p class="text-[10px] text-stone-400 line-clamp-2">${i.description || '經典風味。'}</p></div>
-                        <div class="flex justify-between items-end"><span class="text-p-gold font-black font-serif text-lg">$${i.price}</span><span class="text-[9px] bg-stone-100 px-3 py-1.5 rounded-full font-bold text-stone-400 uppercase">選擇</span></div>
+                <div class="bg-white rounded-3xl p-3 shadow-sm flex h-32 gap-3 border border-white" onclick="openDetail('${i.id}')">
+                    <div class="w-28 flex-shrink-0"><img src="${i.image_url || ''}" class="img-contain"></div>
+                    <div class="flex-1 flex flex-col justify-between py-1 overflow-hidden text-left">
+                        <div><h3 class="font-bold text-p-green text-base truncate font-serif">${i.name}</h3><p class="text-[9px] text-stone-400 line-clamp-2">${i.description || '經典家味。'}</p></div>
+                        <div class="flex justify-between items-end"><span class="text-p-gold font-bold font-serif text-base">$${i.price}</span><span class="text-[8px] bg-stone-100 px-2.5 py-1.5 rounded-full font-bold text-stone-400 uppercase">選擇</span></div>
                     </div>
                 </div>`).join('');
         }
@@ -229,10 +240,10 @@
             if(tempItem.is_set_menu && tempItem.set_menu_groups) {
                 document.getElementById('set-group-container').innerHTML = tempItem.set_menu_groups.map(g => `
                     <div class="group-block" data-name="${g.group_name}" data-limit="${g.selection_limit}">
-                        <div class="flex justify-between items-center mb-3"><p class="font-bold text-p-green font-serif border-l-2 border-p-gold pl-2 uppercase text-[12px]">${g.group_name}</p><span class="text-[9px] text-stone-300">必選 ${g.selection_limit}</span></div>
+                        <div class="flex justify-between items-center mb-2"><p class="font-bold text-p-green font-serif border-l-2 border-p-gold pl-2 uppercase text-[11px]">${g.group_name}</p><span class="text-[8px] text-stone-300">必選 ${g.selection_limit}</span></div>
                         <div class="grid grid-cols-2 gap-2">${g.set_menu_contents.map((c, idx) => `
                             <div class="set-item-card border rounded-xl overflow-hidden" id="sub-${g.id}-${c.menu_items.id}-${idx}" data-id="${c.menu_items.id}" data-name="${c.menu_items.name}" data-has-flv="${c.menu_items.item_flavor_relation?.length > 0}" data-selected-flv="">
-                                <div onclick="handleSubClick('sub-${g.id}-${c.menu_items.id}-${idx}')" class="p-3 bg-stone-50 flex justify-between items-center cursor-pointer text-xs font-bold"><span>${c.menu_items.name}</span>${c.menu_items.item_flavor_relation?.length>0?'<span class="text-[8px] text-p-gold">●</span>':''}</div>
+                                <div onclick="handleSubClick('sub-${g.id}-${c.menu_items.id}-${idx}')" class="p-2.5 bg-stone-50 flex justify-between items-center cursor-pointer text-[11px] font-bold"><span>${c.menu_items.name}</span>${c.menu_items.item_flavor_relation?.length>0?'<span class="text-[8px] text-p-gold">●</span>':''}</div>
                                 <div id="flv-sub-${g.id}-${c.menu_items.id}-${idx}" class="bg-stone-100 p-2 hidden border-t"></div>
                             </div>`).join('')}</div>
                     </div>`).join('');
@@ -245,8 +256,8 @@
             const container = document.getElementById(target);
             container.innerHTML += rels.map(r => `
                 <div class="flv-block">
-                    <p class="text-[9px] text-stone-300 font-bold mb-2 uppercase">${r.flavor_groups.name}</p>
-                    <div class="flex flex-wrap gap-2">${r.flavor_groups.flavor_options.map(o => `<div onclick="selectFlv(this, '${parentID}')" class="flv-opt px-4 py-1.5 border rounded-full text-[11px] bg-stone-50 transition cursor-pointer" data-val="${o.option_name}">${o.option_name}</div>`).join('')}</div>
+                    <p class="text-[8px] text-stone-300 font-bold mb-1.5 uppercase tracking-widest">${r.flavor_groups.name}</p>
+                    <div class="flex flex-wrap gap-2">${r.flavor_groups.flavor_options.map(o => `<div onclick="selectFlv(this, '${parentID}')" class="flv-opt px-3 py-1.5 border rounded-full text-[10px] bg-stone-50 transition cursor-pointer" data-val="${o.option_name}">${o.option_name}</div>`).join('')}</div>
                 </div>`).join('');
         }
 
@@ -279,16 +290,16 @@
             let mn = "";
             if (tempItem.item_flavor_relation?.length > 0) {
                 const sels = Array.from(document.querySelectorAll('#flavor-container .flavor-selected'));
-                if (sels.length < tempItem.item_flavor_relation.length) return alert("請選取客製口味");
+                if (sels.length < tempItem.item_flavor_relation.length) return alert("請選取口味");
                 mn = ` [${sels.map(o => o.dataset.val).join('/')}]`;
             }
             let sn = [];
             if (tempItem.is_set_menu) {
                 for (let b of document.querySelectorAll('.group-block')) {
                     const sels = b.querySelectorAll('.opt-selected');
-                    if (sels.length < parseInt(b.dataset.limit)) return alert(`【${b.dataset.name}】尚未選滿`);
+                    if (sels.length < parseInt(b.dataset.limit)) return alert(`【${b.dataset.name}】未選滿`);
                     for (let c of sels) {
-                        if (c.dataset.hasFlv === "true" && !c.dataset.selectedFlv) return alert(`請選擇【${c.dataset.name}】口味`);
+                        if (c.dataset.hasFlv === "true" && !c.dataset.selectedFlv) return alert(`請選【${c.dataset.name}】口味`);
                         sn.push(c.dataset.name + (c.dataset.selectedFlv ? ` [${c.dataset.selectedFlv}]` : ''));
                     }
                 }
@@ -303,7 +314,7 @@
         function closePreview() { document.getElementById('preview-modal').classList.add('hidden'); }
         function openPreview() {
             if(!cart.length) return;
-            document.getElementById('preview-list').innerHTML = cart.map((i, idx) => `<div class="flex justify-between items-start bg-stone-50 p-3 rounded-xl border text-left"><div class="text-xs font-bold text-p-green flex-1 leading-relaxed">${i.name}<br><span class="text-p-gold font-serif mt-1 block">$${i.price}</span></div><button onclick="cart.splice(${idx},1);openPreview();document.getElementById('cart-count').innerText=cart.length;if(!cart.length)closePreview();" class="text-red-200 p-2 text-lg">✕</button></div>`).join('');
+            document.getElementById('preview-list').innerHTML = cart.map((i, idx) => `<div class="flex justify-between items-start bg-stone-50 p-2.5 rounded-xl border text-left"><div class="text-[11px] font-bold text-p-green flex-1 leading-relaxed">${i.name}<br><span class="text-p-gold font-serif mt-1 block">$${i.price}</span></div><button onclick="cart.splice(${idx},1);openPreview();document.getElementById('cart-count').innerText=cart.length;if(!cart.length)closePreview();" class="text-red-200 p-1 px-2 text-lg">✕</button></div>`).join('');
             document.getElementById('preview-total').innerText = `$${cart.reduce((s,i)=>s+i.price,0)}`;
             document.getElementById('preview-modal').classList.remove('hidden');
         }
