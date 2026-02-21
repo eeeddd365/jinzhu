@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>真珠 | 活動菜單配置系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --p-green: #004d40; --p-gold: #b89150; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
+        .font-serif { font-family: 'Noto Serif TC', serif; }
+        .item-active { border-color: var(--p-gold) !important; background-color: #fffbeb; }
+        .check-tag { background: var(--p-gold); color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-4xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-p-green font-serif">活動菜單配置</h1>
+            <a href="admin.html" class="text-stone-400 underline text-sm">返回總後台</a>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl shadow-sm border mb-8">
+            <label class="block text-sm font-bold text-stone-400 mb-2 uppercase">第一步：選擇目標活動代號</label>
+            <div class="flex gap-4">
+                <select id="select-campaign" class="flex-1 border p-3 rounded-xl bg-stone-50 outline-none focus:border-p-gold">
+                    <option value="">-- 請選擇活動 --</option>
+                </select>
+                <button onclick="loadActivityMenu()" class="bg-p-green text-white px-8 rounded-xl font-bold">進入配置模式</button>
+            </div>
+        </div>
+
+        <div id="config-section" class="hidden">
+            <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 mb-6 flex justify-between items-center">
+                <div>
+                    <p class="text-amber-800 font-bold">配置模式：<span id="current-act-name" class="text-xl"></span></p>
+                    <p class="text-amber-600 text-xs">點擊餐點即可「加入」或「移出」活動選單</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-stone-400 mb-1">專屬點餐網址：</p>
+                    <button onclick="copyEventLink()" class="bg-white border border-amber-300 text-amber-700 px-3 py-1 rounded-lg text-xs font-bold shadow-sm hover:bg-amber-100">📋 複製網址</button>
+                </div>
+            </div>
+
+            <div id="items-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://pydlnqriztpzgxbjuohm.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_ISKUWOXUR9A-1y81xCOUXg_8-zNle3v';
+        const _s = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let activeAct = "";
+
+        async function init() {
+            // 載入所有活動代號
+            const { data } = await _s.from('campaign_settings').select('*');
+            document.getElementById('select-campaign').innerHTML += data.map(c => `<option value="${c.code_name}">${c.code_name}</option>`).join('');
+        }
+        init();
+
+        async function loadActivityMenu() {
+            activeAct = document.getElementById('select-campaign').value;
+            if(!activeAct) return alert("請先選擇活動");
+
+            document.getElementById('current-act-name').innerText = activeAct;
+            document.getElementById('config-section').classList.remove('hidden');
+
+            const { data: items } = await _s.from('menu_items').select('*').order('name');
+            renderItems(items);
+        }
+
+        function renderItems(items) {
+            const grid = document.getElementById('items-grid');
+            const tag = `#${activeAct}`;
+            
+            grid.innerHTML = items.map(i => {
+                const isSelected = i.description && i.description.includes(tag);
+                return `
+                <div onclick="toggleTag('${i.id}', \`${i.description || ''}\`)" 
+                     class="bg-white p-4 rounded-2xl border-2 transition cursor-pointer hover:shadow-md ${isSelected ? 'item-active' : 'border-transparent'}">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="font-bold text-p-green text-sm">${i.name}</span>
+                        ${isSelected ? '<span class="check-tag">已加入</span>' : ''}
+                    </div>
+                    <p class="text-[10px] text-stone-400 line-clamp-1">${i.description ? i.description.replace(tag, '') : '無描述'}</p>
+                </div>`;
+            }).join('');
+        }
+
+        async function toggleTag(id, currentDesc) {
+            const tag = `#${activeAct}`;
+            let newDesc = "";
+
+            if (currentDesc.includes(tag)) {
+                // 移除標籤
+                newDesc = currentDesc.replace(tag, "").trim();
+            } else {
+                // 加入標籤
+                newDesc = currentDesc + " " + tag;
+            }
+
+            const { error } = await _s.from('menu_items').update({ description: newDesc }).eq('id', id);
+            if(!error) loadActivityMenu();
+        }
+
+        function copyEventLink() {
+            const link = `${window.location.origin}/Activity.html?code=${encodeURIComponent(activeAct)}`;
+            navigator.clipboard.writeText(link);
+            alert("網址已複製到剪貼簿！\n" + link);
+        }
+    </script>
+</body>
+</html>
