@@ -10,6 +10,9 @@
         :root { --p-green: #004d40; --p-gold: #b89150; }
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; text-align: left; }
         .font-serif { font-family: 'Noto Serif TC', serif; }
+        /* 確保按鈕文字清晰 */
+        .btn-main { background-color: var(--p-green); color: #ffffff !important; }
+        .btn-main:hover { background-color: #003d33; }
     </style>
 </head>
 <body class="p-6 md:p-12">
@@ -18,20 +21,22 @@
         
         <div class="bg-white p-8 rounded-[2rem] shadow-sm border space-y-6">
             <div>
-                <label class="block text-xs font-bold text-stone-400 mb-2 uppercase tracking-widest">1. 選擇活動代號 (來自資料庫)</label>
+                <label class="block text-xs font-bold text-stone-400 mb-2 uppercase tracking-widest">1. 選擇活動代號</label>
                 <select id="sel-campaign" class="w-full border p-3 rounded-xl bg-stone-50 outline-none focus:ring-2 focus:ring-p-gold"></select>
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-stone-400 mb-2 uppercase tracking-widest">2. 綁定隱藏分類 (點餐頁將只顯示此分類)</label>
+                <label class="block text-xs font-bold text-stone-400 mb-2 uppercase tracking-widest">2. 綁定隱藏分類</label>
                 <select id="sel-category" class="w-full border p-3 rounded-xl bg-stone-50 outline-none focus:ring-2 focus:ring-p-gold"></select>
-                <p class="text-[10px] text-stone-400 mt-2">* 請先在總後台建立分類並設為「隱藏」</p>
+                <p class="text-[10px] text-stone-400 mt-2">* 請確認該分類在總後台已設為「隱藏」</p>
             </div>
 
-            <button onclick="bindEvent()" class="w-full bg-p-green text-white py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition">確認綁定並產生連結</button>
+            <button onclick="bindEvent()" class="w-full btn-main py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition text-lg">
+                確認綁定並產生連結
+            </button>
         </div>
 
-        <div class="mt-12">
+        <div class="mt-12 text-left">
             <h3 class="font-bold text-stone-400 text-sm mb-4 uppercase tracking-widest">目前已啟用的活動連結</h3>
             <div id="active-list" class="space-y-3"></div>
         </div>
@@ -55,14 +60,14 @@
         async function loadActiveEvents() {
             const { data } = await _s.from('categories').select('*').not('campaign_code', 'is', null);
             const list = document.getElementById('active-list');
-            list.innerHTML = data.map(c => `
+            list.innerHTML = (data || []).map(c => `
                 <div class="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm">
                     <div class="text-left">
                         <span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md font-bold mr-2 uppercase">${c.campaign_code}</span>
                         <span class="font-bold text-p-green">${c.name}</span>
                     </div>
                     <div class="flex gap-3">
-                        <button onclick="copyLink('${c.campaign_code}')" class="text-blue-600 text-sm font-bold underline">複製網址</button>
+                        <button onclick="copyLink('${c.campaign_code}')" class="text-blue-600 text-sm font-bold underline">複製連結</button>
                         <button onclick="unbind('${c.id}')" class="text-red-300 text-sm font-bold">解除</button>
                     </div>
                 </div>
@@ -72,11 +77,13 @@
         async function bindEvent() {
             const camp = document.getElementById('sel-campaign').value;
             const catId = document.getElementById('sel-category').value;
-            if(!camp || !catId) return alert("請選擇活動代號與分類");
+            if(!camp || !catId) return alert("請填寫完整資訊");
 
-            await _s.from('categories').update({ campaign_code: camp }).eq('id', catId);
-            loadActiveEvents();
-            alert("綁定成功！");
+            const { error } = await _s.from('categories').update({ campaign_code: camp }).eq('id', catId);
+            if(!error) {
+                loadActiveEvents();
+                alert("綁定成功！");
+            }
         }
 
         async function unbind(id) {
@@ -86,19 +93,23 @@
             }
         }
 
+        // 核心修正：精準處理 GitHub 子目錄網址拼接
         function copyLink(code) {
-            // 自動偵測路徑，解決 GitHub Pages 子目錄問題
-            const baseUrl = window.location.href.split('event_admin.html')[0];
-            const url = `${baseUrl}event.html?code=${encodeURIComponent(code)}`;
+            // 獲取目前完整網址，並切除最後的檔名部分
+            const currentUrl = window.location.href;
+            const lastSlashIndex = currentUrl.lastIndexOf('/');
+            const basePath = currentUrl.substring(0, lastSlashIndex + 1); // 確保保留最後一個斜線
+            
+            const finalUrl = `${basePath}event.html?code=${encodeURIComponent(code)}`;
             
             const tempInput = document.createElement("input");
-            tempInput.value = url;
+            tempInput.value = finalUrl;
             document.body.appendChild(tempInput);
             tempInput.select();
             document.execCommand("copy");
             document.body.removeChild(tempInput);
             
-            alert("網址已複製！\n" + url);
+            alert("網址已複製！\n" + finalUrl);
         }
 
         init();
