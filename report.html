@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>真珠 | 營運報表與備料統計</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --p-green: #004d40; --p-gold: #b89150; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
+        .font-serif { font-family: 'Noto Serif TC', serif; }
+        .print-only { display: none; }
+
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block; }
+            body { background: white; padding: 0; }
+            .print-card { border: 1px solid #eee; box-shadow: none !important; margin-bottom: 20px; page-break-inside: avoid; }
+            .page-break { page-break-before: always; }
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 no-print gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-p-green font-serif">營運報表統計</h1>
+                <p class="text-stone-400 text-sm mt-1 uppercase tracking-widest">Operation Report & Analytics</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="window.print()" class="bg-white border-2 border-p-green text-p-green px-6 py-2 rounded-xl font-bold hover:bg-emerald-50 transition">🖨️ 列印 PDF</button>
+                <button onclick="exportComprehensiveExcel()" class="bg-p-green text-white px-6 py-2 rounded-xl font-bold shadow-lg hover:opacity-90 transition">📊 導出統整 Excel</button>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-[2rem] shadow-sm border mb-8 no-print text-left">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-xs font-bold text-stone-400 mb-2 uppercase">查詢日期</label>
+                    <input type="date" id="report-date" onchange="fetchData()" class="w-full border p-3 rounded-xl bg-stone-50 outline-none focus:border-p-gold">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-400 mb-2 uppercase">活動代號過濾</label>
+                    <select id="report-campaign" onchange="fetchData()" class="w-full border p-3 rounded-xl bg-stone-50 outline-none focus:border-p-gold">
+                        <option value="all">所有來源 (含一般與活動)</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button onclick="fetchData()" class="w-full bg-stone-800 text-white py-3 rounded-xl font-bold hover:bg-black transition">刷新數據資料</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white rounded-[2rem] shadow-sm border overflow-hidden print-card">
+                    <div class="bg-stone-50 p-5 border-b flex justify-between items-center">
+                        <h3 class="font-bold text-p-green font-serif italic">備料總計 (廚房用)</h3>
+                        <span id="total-items-count" class="bg-p-gold text-white text-[10px] px-2 py-1 rounded-md font-bold">0 品項</span>
+                    </div>
+                    <div class="p-2 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                        <table class="w-full text-left">
+                            <tbody id="summary-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-[2rem] shadow-sm border overflow-hidden print-card">
+                    <div class="bg-p-green p-5 border-b flex justify-between items-center">
+                        <h3 class="font-bold text-white font-serif italic">訂單明細 (核對用)</h3>
+                        <span id="order-count-tag" class="text-white/60 text-xs font-bold">共 0 筆訂單</span>
+                    </div>
+                    <div id="detail-container" class="p-6 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://pydlnqriztpzgxbjuohm.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_ISKUWOXUR9A-1y81xCOUXg_8-zNle3v';
+        const _s = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 初始化日期為今日
+        document.getElementById('report-date').valueAsDate = new Date();
+
+        async function init() {
+            // 載入活動代號清單
+            const { data } = await _s.from('campaign_settings').select('*');
+            if(data) {
+                document.getElementById('report-campaign').innerHTML += data.map(c => `<option value="${c.code_name}">${c.code_name}</option>`).join('');
+            }
+            fetchData();
+        }
+
+        async function fetchData() {
+            const date = document.getElementById('report-date').value;
+            const campaign = document.getElementById('report-campaign').value;
+
+            let query = _s.from('orders').select('*').order('created_at', {ascending: true});
+            
+            // 日期篩選
+            if(date) {
+                query = query.gte('created_at', `${date}T00:00:00Z`).lte('created_at', `${date}T23:59:59Z`);
+            }
+
+            // 活動篩選
+            if(campaign !== 'all') {
+                query = query.eq('campaign_code', campaign);
+            }
+
+            const { data: orders, error } = await query;
+            if(error) return alert("讀取失敗");
+
+            processReports(orders || []);
+        }
+
+        function processReports(orders) {
+            const summary = {};
+            let orderHtml = "";
+
+            orders.forEach((o, index) => {
+                // 1. 處理彙總邏輯
+                o.order_content.forEach(item => {
+                    // 使用正則表達式去除數量 x2 等干擾，抓取純品名
+                    const cleanName = item.name.replace(/ x\d+/g, "");
+                    const qtyMatch = item.name.match(/ x(\d+)/);
+                    const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+
+                    if (!summary[cleanName]) summary[cleanName] = 0;
+                    summary[cleanName] += qty;
+                });
+
+                // 2. 處理明細 HTML
+                orderHtml += `
+                    <div class="pb-6 border-b border-stone-100 last:border-0 text-left">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="text-p-gold font-bold text-lg">#${index + 1} ${o.customer_name}</span>
+                                <span class="ml-3 text-xs text-stone-400">${o.phone}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[10px] bg-stone-100 px-2 py-1 rounded font-bold uppercase">${o.campaign_code || '一般預約'}</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 text-xs text-stone-500 mb-2">
+                            <span>桌號: ${o.table_no || '未填'}</span>
+                            <span>大人: ${o.adult_count||0} / 小孩: ${o.kid_count||0}</span>
+                        </div>
+                        <ul class="space-y-1">
+                            ${o.order_content.map(i => `<li class="text-sm font-medium text-p-green flex justify-between"><span>• ${i.name}</span> <span class="font-serif">$${i.price}</span></li>`).join('')}
+                        </ul>
+                        ${o.note ? `<p class="mt-3 text-[11px] bg-amber-50 p-2 rounded text-amber-700 italic">備註: ${o.note}</p>` : ''}
+                    </div>
+                `;
+            });
+
+            // 渲染彙總表格
+            const sortedSummary = Object.entries(summary).sort((a,b) => b[1] - a[1]);
+            document.getElementById('summary-body').innerHTML = sortedSummary.map(([name, count]) => `
+                <tr class="border-b last:border-0 hover:bg-stone-50">
+                    <td class="p-4 text-sm font-bold text-slate-700">${name}</td>
+                    <td class="p-4 text-right"><span class="text-lg font-black text-p-green font-serif">${count}</span> <span class="text-[10px] text-stone-400">份</span></td>
+                </tr>
+            `).join('');
+
+            document.getElementById('detail-container').innerHTML = orders.length ? orderHtml : '<p class="text-center text-stone-300 py-10">此日期暫無訂單</p>';
+            document.getElementById('total-items-count').innerText = `${sortedSummary.length} 品項`;
+            document.getElementById('order-count-tag').innerText = `共 ${orders.length} 筆訂單`;
+            
+            window.currentReportData = { summary: sortedSummary, orders };
+        }
+
+        async function exportComprehensiveExcel() {
+            const data = window.currentReportData;
+            if(!data) return alert("請先查詢數據");
+
+            const dateStr = document.getElementById('report-date').value;
+
+            // 1. 彙總工作表
+            const ws_summary = XLSX.utils.json_to_sheet(data.summary.map(s => ({ "餐點名稱": s[0], "總數量": s[1] })));
+
+            // 2. 明細工作表
+            const ws_detail = XLSX.utils.json_to_sheet(data.orders.map(o => ({
+                "訂單時間": new Date(o.created_at).toLocaleString(),
+                "顧客姓名": o.customer_name,
+                "聯絡電話": o.phone,
+                "活動來源": o.campaign_code,
+                "桌號": o.table_no,
+                "大人": o.adult_count,
+                "小孩": o.kid_count,
+                "內容": o.order_content.map(i => i.name).join(' | '),
+                "總額": o.total_price,
+                "備註": o.note
+            })));
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws_summary, "備料總計");
+            XLSX.utils.book_append_sheet(wb, ws_detail, "訂單明細");
+
+            XLSX.writeFile(wb, `真珠營運報表_${dateStr}.xlsx`);
+        }
+
+        init();
+    </script>
+</body>
+</html>
