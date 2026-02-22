@@ -1,0 +1,20 @@
+<div id="photo-modal" class="fixed inset-0 bg-black/80 z-[2000] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-md rounded-[2.5rem] p-8 text-center animate__animated animate__zoomIn animate__faster">
+        <h3 class="text-2xl font-black text-p-green font-serif mb-2">珍藏回憶下載</h3>
+        <p class="text-stone-400 text-xs mb-8">請輸入您的訂位資訊，領取專屬紀念照</p>
+        
+        <div class="space-y-4 mb-8">
+            <input type="text" id="search-photo-input" placeholder="輸入：姓名、電話 或 單號" class="w-full border-b-2 border-stone-100 py-3 text-center outline-none focus:border-p-gold font-bold">
+        </div>
+        
+        <div id="photo-result-area" class="hidden space-y-4 mb-6">
+            <div class="bg-stone-50 p-2 rounded-2xl border border-dashed">
+                <img id="found-photo" src="" class="w-full rounded-xl shadow-sm mb-4">
+                <a id="download-link" href="" download class="block w-full btn-gold py-3 rounded-xl font-bold no-underline">點此下載照片</a>
+            </div>
+        </div>
+
+        <button onclick="searchPhoto()" id="btn-do-search" class="w-full btn-green py-4 rounded-full font-black shadow-lg">立即搜尋回憶</button>
+        <button onclick="closePhotoModal()" class="mt-4 text-stone-300 text-xs font-bold">返回首頁</button>
+    </div>
+</div>
