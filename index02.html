@@ -258,24 +258,44 @@
         }
 
         .kv-scroll-hint {
-            position: absolute; bottom: 32px; left: 0; right: 0;
+            position: absolute; bottom: 28px; left: 0; right: 0;
             text-align: center;
-            animation: bounce 2s 2s ease infinite;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
         }
         .kv-scroll-hint span {
             display: block;
-            color: rgba(255,255,255,0.4);
-            font-size: 10px;
-            letter-spacing: 0.3em;
+            color: rgba(255,255,255,0.45);
+            font-size: 9px;
+            letter-spacing: 0.35em;
             text-transform: uppercase;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            animation: fadeFloat 3s 1.5s ease-in-out infinite;
         }
-        .kv-scroll-hint::after {
-            content: '';
+        .scroll-chevron {
             display: block;
-            width: 1px; height: 30px;
-            background: linear-gradient(to bottom, var(--gold), transparent);
-            margin: 0 auto;
+            width: 20px; height: 12px;
+            position: relative;
+        }
+        .scroll-chevron::before, .scroll-chevron::after {
+            content: '';
+            position: absolute; left: 50%; transform: translateX(-50%);
+            width: 14px; height: 14px;
+            border-right: 1.5px solid var(--gold);
+            border-bottom: 1.5px solid var(--gold);
+            transform: translateX(-50%) rotate(45deg);
+        }
+        .scroll-chevron::before { top: 0; opacity: 0.4; }
+        .scroll-chevron::after  { top: 6px; opacity: 0.85; }
+        .scroll-chevron:nth-child(2) { animation: chevronBounce 1.6s 0s ease-in-out infinite; }
+        .scroll-chevron:nth-child(3) { animation: chevronBounce 1.6s 0.2s ease-in-out infinite; }
+        .scroll-chevron:nth-child(4) { animation: chevronBounce 1.6s 0.4s ease-in-out infinite; }
+        @keyframes chevronBounce {
+            0%,100% { opacity: 0.2; transform: translateY(0); }
+            50%      { opacity: 1;   transform: translateY(6px); }
+        }
+        @keyframes fadeFloat {
+            0%,100% { opacity: 0.45; }
+            50%      { opacity: 0.8; }
         }
 
         /* ── STEP 1: ENTRY FORM ── */
@@ -423,18 +443,19 @@
         .menu-card:active { transform: scale(0.99); box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
 
         .menu-card-img {
-            width: 110px; flex-shrink: 0;
+            width: 140px; flex-shrink: 0;
             background: var(--cream);
             display: flex; align-items: center; justify-content: center;
-            padding: 12px;
+            padding: 10px;
         }
         .menu-card-img img {
-            width: 100%; height: 86px;
-            object-fit: contain;
+            width: 100%; height: 118px;
+            object-fit: cover;
+            border-radius: 10px;
             mix-blend-mode: multiply;
         }
         .menu-card-img .img-skeleton {
-            width: 86px; height: 86px;
+            width: 118px; height: 118px;
             background: linear-gradient(90deg, var(--cream) 25%, #f0ebe2 50%, var(--cream) 75%);
             background-size: 200% 100%;
             animation: shimmer 1.5s infinite;
@@ -1107,7 +1128,10 @@
         <p class="kv-subtitle">傳承心意 · 玩味新意</p>
     </div>
     <div class="kv-scroll-hint">
-        <span>預點餐</span>
+        <span>scroll</span>
+        <i class="scroll-chevron"></i>
+        <i class="scroll-chevron"></i>
+        <i class="scroll-chevron"></i>
     </div>
 </div>
 
