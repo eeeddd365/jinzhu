@@ -257,17 +257,6 @@
             opacity: 0;
         }
 
-        /* ── KV NUDGE ── */
-        @keyframes kvNudge {
-            0%,100% { transform: translateY(0); }
-            40%     { transform: translateY(10px); }
-            70%     { transform: translateY(-3px); }
-        }
-        #kv-area.do-nudge .kv-content,
-        #kv-area.do-nudge .kv-scroll-hint {
-            animation: kvNudge 0.65s cubic-bezier(0.36,0.07,0.19,0.97) both;
-        }
-
         .kv-scroll-hint {
             position: absolute; bottom: 28px; left: 0; right: 0;
             text-align: center;
@@ -454,18 +443,19 @@
         .menu-card:active { transform: scale(0.99); box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
 
         .menu-card-img {
-            width: 110px; flex-shrink: 0;
+            width: 140px; flex-shrink: 0;
             background: var(--cream);
             display: flex; align-items: center; justify-content: center;
             padding: 10px;
         }
         .menu-card-img img {
-            width: 100%; height: 90px;
-            object-fit: contain;
-            display: block;
+            width: 100%; height: 118px;
+            object-fit: cover;
+            border-radius: 10px;
+            mix-blend-mode: multiply;
         }
         .menu-card-img .img-skeleton {
-            width: 90px; height: 90px;
+            width: 118px; height: 118px;
             background: linear-gradient(90deg, var(--cream) 25%, #f0ebe2 50%, var(--cream) 75%);
             background-size: 200% 100%;
             animation: shimmer 1.5s infinite;
@@ -1563,26 +1553,6 @@
     function closeAnnouncePopup() {
         document.getElementById('announce-popup').classList.remove('visible');
     }
-
-    // ── PAGE NUDGE: 輕微滾動整個頁面提示客人往下 ──
-    (function pageNudge() {
-        let count = 0;
-        const MAX = 3;
-        function doNudge() {
-            if (count >= MAX) return;
-            count++;
-            // 往下滑 60px，再彈回
-            window.scrollTo({ top: 60, behavior: 'smooth' });
-            setTimeout(() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                if (count < MAX) setTimeout(doNudge, 900);
-            }, 500);
-        }
-        // 使用者一旦自己滾動就停止
-        let userScrolled = false;
-        window.addEventListener('scroll', () => { userScrolled = true; }, { once: true });
-        setTimeout(() => { if (!userScrolled) doNudge(); }, 2800);
-    })();
 </script>
 </body>
 </html>
