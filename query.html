@@ -2,174 +2,509 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>真珠 | 訂單進度查詢</title>
-    <link rel="stylesheet" href="https://www.jinzhu.com.tw/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://www.jinzhu.com.tw/css/animate.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>真珠 · 訂單查詢</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root { --p-green: #004d40; --p-gold: #b89150; --p-cream: #f9f5f0; }
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--p-cream); min-height: 100vh; }
-        .font-serif { font-family: 'Noto Serif TC', serif; }
-        .navbar-custom { background-color: #ffffff; height: 60px; display: flex; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .navbar-brand img { max-height: 40px; image-rendering: -webkit-optimize-contrast; object-fit: contain; }
-        
-        .query-card { background: #fff; border-radius: 2rem; box-shadow: 0 15px 35px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.8); }
-        .order-item-box { border-left: 3px solid var(--p-gold); background: #fcfcfc; }
-        .status-badge { font-size: 10px; padding: 4px 12px; border-radius: 999px; font-weight: bold; }
-        .status-pending { background-color: #fff4e5; color: #b89150; }
-        .status-synced { background-color: #e6f4f1; color: #004d40; }
-        
-        input::placeholder { color: #ccc; }
-        .btn-query { background-color: var(--p-green); color: white; transition: all 0.3s; }
-        .btn-query:active { scale: 0.95; }
-        
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        :root {
+            --ink: #1a2820;
+            --pine: #004d40;
+            --gold: #b89150;
+            --gold-pale: #e8d5a0;
+            --cream: #f7f3ec;
+            --paper: #faf8f4;
+            --stone: #8a8070;
+            --border: rgba(184,145,80,0.2);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: var(--paper);
+            color: var(--ink);
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior: none;
+            padding-bottom: 60px;
+        }
+
+        ::-webkit-scrollbar { width: 0; }
+
+        body::before {
+            content: ''; position: fixed; inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none; z-index: 9999; opacity: 0.4;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0;
+            height: 58px; z-index: 500;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px;
+            background: rgba(250,248,244,0.92);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            transition: all 0.4s;
+        }
+        .navbar.scrolled { box-shadow: 0 4px 24px rgba(0,77,64,0.08); }
+        .nav-logo { height: 32px; object-fit: contain; }
+        .back-link {
+            display: flex; align-items: center; gap: 4px;
+            color: var(--pine); font-size: 13px; font-weight: 700;
+            text-decoration: none; letter-spacing: 0.05em;
+        }
+        .menu-btn {
+            background: none; border: none; cursor: pointer;
+            width: 36px; height: 36px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
+        }
+        .menu-btn span {
+            display: block; width: 22px; height: 1.5px;
+            background: var(--pine); transition: all 0.3s; transform-origin: center;
+        }
+        .menu-btn.active span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+        .menu-btn.active span:nth-child(2) { opacity: 0; }
+        .menu-btn.active span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+        /* ── SIDE MENU ── */
+        .overlay {
+            position: fixed; inset: 0;
+            background: rgba(20,30,25,0.6);
+            z-index: 800; opacity: 0; visibility: hidden;
+            transition: all 0.35s; backdrop-filter: blur(4px);
+        }
+        .overlay.active { opacity: 1; visibility: visible; }
+        .side-menu {
+            position: fixed; top: 0; right: -340px; bottom: 0;
+            width: 300px; background: var(--ink);
+            z-index: 900;
+            transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: flex; flex-direction: column; padding-top: 80px;
+        }
+        .side-menu.active { right: 0; }
+        .menu-gold-line {
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+        .menu-decor {
+            padding: 24px 32px 12px; color: var(--gold);
+            font-size: 10px; letter-spacing: 0.35em; text-transform: uppercase; opacity: 0.6;
+        }
+        .menu-nav-item {
+            display: block; padding: 16px 32px;
+            color: rgba(255,255,255,0.7); text-decoration: none;
+            font-size: 0.85rem; letter-spacing: 0.2em;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.2s; font-weight: 500;
+        }
+        .menu-nav-item:hover { color: var(--gold-pale); padding-left: 40px; }
+        .menu-nav-item.active { color: var(--gold); }
+        .menu-footer {
+            padding: 20px 32px; color: rgba(255,255,255,0.15);
+            font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase;
+            text-align: center; border-top: 1px solid rgba(255,255,255,0.04); margin-top: auto;
+        }
+
+        /* ── KV ── */
+        .kv {
+            height: 46svh; position: relative;
+            overflow: hidden; display: flex; align-items: center; justify-content: center;
+        }
+        .kv-bg {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%; object-fit: cover;
+            transform: scale(1.04); transition: transform 8s ease;
+        }
+        .kv-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to bottom, rgba(10,20,15,0.25) 0%, rgba(10,20,15,0.55) 60%, rgba(10,20,15,0.88) 100%);
+        }
+        .kv-content { position: relative; z-index: 10; text-align: center; animation: fadeUp 1.2s ease both; }
+        .kv-tag {
+            display: inline-block; font-size: 9px; letter-spacing: 0.45em;
+            color: var(--gold-pale); text-transform: uppercase;
+            border: 1px solid rgba(184,145,80,0.4);
+            padding: 5px 18px; border-radius: 999px; margin-bottom: 16px;
+            animation: fadeUp 1.2s 0.2s ease both; opacity: 0;
+        }
+        .kv-title {
+            font-family: 'Noto Serif TC', serif; font-size: 2.4rem;
+            font-weight: 900; color: white; letter-spacing: 0.12em;
+            text-shadow: 0 4px 30px rgba(0,0,0,0.4);
+            animation: fadeUp 1.2s 0.3s ease both; opacity: 0;
+        }
+        .kv-gold-line {
+            width: 40px; height: 1px; margin: 16px auto;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            animation: fadeUp 1.2s 0.5s ease both; opacity: 0;
+        }
+        .kv-sub {
+            font-size: 0.75rem; letter-spacing: 0.35em;
+            color: rgba(255,255,255,0.5); font-weight: 300;
+            animation: fadeUp 1.2s 0.6s ease both; opacity: 0;
+        }
+
+        /* ── LAYOUT ── */
+        .main-wrap {
+            max-width: 520px; margin: 0 auto;
+            padding: 0 16px;
+            margin-top: -56px; position: relative; z-index: 20;
+        }
+
+        /* ── SEARCH CARD ── */
+        .search-card {
+            background: white; border-radius: 24px;
+            box-shadow: 0 24px 64px rgba(0,77,64,0.1), 0 0 0 1px var(--border);
+            position: relative; overflow: hidden; margin-bottom: 20px;
+        }
+        .search-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, transparent, var(--pine), var(--gold), var(--pine), transparent);
+        }
+        .card-inner { padding: 28px 28px 28px; }
+        .card-title {
+            font-family: 'Noto Serif TC', serif; font-size: 1.1rem;
+            font-weight: 700; color: var(--pine);
+            text-align: center; letter-spacing: 0.3em; margin-bottom: 6px;
+        }
+        .card-sub {
+            text-align: center; font-size: 10px;
+            letter-spacing: 0.15em; color: var(--stone); margin-bottom: 28px;
+        }
+        .field-wrap { margin-bottom: 24px; }
+        .field-label {
+            display: block; font-size: 9px;
+            letter-spacing: 0.3em; text-transform: uppercase;
+            color: var(--gold); font-weight: 700; margin-bottom: 10px;
+        }
+        .field-input {
+            width: 100%; border: none;
+            border-bottom: 1.5px solid rgba(0,0,0,0.1);
+            padding: 10px 0; font-size: 1rem;
+            background: transparent; outline: none;
+            color: var(--ink); font-family: 'Noto Sans TC', sans-serif;
+            transition: border-color 0.3s;
+        }
+        .field-input:focus { border-color: var(--pine); }
+        .field-input::placeholder { color: rgba(0,0,0,0.2); font-size: 0.9rem; }
+
+        .query-btn {
+            width: 100%; background: var(--pine);
+            color: white; border: none; border-radius: 14px;
+            padding: 18px; font-size: 0.9rem; font-weight: 700;
+            letter-spacing: 0.2em; cursor: pointer;
+            transition: all 0.3s; font-family: 'Noto Sans TC', sans-serif;
+            position: relative; overflow: hidden; margin-top: 4px;
+        }
+        .query-btn::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+        }
+        .query-btn:active { transform: scale(0.98); }
+        .query-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        /* ── EMPTY STATE ── */
+        .empty-card {
+            background: white; border-radius: 24px;
+            padding: 48px 24px; text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05), 0 0 0 1px var(--border);
+            display: none;
+        }
+        .empty-icon { font-size: 2.5rem; opacity: 0.2; margin-bottom: 16px; }
+        .empty-title { font-size: 13px; font-weight: 700; color: var(--stone); margin-bottom: 6px; }
+        .empty-sub { font-size: 11px; color: rgba(0,0,0,0.25); }
+
+        /* ── RESULTS ── */
+        .results-wrap { display: none; }
+
+        .results-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 4px 4px 16px;
+        }
+        .results-title {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1rem; font-weight: 700; color: var(--pine);
+            letter-spacing: 0.1em;
+        }
+        .re-query-btn {
+            font-size: 11px; color: var(--stone);
+            text-decoration: underline; cursor: pointer;
+            background: none; border: none;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+
+        /* ── ORDER CARD ── */
+        .order-card {
+            background: white; border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05), 0 0 0 1px var(--border);
+            overflow: hidden; margin-bottom: 16px;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .order-card-header {
+            padding: 16px 20px;
+            background: var(--cream);
+            border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: flex-start;
+        }
+        .order-time {
+            font-size: 9px; letter-spacing: 0.15em;
+            color: var(--stone); text-transform: uppercase;
+            font-weight: 700; margin-bottom: 8px;
+        }
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 10px; font-weight: 700;
+            padding: 5px 12px; border-radius: 999px;
+            letter-spacing: 0.05em;
+        }
+        .status-badge::before { content: '●'; font-size: 7px; }
+        .status-pending { background: #fff4e5; color: var(--gold); }
+        .status-synced  { background: #e6f4f1; color: var(--pine); }
+
+        .order-total {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1.4rem; font-weight: 900; color: var(--gold);
+        }
+
+        .order-card-body { padding: 16px 20px; }
+
+        .order-item {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+        .order-item:last-of-type { border-bottom: none; }
+        .order-item-bar {
+            width: 3px; height: 100%; min-height: 32px;
+            background: linear-gradient(to bottom, var(--gold), rgba(184,145,80,0.3));
+            border-radius: 2px; flex-shrink: 0; margin-top: 2px;
+        }
+        .order-item-name {
+            font-size: 13px; font-weight: 700; color: var(--pine);
+            line-height: 1.6; flex: 1;
+        }
+        .order-item-price {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 12px; font-weight: 700; color: var(--stone);
+            flex-shrink: 0;
+        }
+
+        .order-note-wrap {
+            margin-top: 12px; padding-top: 12px;
+            border-top: 1px dashed rgba(0,0,0,0.08);
+        }
+        .order-note-label {
+            font-size: 9px; letter-spacing: 0.25em;
+            text-transform: uppercase; color: var(--stone);
+            font-weight: 700; margin-bottom: 6px;
+        }
+        .order-note-text { font-size: 12px; color: var(--ink); line-height: 1.7; }
+
+        /* ── FOOTER ── */
+        .page-footer {
+            text-align: center; padding: 32px 16px;
+            font-size: 11px; color: var(--stone); letter-spacing: 0.1em;
+        }
+        .page-footer a { color: var(--gold); text-decoration: none; font-weight: 700; }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+            background: var(--ink); color: white;
+            padding: 12px 24px; border-radius: 999px;
+            font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+            z-index: 9000; white-space: nowrap;
+            animation: fadeUp 0.3s ease both; pointer-events: none;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px) translateX(var(--tx, 0)); }
+            to   { opacity: 1; transform: translateY(0)  translateX(var(--tx, 0)); }
+        }
+        .toast { --tx: -50%; }
+        .animate-in { animation: fadeUp 0.4s ease both; }
     </style>
 </head>
-<body class="pt-20">
+<body>
 
-    <header class="fixed-top navbar-custom px-4 justify-center">
-        <a class="navbar-brand" href="index.html">
-            <img id="main-logo" src="https://www.jinzhu.com.tw/images/Jinzhu_logo.svg" alt="logo">
-        </a>
-    </header>
+<!-- NAVBAR -->
+<header class="navbar" id="navbar">
+    <a href="index.html" class="back-link">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        返回
+    </a>
+    <a href="index.html"><img id="main-logo" class="nav-logo" src="https://www.jinzhu.com.tw/images/Jinzhu_logo.svg" alt="真珠"></a>
+    <button class="menu-btn" id="menu-btn" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+    </button>
+</header>
 
-    <main class="max-w-xl mx-auto p-4">
-        <section id="search-section" class="animate__animated animate__fadeIn">
-            <div class="query-card p-8 md:p-10 mb-8">
-                <h2 class="text-2xl font-bold text-p-green text-center mb-2 font-serif tracking-widest">訂單查詢</h2>
-                <p class="text-stone-400 text-center text-xs mb-8 uppercase tracking-tighter">Order Tracking System</p>
-                
-                <div class="space-y-6">
-                    <div>
-                        <label class="text-[10px] font-bold text-stone-400 block mb-1 tracking-widest">姓名 NAME</label>
-                        <input type="text" id="queryName" placeholder="請輸入訂位姓名" class="w-full border-b py-2 bg-transparent outline-none focus:border-p-green text-lg">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-stone-400 block mb-1 tracking-widest">電話 PHONE</label>
-                        <input type="tel" id="queryPhone" placeholder="請輸入聯絡電話" class="w-full border-b py-2 bg-transparent outline-none focus:border-p-green text-lg">
-                    </div>
-                    <button onclick="fetchOrders()" class="w-full btn-query py-4 rounded-full font-bold shadow-lg mt-4">
-                        立即查詢
-                    </button>
-                </div>
+<!-- OVERLAY -->
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+<!-- SIDE MENU -->
+<nav class="side-menu" id="side-menu">
+    <div class="menu-gold-line"></div>
+    <div class="menu-decor">真珠 · Jin Zhu</div>
+    <a href="index.html" class="menu-nav-item">首頁 Home</a>
+    <a href="query.html" class="menu-nav-item active">訂單查詢 Tracking</a>
+    <a href="photo-search.html" class="menu-nav-item">紀念照下載 Photos</a>
+    <div class="menu-footer">Jin Zhu Taichung · 文心店</div>
+</nav>
+
+<!-- KV -->
+<div class="kv">
+    <img id="kv-bg" class="kv-bg" src="" alt="">
+    <div class="kv-overlay"></div>
+    <div class="kv-content">
+        <div class="kv-tag">Order Tracking</div>
+        <h1 class="kv-title">訂單查詢</h1>
+        <div class="kv-gold-line"></div>
+        <p class="kv-sub">查詢您的預點餐進度</p>
+    </div>
+</div>
+
+<!-- MAIN -->
+<main class="main-wrap">
+
+    <!-- 搜尋卡片 -->
+    <div class="search-card animate-in" id="search-card">
+        <div class="card-inner">
+            <h2 class="card-title">訂單查詢</h2>
+            <p class="card-sub">Order Tracking System</p>
+            <div class="field-wrap">
+                <label class="field-label">姓名 Name</label>
+                <input type="text" id="queryName" class="field-input" placeholder="請輸入訂位姓名">
             </div>
-        </section>
-
-        <section id="results-section" class="hidden space-y-6 animate__animated animate__fadeInUp">
-            <div class="flex justify-between items-center px-2">
-                <h3 class="font-bold text-p-green font-serif text-lg">查詢結果</h3>
-                <button onclick="location.reload()" class="text-xs text-stone-400 underline">重新查詢</button>
+            <div class="field-wrap">
+                <label class="field-label">電話 Phone</label>
+                <input type="tel" id="queryPhone" class="field-input" placeholder="請輸入聯絡電話">
             </div>
-            
-            <div id="order-results-list" class="space-y-6">
-                </div>
-        </section>
+            <button class="query-btn" id="query-btn" onclick="fetchOrders()">立即查詢</button>
+        </div>
+    </div>
 
-        <section id="empty-section" class="hidden py-20 text-center">
-            <div class="text-5xl mb-4 opacity-20">🔍</div>
-            <p class="text-stone-400 font-medium">找不到相關訂單內容<br><span class="text-xs">請檢查輸入的姓名與電話是否正確</span></p>
-        </section>
-    </main>
+    <!-- 無結果 -->
+    <div class="empty-card" id="empty-card">
+        <div class="empty-icon">🔍</div>
+        <p class="empty-title">找不到相關訂單</p>
+        <p class="empty-sub">請確認輸入的姓名與電話是否正確</p>
+    </div>
 
-    <script>
-        const SUPABASE_URL = 'https://pydlnqriztpzgxbjuohm.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_ISKUWOXUR9A-1y81xCOUXg_8-zNle3v';
-        const _s = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    <!-- 結果 -->
+    <div class="results-wrap" id="results-wrap">
+        <div class="results-header">
+            <span class="results-title">查詢結果</span>
+            <button class="re-query-btn" onclick="resetQuery()">重新查詢</button>
+        </div>
+        <div id="order-list"></div>
+    </div>
 
-        // 初始化 Logo
-        async function initLogo() {
-            const { data } = await _s.from('store_settings').select('logo_url').eq('id', 1).single();
-            if (data?.logo_url) document.getElementById('main-logo').src = `${data.logo_url}?t=${Date.now()}`;
-        }
-        initLogo();
+    <p class="page-footer">
+        如有問題請致電：<a href="tel:0437027538">04-3702-7538</a>
+    </p>
+</main>
 
-        async function fetchOrders() {
-            const name = document.getElementById('queryName').value.trim();
-            const phone = document.getElementById('queryPhone').value.trim();
+<script>
+    const SUPABASE_URL = 'https://pydlnqriztpzgxbjuohm.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_ISKUWOXUR9A-1y81xCOUXg_8-zNle3v';
+    const _s = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-            if (!name || !phone) return alert("請輸入姓名與電話以進行查詢");
+    async function init() {
+        const isMob = window.innerWidth <= 768;
+        const { data } = await _s.from('store_settings').select('logo_url').eq('id', 1).single();
+        if (data?.logo_url) document.getElementById('main-logo').src = `${data.logo_url}?t=${Date.now()}`;
+        const kv = document.getElementById('kv-bg');
+        kv.src = isMob
+            ? "https://www.jinzhu.com.tw/storage/website/kv/jinzhu20230904143032_Mobile-KV.jpeg"
+            : "https://www.jinzhu.com.tw/storage/website/kv/jinzhu20230904143032_PC-KV.jpeg";
+        setTimeout(() => kv.style.transform = 'scale(1)', 100);
+    }
+    init();
 
-            // 顯示 Loading (可選)
-            const btn = document.querySelector('.btn-query');
-            btn.innerText = "查詢中...";
-            btn.disabled = true;
+    window.addEventListener('scroll', () => {
+        document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20);
+    });
 
-            const { data, error } = await _s
-                .from('orders')
-                .select('*')
-                .eq('customer_name', name)
-                .eq('phone', phone)
-                .order('created_at', { ascending: false });
+    function toggleMenu() {
+        document.getElementById('menu-btn').classList.toggle('active');
+        document.getElementById('side-menu').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    }
 
-            btn.innerText = "立即查詢";
-            btn.disabled = false;
+    function showToast(msg) {
+        const t = document.createElement('div');
+        t.className = 'toast'; t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.4s'; setTimeout(() => t.remove(), 400); }, 2000);
+    }
 
-            if (error) {
-                console.error(error);
-                return alert("查詢出錯，請稍後再試");
-            }
+    async function fetchOrders() {
+        const name  = document.getElementById('queryName').value.trim();
+        const phone = document.getElementById('queryPhone').value.trim();
+        if (!name || !phone) { showToast('請輸入姓名與電話'); return; }
 
-            const resultsSec = document.getElementById('results-section');
-            const emptySec = document.getElementById('empty-section');
-            const list = document.getElementById('order-results-list');
+        const btn = document.getElementById('query-btn');
+        btn.textContent = '查詢中⋯'; btn.disabled = true;
 
-            if (data.length === 0) {
-                resultsSec.classList.add('hidden');
-                emptySec.classList.remove('hidden');
-            } else {
-                emptySec.classList.add('hidden');
-                resultsSec.classList.remove('hidden');
-                
-                list.innerHTML = data.map(order => {
-                    const time = new Date(order.created_at).toLocaleString('zh-TW', {
-                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                    });
-                    
-                    const isSynced = order.status === 'synced';
-                    
-                    return `
-                        <div class="query-card overflow-hidden animate__animated animate__fadeIn">
-                            <div class="p-5 bg-stone-50 border-b flex justify-between items-center">
-                                <div>
-                                    <p class="text-[10px] text-stone-400 font-bold uppercase mb-1">Order Time: ${time}</p>
-                                    <div class="flex items-center gap-3">
-                                        <span class="status-badge ${isSynced ? 'status-synced' : 'status-pending'}">
-                                            ${isSynced ? '● 已處理' : '● 準備中'}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-p-gold font-black font-serif text-xl">$${order.total_price}</p>
-                                </div>
-                            </div>
-                            
-                            <div class="p-6 space-y-4">
-                                ${order.order_content.map(item => `
-                                    <div class="order-item-box p-3 rounded-r-xl">
-                                        <p class="text-sm font-bold text-p-green leading-relaxed">${item.name}</p>
-                                        <p class="text-[10px] text-stone-400 mt-1 font-serif">單項金額: $${item.price}</p>
-                                    </div>
-                                `).join('')}
-                                
-                                ${order.note ? `
-                                    <div class="mt-4 pt-4 border-t border-dashed">
-                                        <p class="text-[10px] font-black text-stone-300 uppercase mb-1">您的備註 Note</p>
-                                        <p class="text-xs text-stone-500 italic">${order.note}</p>
-                                    </div>
-                                ` : ''}
-                            </div>
+        const { data, error } = await _s.from('orders').select('*')
+            .eq('customer_name', name).eq('phone', phone)
+            .order('created_at', { ascending: false });
+
+        btn.textContent = '立即查詢'; btn.disabled = false;
+
+        if (error) { showToast('查詢出錯，請稍後再試'); return; }
+
+        document.getElementById('empty-card').style.display   = data.length === 0 ? 'block' : 'none';
+        document.getElementById('results-wrap').style.display = data.length  >  0 ? 'block' : 'none';
+
+        if (data.length > 0) {
+            document.getElementById('order-list').innerHTML = data.map((order, i) => {
+                const time = new Date(order.created_at).toLocaleString('zh-TW', {
+                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+                const synced = order.status === 'synced';
+                return `
+                <div class="order-card" style="animation-delay:${i * 0.08}s">
+                    <div class="order-card-header">
+                        <div>
+                            <div class="order-time">${time}</div>
+                            <span class="status-badge ${synced ? 'status-synced' : 'status-pending'}">
+                                ${synced ? '已處理' : '準備中'}
+                            </span>
                         </div>
-                    `;
-                }).join('');
-            }
-            
-            // 滾動到結果區
-            resultsSec.scrollIntoView({ behavior: 'smooth' });
+                        <div class="order-total">$${order.total_price}</div>
+                    </div>
+                    <div class="order-card-body">
+                        ${order.order_content.map(item => `
+                            <div class="order-item">
+                                <div class="order-item-bar"></div>
+                                <div class="order-item-name">${item.name}</div>
+                                <div class="order-item-price">$${item.price}</div>
+                            </div>`).join('')}
+                        ${order.note ? `
+                            <div class="order-note-wrap">
+                                <div class="order-note-label">備註 Note</div>
+                                <div class="order-note-text">${order.note}</div>
+                            </div>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+
+            document.getElementById('results-wrap').scrollIntoView({ behavior: 'smooth' });
         }
-    </script>
+    }
+
+    function resetQuery() {
+        document.getElementById('results-wrap').style.display = 'none';
+        document.getElementById('empty-card').style.display   = 'none';
+        document.getElementById('queryName').value  = '';
+        document.getElementById('queryPhone').value = '';
+        document.getElementById('search-card').scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
 </body>
 </html>
