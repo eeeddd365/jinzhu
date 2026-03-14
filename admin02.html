@@ -989,9 +989,11 @@ async function loadOrders() {
         :(data||[]).map(o=>{
         let bTime='';
         if(o.booking_date){
-            // 直接切字串，避免 Date 物件時區偏移
-            const raw = o.booking_date.replace('T',' ').slice(0,16); // "YYYY-MM-DD HH:MM"
-            bTime = o.booking_date.slice(0,16); // "YYYY-MM-DDTHH:MM"
+            // booking_date 是 timestamptz，Supabase 回傳 UTC
+            // 加 8 小時轉換成台灣時間再顯示
+            const utc = new Date(o.booking_date);
+            const tw = new Date(utc.getTime() + 8 * 60 * 60 * 1000);
+            bTime = `${tw.getUTCFullYear()}-${String(tw.getUTCMonth()+1).padStart(2,'0')}-${String(tw.getUTCDate()).padStart(2,'0')}T${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`;
         }
         const synced=o.status==='synced';
         return `
@@ -1016,11 +1018,11 @@ async function loadOrders() {
                     <div class="order-fields-grid">
                         <div class="order-field">
                             <label>訂位日期</label>
-                            <input type="date" id="bdate-${o.id}" value="${bTime.split('T')[0]||''}" onchange="updateBookingDateTime('${o.id}')">
+                            <input type="date" id="bdate-${o.id}" value="${bTime.split('T')[0]||''}" onchange="saveBookingDate('${o.id}',this.value)">
                         </div>
                         <div class="order-field">
                             <label>訂位時間</label>
-                            <select id="btime-${o.id}" onchange="updateBookingDateTime('${o.id}')">
+                            <select id="btime-${o.id}" onchange="saveBookingTime('${o.id}',this.value)">
                                 <option value="">-- 選擇時間 --</option>
                                 ${[11,12,13,17,18,19].flatMap(h=>[0,15,30,45].map(m=>{const hh=String(h).padStart(2,'0'),mm=String(m).padStart(2,'0'),val=`${hh}:${mm}`,cur=bTime?bTime.split('T')[1]?.slice(0,5):'';return`<option value="${val}"${cur===val?' selected':''}>${val}</option>`;})).join('')}
                             </select>
@@ -1091,16 +1093,28 @@ async function updateOrderData(id,field,val,inputEl){
     }
     if(!error)toast('已更新');else toast('更新失敗','error');
 }
-async function updateBookingDateTime(id){
-    const date=document.getElementById(`bdate-${id}`)?.value;
-    const time=document.getElementById(`btime-${id}`)?.value;
-    if(!date && !time) return;
-    if(!date){ toast('請先填寫訂位日期','warn'); return; }
-    if(!time){ toast('請選擇訂位時間','warn'); return; }
-    // 加上台灣時區 +08:00，讓 Supabase 正確儲存
-    const isoStr = `${date}T${time}:00+08:00`;
+async function saveBookingDate(id, newDate){
+    if(!newDate) return;
+    const time = document.getElementById(`btime-${id}`)?.value || '00:00';
+    const isoStr = `${newDate}T${time}:00+08:00`;
     const{error}=await _s.from('orders').update({booking_date: isoStr}).eq('id',id);
-    if(!error) toast('訂位時間已更新'); else toast('更新失敗','error');
+    const el = document.getElementById(`bdate-${id}`);
+    if(!error){
+        if(el){ el.style.borderColor='#10b981'; setTimeout(()=>el.style.borderColor='',1200); }
+        toast('訂位日期已更新');
+    } else toast('更新失敗','error');
+}
+async function saveBookingTime(id, newTime){
+    if(!newTime) return;
+    const date = document.getElementById(`bdate-${id}`)?.value;
+    if(!date){ toast('請先填寫訂位日期','warn'); return; }
+    const isoStr = `${date}T${newTime}:00+08:00`;
+    const{error}=await _s.from('orders').update({booking_date: isoStr}).eq('id',id);
+    const el = document.getElementById(`btime-${id}`);
+    if(!error){
+        if(el){ el.style.borderColor='#10b981'; setTimeout(()=>el.style.borderColor='',1200); }
+        toast('訂位時間已更新');
+    } else toast('更新失敗','error');
 }
 async function toggleSync(id,cur){
     await _s.from('orders').update({status:cur==='synced'?'pending':'synced'}).eq('id',id);
