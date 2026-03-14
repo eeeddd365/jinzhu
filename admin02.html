@@ -136,11 +136,11 @@
         .section-title::before { content: ''; display: block; width: 4px; height: 24px; background: var(--gold); border-radius: 2px; }
 
         /* ── FILTER BAR ── */
-        .filter-bar { background: white; border-radius: 16px; padding: 20px; border: 1px solid var(--border); margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .filter-label { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--stone); margin-bottom: 6px; }
-        .filter-input { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 9px 12px; font-size: 13px; background: #f8fafc; outline: none; transition: border 0.2s; font-family: 'Noto Sans TC', sans-serif; color: var(--ink); }
+        .filter-bar { background: white; border-radius: 14px; padding: 14px 16px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .filter-label { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--stone); margin-bottom: 4px; }
+        .filter-input { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; background: #f8fafc; outline: none; transition: border 0.2s; font-family: 'Noto Sans TC', sans-serif; color: var(--ink); }
         .filter-input:focus { border-color: var(--pine); background: white; }
-        .filter-select { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 9px 12px; font-size: 13px; background: #f8fafc; outline: none; font-family: 'Noto Sans TC', sans-serif; color: var(--ink); cursor: pointer; }
+        .filter-select { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; background: #f8fafc; outline: none; font-family: 'Noto Sans TC', sans-serif; color: var(--ink); cursor: pointer; }
 
         /* ── BUTTONS ── */
         .btn { padding: 9px 20px; border-radius: 10px; font-weight: 700; font-size: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.05em; font-family: 'Noto Sans TC', sans-serif; display: inline-flex; align-items: center; gap: 6px; }
@@ -214,7 +214,7 @@
         .status-badge::before { content: '●'; font-size: 7px; }
 
         /* ── REPORT STYLES ── */
-        .rpt-f-input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); color: white; border-radius: 10px; padding: 9px 12px; font-size: 13px; font-weight: 600; outline: none; transition: border .2s; font-family: 'Noto Sans TC', sans-serif; }
+        .rpt-f-input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); color: white; border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 600; outline: none; transition: border .2s; font-family: 'Noto Sans TC', sans-serif; }
         .rpt-f-input:focus { border-color: var(--gold-light); }
         .rpt-f-input option { background: #1a2e2b; }
         .rpt-preset-btn { padding: 5px 14px; border-radius: 999px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.55); background: transparent; transition: all .15s; white-space: nowrap; }
@@ -407,7 +407,7 @@
     </div>
 
     <div class="filter-bar">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
             <div>
                 <label class="filter-label">快速日期</label>
                 <select id="filter-date-preset" onchange="setQuickDate(this.value)" class="filter-select">
@@ -434,12 +434,12 @@
                 </select>
             </div>
         </div>
-        <div class="flex gap-3 items-center">
+        <div class="flex gap-2 items-center">
             <input type="text" id="filter-search" class="filter-input flex-1" placeholder="搜尋顧客姓名或電話…">
-            <button onclick="loadOrders()" class="btn btn-primary">篩選</button>
+            <button onclick="loadOrders()" class="btn btn-primary btn-sm">篩選</button>
             <button onclick="resetFilters()" class="btn btn-ghost btn-sm">重置</button>
         </div>
-        <div class="flex items-center gap-3 mt-4 pt-4 border-t border-slate-100">
+        <div class="flex items-center gap-3 mt-3 pt-3 border-t border-slate-100">
             <label class="flex items-center gap-2 cursor-pointer select-none">
                 <input type="checkbox" id="order-select-all" onchange="toggleOrderSelectAll(this.checked)" class="accent-red-400 w-4 h-4">
                 <span class="text-xs font-bold text-slate-500">全選</span>
@@ -545,39 +545,39 @@
 
 <!-- 備料統計報表 -->
 <section id="sec-report" class="hidden space-y-4">
-    <div class="rounded-2xl overflow-hidden shadow-lg" style="background:linear-gradient(135deg,#004d40,#00695c)">
-        <div class="flex flex-wrap justify-between items-center gap-3 px-6 pt-5 pb-4 border-b border-white/10">
-            <div class="flex items-center gap-3">
-                <div class="w-1 h-6 rounded-full bg-amber-400"></div>
-                <h2 class="text-lg font-black text-white font-serif tracking-widest">備料統計中心</h2>
-                <span id="report-period-display" class="text-xs font-bold px-3 py-1 rounded-full" style="background:rgba(184,145,80,.2);color:#d4a85a">尚未查詢</span>
+    <div class="rounded-xl overflow-hidden shadow-md" style="background:linear-gradient(135deg,#004d40,#00695c)">
+        <div class="flex flex-wrap justify-between items-center gap-2 px-4 pt-4 pb-3 border-b border-white/10">
+            <div class="flex items-center gap-2">
+                <div class="w-1 h-5 rounded-full bg-amber-400"></div>
+                <h2 class="text-base font-black text-white font-serif tracking-widest">備料統計中心</h2>
+                <span id="report-period-display" class="text-xs font-bold px-2 py-0.5 rounded-full" style="background:rgba(184,145,80,.2);color:#d4a85a">尚未查詢</span>
             </div>
             <div class="flex gap-2">
                 <button onclick="reportPrint()" class="btn btn-sm" style="background:#fee2e2;color:#dc2626">🖨 列印</button>
                 <button onclick="exportFullData()" class="btn btn-sm" style="background:#dcfce7;color:#16a34a">📊 匯出</button>
             </div>
         </div>
-        <div class="px-6 py-5">
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
-                <div>
-                    <span class="block text-[9px] font-bold tracking-widest uppercase mb-2" style="color:rgba(255,255,255,.45)">快速選擇</span>
-                    <div class="flex flex-wrap gap-1.5">
+        <div class="px-4 py-3">
+            <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 items-end">
+                <div class="col-span-3 sm:col-span-1">
+                    <span class="block text-[9px] font-bold tracking-widest uppercase mb-1.5" style="color:rgba(255,255,255,.45)">快速選擇</span>
+                    <div class="flex flex-wrap gap-1">
                         <button class="rpt-preset-btn" onclick="rptPreset('today')">今日</button>
                         <button class="rpt-preset-btn" onclick="rptPreset('yesterday')">昨日</button>
                         <button class="rpt-preset-btn" onclick="rptPreset('week')">本週</button>
                         <button class="rpt-preset-btn" onclick="rptPreset('month')">本月</button>
                     </div>
                 </div>
-                <div><span class="block text-[9px] font-bold tracking-widest uppercase mb-2" style="color:rgba(255,255,255,.45)">開始日期</span><input type="date" id="r-s-date" class="rpt-f-input w-full"></div>
-                <div><span class="block text-[9px] font-bold tracking-widest uppercase mb-2" style="color:rgba(255,255,255,.45)">結束日期</span><input type="date" id="r-e-date" class="rpt-f-input w-full"></div>
-                <div><span class="block text-[9px] font-bold tracking-widest uppercase mb-2" style="color:rgba(255,255,255,.45)">開始時間</span><input type="time" id="r-s-time" value="00:00" class="rpt-f-input w-full"></div>
-                <div><span class="block text-[9px] font-bold tracking-widest uppercase mb-2" style="color:rgba(255,255,255,.45)">結束時間</span><input type="time" id="r-e-time" value="23:59" class="rpt-f-input w-full"></div>
+                <div><span class="block text-[9px] font-bold tracking-widest uppercase mb-1.5" style="color:rgba(255,255,255,.45)">開始日期</span><input type="date" id="r-s-date" class="rpt-f-input w-full"></div>
+                <div><span class="block text-[9px] font-bold tracking-widest uppercase mb-1.5" style="color:rgba(255,255,255,.45)">結束日期</span><input type="date" id="r-e-date" class="rpt-f-input w-full"></div>
+                <div><span class="block text-[9px] font-bold tracking-widest uppercase mb-1.5" style="color:rgba(255,255,255,.45)">開始時間</span><input type="time" id="r-s-time" value="00:00" class="rpt-f-input w-full"></div>
+                <div><span class="block text-[9px] font-bold tracking-widest uppercase mb-1.5" style="color:rgba(255,255,255,.45)">結束時間</span><input type="time" id="r-e-time" value="23:59" class="rpt-f-input w-full"></div>
                 <div>
-                    <span class="block text-[9px] font-bold tracking-widest uppercase mb-2" style="color:rgba(255,255,255,.45)">活動代號</span>
+                    <span class="block text-[9px] font-bold tracking-widest uppercase mb-1.5" style="color:rgba(255,255,255,.45)">活動代號</span>
                     <select id="report-campaign" class="rpt-f-input w-full"><option value="all">全部來源</option><option value="none">一般訂單</option></select>
                 </div>
             </div>
-            <button id="r-run-btn" onclick="fetchData()" class="mt-4 w-full py-3 rounded-xl font-bold text-sm tracking-widest shadow-lg transition" style="background:var(--gold);color:white">
+            <button id="r-run-btn" onclick="fetchData()" class="mt-3 w-full py-2.5 rounded-xl font-bold text-sm tracking-widest shadow-lg transition" style="background:var(--gold);color:white">
                 <span id="r-run-lbl">▶ 執行查詢</span>
             </button>
         </div>
