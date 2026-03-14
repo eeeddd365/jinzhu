@@ -988,7 +988,11 @@ async function loadOrders() {
         ?`<div class="col-span-2 empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">找不到符合條件的訂單</div><div class="empty-state-sub">請調整篩選條件或重置後再試</div></div>`
         :(data||[]).map(o=>{
         let bTime='';
-        if(o.booking_date){const d=new Date(o.booking_date);bTime=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;}
+        if(o.booking_date){
+            // 直接切字串，避免 Date 物件時區偏移
+            const raw = o.booking_date.replace('T',' ').slice(0,16); // "YYYY-MM-DD HH:MM"
+            bTime = o.booking_date.slice(0,16); // "YYYY-MM-DDTHH:MM"
+        }
         const synced=o.status==='synced';
         return `
         <div id="order-card-${o.id}" class="order-card ${synced?'completed':''} collapsed ${selectedOrderIds.has(o.id)?'ring-2 ring-red-300':''}">
@@ -1093,8 +1097,8 @@ async function updateBookingDateTime(id){
     if(!date && !time) return;
     if(!date){ toast('請先填寫訂位日期','warn'); return; }
     if(!time){ toast('請選擇訂位時間','warn'); return; }
-    // 直接用字串組合避免時區偏移
-    const isoStr = `${date}T${time}:00`;
+    // 加上台灣時區 +08:00，讓 Supabase 正確儲存
+    const isoStr = `${date}T${time}:00+08:00`;
     const{error}=await _s.from('orders').update({booking_date: isoStr}).eq('id',id);
     if(!error) toast('訂位時間已更新'); else toast('更新失敗','error');
 }
