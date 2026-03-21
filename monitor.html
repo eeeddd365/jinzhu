@@ -2,181 +2,517 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>真珠 | 訂單即時監控系統</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>真珠 · 訂單監控</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --p-gold: #b89150; --p-green: #004d40; }
-        body { background-color: #00251a; color: #e0e0e0; font-family: 'Noto Sans TC', sans-serif; }
-        .font-serif { font-family: 'Noto Serif TC', serif; }
-        
-        /* 訂單卡片進入動畫 */
-        .order-card { animation: slideIn 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
-        @keyframes slideIn {
-            from { opacity: 0; transform: scale(0.9) translateY(20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
+        :root {
+            --pine: #004d40;
+            --pine-dark: #002e27;
+            --pine-light: #00695c;
+            --gold: #b89150;
+            --gold-light: #d4a85a;
+            --cream: #f7f3ec;
+            --ink: #1a2820;
         }
 
-        /* 已處理消失動畫 */
-        .fade-out { 
-            opacity: 0 !important; 
-            transform: scale(0.8) !important; 
-            transition: all 0.5s ease; 
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: var(--pine-dark);
+            color: #e0d8cc;
+            min-height: 100svh;
+            overflow-x: hidden;
+        }
+
+        /* 紙紋背景 */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none; z-index: 0; opacity: 0.5;
+        }
+
+        /* ── 啟動畫面 ── */
+        #notice-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.96);
+            z-index: 200;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(12px);
+        }
+        #notice-overlay.hidden { display: none; }
+
+        .notice-card {
+            background: white;
+            border-radius: 32px;
+            padding: 56px 48px;
+            text-align: center;
+            max-width: 380px; width: calc(100% - 48px);
+            box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+            position: relative; overflow: hidden;
+        }
+        .notice-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--pine), var(--gold), var(--pine));
+        }
+        .notice-icon { font-size: 3.5rem; margin-bottom: 20px; }
+        .notice-title {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1.5rem; font-weight: 900;
+            color: var(--pine); margin-bottom: 10px;
+        }
+        .notice-sub { color: #94a3b8; font-size: 13px; line-height: 1.8; margin-bottom: 32px; }
+        .notice-btn {
+            background: var(--pine); color: white;
+            padding: 16px 40px; border-radius: 999px;
+            font-weight: 700; font-size: 15px;
+            letter-spacing: 0.1em;
+            display: inline-block;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,100% { box-shadow: 0 0 0 0 rgba(0,77,64,0.4); }
+            50% { box-shadow: 0 0 0 12px rgba(0,77,64,0); }
+        }
+
+        /* ── HEADER ── */
+        #main-header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(0,30,22,0.92);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(184,145,80,0.15);
+            padding: 14px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 16px;
+        }
+
+        .header-brand { display: flex; align-items: center; gap: 12px; }
+        .header-logo { height: 28px; filter: brightness(0) invert(1); opacity: 0.9; }
+        .header-title {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1rem; font-weight: 900;
+            color: var(--gold); letter-spacing: 0.2em;
+        }
+
+        #conn-status {
+            font-size: 10px; font-weight: 700;
+            letter-spacing: 0.15em; text-transform: uppercase;
+            color: #64748b;
+        }
+        #conn-status.connected { color: #4ade80; }
+
+        #clock {
+            font-family: 'Noto Sans TC', monospace;
+            font-size: 1.4rem; font-weight: 700;
+            color: white; letter-spacing: 0.05em;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 6px 18px; border-radius: 12px;
+        }
+
+        .header-right { display: flex; align-items: center; gap: 12px; }
+
+        #order-count-badge {
+            background: var(--gold);
+            color: white; font-weight: 900;
+            font-size: 11px; letter-spacing: 0.05em;
+            padding: 4px 12px; border-radius: 999px;
+            display: none;
+        }
+
+        /* ── MAIN CONTENT ── */
+        #main-content {
+            position: relative; z-index: 1;
+            padding: 24px;
+            max-width: 1400px; margin: 0 auto;
+        }
+
+        /* ── ORDER GRID ── */
+        #order-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        /* ── ORDER CARD ── */
+        .order-card {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.25), 0 0 0 1px rgba(184,145,80,0.15);
+            display: flex; flex-direction: column;
+            animation: cardIn 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+        .order-card:hover {
+            box-shadow: 0 12px 50px rgba(0,0,0,0.35), 0 0 0 2px rgba(184,145,80,0.3);
+            transform: translateY(-2px);
+        }
+        @keyframes cardIn {
+            from { opacity: 0; transform: scale(0.92) translateY(16px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .order-card.fade-out {
+            opacity: 0 !important;
+            transform: scale(0.88) translateY(8px) !important;
+            transition: all 0.45s ease !important;
             pointer-events: none;
         }
 
-        .gold-glow { box-shadow: 0 0 20px rgba(184, 145, 80, 0.2); }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1a4d3a; border-radius: 10px; }
+        /* 卡片頂部色條 */
+        .card-top-bar {
+            height: 4px;
+            background: linear-gradient(90deg, var(--pine), var(--gold));
+        }
+
+        /* 卡片 Header */
+        .card-header {
+            padding: 18px 20px 16px;
+            background: #f8fafc;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex; justify-content: space-between; align-items: flex-start;
+        }
+        .card-new-badge {
+            font-size: 9px; font-weight: 700; letter-spacing: 0.2em;
+            text-transform: uppercase;
+            background: var(--gold); color: white;
+            padding: 2px 8px; border-radius: 4px;
+            margin-bottom: 6px; display: inline-block;
+        }
+        .card-name {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1.3rem; font-weight: 900;
+            color: var(--pine);
+        }
+        .card-total {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1.3rem; font-weight: 900;
+            color: var(--gold); text-align: right;
+        }
+        .card-time {
+            font-size: 10px; color: #94a3b8;
+            font-weight: 700; margin-top: 2px;
+        }
+
+        /* 卡片 Body */
+        .card-body {
+            padding: 16px 20px;
+            flex: 1;
+            max-height: 220px; overflow-y: auto;
+        }
+        .card-body::-webkit-scrollbar { width: 3px; }
+        .card-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+
+        .card-item {
+            display: flex; align-items: flex-start; gap: 8px;
+            padding: 7px 0;
+            border-bottom: 1px solid #f8fafc;
+            font-size: 13px; font-weight: 700; color: #1e293b;
+            line-height: 1.5;
+        }
+        .card-item:last-child { border-bottom: none; }
+        .card-item-dot {
+            width: 5px; height: 5px; border-radius: 50%;
+            background: var(--gold); flex-shrink: 0; margin-top: 6px;
+        }
+
+        /* 備註 */
+        .card-note {
+            margin: 0 20px 14px;
+            background: #fffbeb;
+            border-left: 3px solid var(--gold);
+            border-radius: 0 10px 10px 0;
+            padding: 10px 12px;
+        }
+        .card-note-label {
+            font-size: 9px; font-weight: 700;
+            letter-spacing: 0.2em; text-transform: uppercase;
+            color: var(--gold); margin-bottom: 4px;
+        }
+        .card-note-text { font-size: 12px; color: #78350f; font-weight: 500; line-height: 1.6; }
+
+        /* 卡片 Footer */
+        .card-footer {
+            padding: 14px 20px;
+            border-top: 1px solid #f1f5f9;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .card-phone {
+            font-size: 11px; font-weight: 700;
+            color: #94a3b8; flex: 1;
+            letter-spacing: 0.05em;
+        }
+        .card-done-btn {
+            background: var(--pine); color: white;
+            padding: 10px 20px; border-radius: 12px;
+            font-weight: 700; font-size: 12px;
+            letter-spacing: 0.1em;
+            border: none; cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        .card-done-btn:hover { background: var(--pine-light); }
+        .card-done-btn:active { transform: scale(0.96); }
+
+        /* ── 空狀態 ── */
+        #no-order-hint {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 100px 24px;
+            color: rgba(184,145,80,0.2);
+        }
+        #no-order-hint .hint-icon { font-size: 5rem; margin-bottom: 16px; }
+        #no-order-hint .hint-text {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1.1rem; letter-spacing: 0.2em;
+        }
+
+        /* ── 新訂單閃爍提示 ── */
+        #new-order-flash {
+            position: fixed; top: 80px; right: 24px;
+            z-index: 150;
+            background: var(--pine);
+            color: white;
+            border-left: 4px solid var(--gold);
+            border-radius: 14px;
+            padding: 14px 20px;
+            font-weight: 700; font-size: 13px;
+            box-shadow: 0 8px 32px rgba(0,77,64,0.4);
+            display: none;
+            animation: flashIn 0.35s cubic-bezier(0.23,1,0.32,1) both;
+        }
+        @keyframes flashIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        #new-order-flash .flash-name { font-size: 16px; font-family: 'Noto Serif TC', serif; }
+        #new-order-flash .flash-sub { font-size: 10px; opacity: 0.7; margin-top: 2px; letter-spacing: 0.1em; }
     </style>
 </head>
-<body class="p-4 md:p-8 min-h-screen">
+<body>
 
-    <div id="notice-overlay" onclick="enableSystem()" class="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center cursor-pointer backdrop-blur-md">
-        <div class="text-center bg-white p-12 rounded-[3rem] shadow-2xl max-w-sm">
-            <div class="text-7xl mb-6">📢</div>
-            <h2 class="text-3xl font-black mb-3 text-[#004d40] font-serif">監控系統啟動</h2>
-            <p class="text-gray-400 mb-8">點擊後開始接收即時訂單<br>並啟用語音廣播功能</p>
-            <div class="bg-[#b89150] text-white py-4 px-10 rounded-full font-bold text-lg animate-pulse">開啟語音監控</div>
+<!-- 啟動畫面 -->
+<div id="notice-overlay" onclick="enableSystem()">
+    <div class="notice-card">
+        <div class="notice-icon">🔔</div>
+        <h2 class="notice-title">真珠監控系統</h2>
+        <p class="notice-sub">點擊啟動後將開始接收即時訂單通知<br>並開啟音效提示功能</p>
+        <div class="notice-btn">啟動監控</div>
+    </div>
+</div>
+
+<!-- 新訂單閃爍提示 -->
+<div id="new-order-flash">
+    <div class="flash-name" id="flash-name">新訂單</div>
+    <div class="flash-sub">🔔 新預點餐已收到</div>
+</div>
+
+<!-- Header -->
+<header id="main-header">
+    <div class="header-brand">
+        <img src="https://www.jinzhu.com.tw/images/Jinzhu_logo.svg" class="header-logo" alt="真珠">
+        <div>
+            <div class="header-title">訂單監控中心</div>
+            <div id="conn-status">初始化中…</div>
         </div>
     </div>
+    <div class="header-right">
+        <div id="order-count-badge">0 筆待處理</div>
+        <div id="clock">00:00:00</div>
+    </div>
+</header>
 
-    <div class="max-w-7xl mx-auto">
-        <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-            <div class="text-center md:text-left">
-                <div class="flex items-center gap-3 justify-center md:justify-start">
-                    <img src="https://www.jinzhu.com.tw/images/Jinzhu_logo.svg" class="h-10 brightness-200" style="filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(10deg);">
-                    <h1 class="text-3xl font-black text-[#b89150] font-serif tracking-widest">訂單監控中心</h1>
-                </div>
-                <p id="conn-status" class="text-amber-500 text-xs mt-3 font-bold tracking-widest uppercase">Initializing System...</p>
-            </div>
-            <div class="flex items-center gap-6">
-                <div id="clock" class="text-3xl font-mono font-bold text-white bg-black/30 px-6 py-2 rounded-2xl border border-white/10 tracking-tighter">00:00:00</div>
-            </div>
-        </header>
-
-        <div id="order-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            </div>
-
-        <div id="no-order-hint" class="text-center py-40 text-emerald-900/30">
-            <div class="text-8xl mb-4">🥢</div>
-            <p class="text-xl font-serif">目前尚無待處理預定</p>
+<!-- Main -->
+<main id="main-content">
+    <div id="order-grid">
+        <div id="no-order-hint">
+            <div class="hint-icon">🥢</div>
+            <p class="hint-text">目前尚無待處理預定</p>
         </div>
     </div>
+</main>
 
-    <script>
-        const SUPABASE_URL = 'https://pydlnqriztpzgxbjuohm.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_ISKUWOXUR9A-1y81xCOUXg_8-zNle3v';
-        const _s = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<script>
+const SUPABASE_URL = 'https://pydlnqriztpzgxbjuohm.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_ISKUWOXUR9A-1y81xCOUXg_8-zNle3v';
+const _s = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let systemActive = false;
+let systemActive = false;
+let audioCtx = null;
+let pendingCount = 0;
 
-        // 啟動系統並預熱語音
-        function enableSystem() {
-            systemActive = true;
-            document.getElementById('notice-overlay').classList.add('hidden');
-            speak("系統已啟動");
+// ── 啟動 ──
+function enableSystem() {
+    systemActive = true;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    document.getElementById('notice-overlay').classList.add('hidden');
+    playChime();
+}
+
+// ── 好聽的音效：三音叮咚 ──
+function playChime() {
+    if (!audioCtx || !systemActive) return;
+    const now = audioCtx.currentTime;
+    // 三個音符：Do Mi Sol（上升三和弦）
+    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+    notes.forEach((freq, i) => {
+        const osc  = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + i * 0.18);
+
+        // 音量包絡：快攻 慢衰
+        gain.gain.setValueAtTime(0, now + i * 0.18);
+        gain.gain.linearRampToValueAtTime(0.22, now + i * 0.18 + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.18 + 0.7);
+
+        osc.start(now + i * 0.18);
+        osc.stop(now + i * 0.18 + 0.75);
+    });
+
+    // 第二波：八度高音收尾
+    setTimeout(() => {
+        const osc  = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1046.5, audioCtx.currentTime); // C6
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.9);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.95);
+    }, 580);
+}
+
+// ── 訂單數量更新 ──
+function updateCount(delta) {
+    pendingCount = Math.max(0, pendingCount + delta);
+    const badge = document.getElementById('order-count-badge');
+    if (pendingCount > 0) {
+        badge.style.display = 'inline-block';
+        badge.textContent = `${pendingCount} 筆待處理`;
+    } else {
+        badge.style.display = 'none';
+    }
+    document.title = pendingCount > 0 ? `(${pendingCount}) 真珠監控` : '真珠 · 訂單監控';
+}
+
+// ── 新訂單閃爍通知 ──
+function showFlash(name) {
+    const el = document.getElementById('new-order-flash');
+    document.getElementById('flash-name').textContent = name;
+    el.style.display = 'block';
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = 'flashIn 0.35s cubic-bezier(0.23,1,0.32,1) both';
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+// ── Realtime 監聽 ──
+_s.channel('orders_realtime')
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
+      playChime();
+      showFlash(payload.new.customer_name || '新訂單');
+      renderOrder(payload.new);
+      updateCount(1);
+  })
+  .subscribe(status => {
+      const el = document.getElementById('conn-status');
+      if (status === 'SUBSCRIBED') {
+          el.textContent = '🟢 即時監控中';
+          el.classList.add('connected');
+      } else {
+          el.textContent = '⏳ 連線中…';
+          el.classList.remove('connected');
+      }
+  });
+
+// ── 渲染訂單卡片 ──
+function renderOrder(order) {
+    document.getElementById('no-order-hint').style.display = 'none';
+    const grid = document.getElementById('order-grid');
+    const items = typeof order.order_content === 'string'
+        ? JSON.parse(order.order_content) : (order.order_content || []);
+
+    // 台灣時間
+    const utc = new Date(order.created_at);
+    const tw  = new Date(utc.getTime() + 8 * 60 * 60 * 1000);
+    const time = `${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`;
+
+    const card = document.createElement('div');
+    card.id = `order-${order.id}`;
+    card.className = 'order-card';
+
+    card.innerHTML = `
+        <div class="card-top-bar"></div>
+        <div class="card-header">
+            <div>
+                <span class="card-new-badge">New Order</span>
+                <div class="card-name">${order.customer_name || '—'}</div>
+            </div>
+            <div class="text-right">
+                <div class="card-total">$${order.total_price || 0}</div>
+                <div class="card-time">${time}</div>
+            </div>
+        </div>
+        <div class="card-body">
+            ${items.map(i => `
+                <div class="card-item">
+                    <div class="card-item-dot"></div>
+                    <span>${i.name}</span>
+                </div>`).join('')}
+        </div>
+        ${order.note ? `
+        <div class="card-note">
+            <div class="card-note-label">備註</div>
+            <div class="card-note-text">${order.note}</div>
+        </div>` : ''}
+        <div class="card-footer">
+            <div class="card-phone">📞 ${order.phone || '—'}</div>
+            <button class="card-done-btn" onclick="markAsDone('${order.id}')">✓ 確認處理</button>
+        </div>`;
+
+    grid.prepend(card);
+}
+
+// ── 標記已處理 ──
+function markAsDone(id) {
+    const el = document.getElementById(`order-${id}`);
+    if (!el) return;
+    el.classList.add('fade-out');
+    setTimeout(() => {
+        el.remove();
+        updateCount(-1);
+        const grid = document.getElementById('order-grid');
+        if (grid.querySelectorAll('.order-card').length === 0) {
+            document.getElementById('no-order-hint').style.display = 'block';
         }
+    }, 450);
+}
 
-        // 語音廣播功能
-        function speak(text) {
-            if (!window.speechSynthesis || !systemActive) return;
-            const utter = new SpeechSynthesisUtterance(text);
-            utter.lang = 'zh-TW';
-            utter.rate = 1.0;
-            utter.pitch = 1.0;
-            window.speechSynthesis.speak(utter);
-        }
-
-        // 監聽新訂單
-        _s.channel('orders_realtime')
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
-              console.log('New Order:', payload.new);
-              speak("有一筆新預定"); // 語音通知
-              renderOrder(payload.new);
-          })
-          .subscribe(status => {
-              const el = document.getElementById('conn-status');
-              if(status === 'SUBSCRIBED') {
-                  el.innerText = "🟢 系統已同步 | 實時點餐監控中";
-                  el.className = "text-emerald-400 text-xs mt-3 font-bold tracking-widest";
-              }
-          });
-
-        function renderOrder(order) {
-            document.getElementById('no-order-hint').classList.add('hidden');
-            const grid = document.getElementById('order-grid');
-            
-            const card = document.createElement('div');
-            card.id = `order-${order.id}`;
-            card.className = "order-card bg-white rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col gold-glow";
-            
-            const time = new Date(order.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const items = typeof order.order_content === 'string' ? JSON.parse(order.order_content) : order.order_content;
-            
-            card.innerHTML = `
-                <div class="p-6 bg-stone-50 border-b border-stone-100 flex justify-between items-center">
-                    <div>
-                        <span class="text-[10px] bg-[#b89150] text-white px-2 py-0.5 rounded-md font-bold uppercase mb-1 inline-block">New Order</span>
-                        <h3 class="text-2xl font-black text-[#004d40] font-serif">${order.customer_name}</h3>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-xl font-black text-[#b89150] font-mono">$${order.total_price}</p>
-                        <p class="text-[10px] text-stone-400 font-bold">${time}</p>
-                    </div>
-                </div>
-                
-                <div class="p-6 flex-1 custom-scrollbar overflow-y-auto max-h-60">
-                    <div class="space-y-3">
-                        ${items.map(i => `
-                            <div class="flex gap-3 items-start">
-                                <div class="w-1.5 h-1.5 bg-[#b89150] rounded-full mt-2 flex-shrink-0"></div>
-                                <p class="text-stone-700 text-base font-bold leading-tight">${i.name}</p>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-
-                ${order.note ? `
-                <div class="px-6 pb-2">
-                    <div class="bg-amber-50 border border-amber-100 p-3 rounded-2xl">
-                        <p class="text-[10px] text-amber-600 font-black uppercase mb-1">特別備註</p>
-                        <p class="text-amber-900 text-xs font-medium">${order.note}</p>
-                    </div>
-                </div>` : ''}
-
-                <div class="p-6 pt-4 flex flex-col gap-3">
-                    <div class="flex items-center justify-between text-stone-400 text-[11px] font-bold px-1">
-                        <span>TEL: ${order.phone}</span>
-                    </div>
-                    <button onclick="markAsDone('${order.id}')" class="w-full bg-[#004d40] text-white py-4 rounded-2xl font-black text-sm tracking-widest hover:bg-emerald-800 transition shadow-lg active:scale-95">
-                        確認已處理
-                    </button>
-                </div>
-            `;
-            
-            grid.prepend(card);
-        }
-
-        // 已處理動作 (僅前端移除)
-        function markAsDone(id) {
-            const el = document.getElementById(`order-${id}`);
-            if(el) {
-                el.classList.add('fade-out');
-                setTimeout(() => {
-                    el.remove();
-                    if(document.getElementById('order-grid').children.length === 0) {
-                        document.getElementById('no-order-hint').classList.remove('hidden');
-                    }
-                }, 500);
-            }
-        }
-
-        // 時鐘
-        setInterval(() => {
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString([], {hour12: false});
-        }, 1000);
-    </script>
+// ── 時鐘 ──
+function updateClock() {
+    const now = new Date();
+    const tw  = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    const h = String(tw.getUTCHours()).padStart(2,'0');
+    const m = String(tw.getUTCMinutes()).padStart(2,'0');
+    const s = String(tw.getUTCSeconds()).padStart(2,'0');
+    document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+</script>
 </body>
 </html>
