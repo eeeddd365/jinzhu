@@ -1663,7 +1663,7 @@ function exportFullData(){
         tableRows.push({'桌號':'','姓名':'','手機':'','大人':'','小孩':'','兒童':'','活動':'','餐點':'','數量':'','金額':'','訂單合計':'','時間':'','備註':''});
     });
     const wsT=XLSX.utils.json_to_sheet(tableRows);
-    wsT['!cols']=[{wch:8},{wch:12},{wch:14},{wch:6},{wch:6},{wch:6},{wch:10},{wch:30},{wch:6},{wch:8},{wch:10},{wch:16},{wch:20}];
+    wsT['!cols']=[{wch:8},{wch:12},{wch:14},{wch:12},{wch:10},{wch:6},{wch:6},{wch:6},{wch:10},{wch:30},{wch:6},{wch:8},{wch:10},{wch:16},{wch:20}];
     XLSX.utils.book_append_sheet(wb,wsT,'🪑 逐桌明細');
 
     // ── 摘要 ──
@@ -1690,9 +1690,18 @@ function exportFullData(){
         (o.order_content||[]).forEach((item,li)=>{
             const qtyM=item.name.match(/ x(\d+)/);
             const qty=qtyM?parseInt(qtyM[1]):1;
+            // 訂位日期時間
+            let bkD2='',bkT2='';
+            if(li===0&&o.booking_date){
+                const u=new Date(o.booking_date),tw2=new Date(u.getTime()+8*60*60*1000);
+                bkD2=`${tw2.getUTCFullYear()}-${String(tw2.getUTCMonth()+1).padStart(2,'0')}-${String(tw2.getUTCDate()).padStart(2,'0')}`;
+                bkT2=`${String(tw2.getUTCHours()).padStart(2,'0')}:${String(tw2.getUTCMinutes()).padStart(2,'0')}`;
+            }
             rows.push({
                 序號:li===0?idx+1:'',
-                時間:li===0?new Date(o.created_at).toLocaleString('zh-TW'):'',
+                下單時間:li===0?new Date(o.created_at).toLocaleString('zh-TW'):'',
+                訂位日期:li===0?bkD2:'',
+                訂位時間:li===0?bkT2:'',
                 姓名:li===0?(o.customer_name||''):'',
                 電話:li===0?(o.phone||''):'',
                 桌號:li===0?(o.table_no||''):'',
