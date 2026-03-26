@@ -1643,11 +1643,21 @@ function exportFullData(){
                 displayRows.push({dish:clean,qty,price:item.price});
             }
         });
+        // 訂位日期時間（台灣時間）
+        let bkDate='', bkTime='';
+        if(o.booking_date){
+            const utc=new Date(o.booking_date);
+            const tw=new Date(utc.getTime()+8*60*60*1000);
+            bkDate=`${tw.getUTCFullYear()}-${String(tw.getUTCMonth()+1).padStart(2,'0')}-${String(tw.getUTCDate()).padStart(2,'0')}`;
+            bkTime=`${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`;
+        }
         displayRows.forEach((row,i)=>{
             tableRows.push({
                 '桌號':i===0?(o.table_no||'—'):'',
                 '姓名':i===0?(o.customer_name||'—'):'',
                 '手機':i===0?(o.phone||'—'):'',
+                '訂位日期':i===0?bkDate:'',
+                '訂位時間':i===0?bkTime:'',
                 '大人':i===0?(o.adult_count||0):'',
                 '小孩':i===0?(o.kid_count||0):'',
                 '兒童':i===0?(o.child_count||0):'',
@@ -1656,11 +1666,11 @@ function exportFullData(){
                 '數量':row.qty,
                 '金額':row.price,
                 '訂單合計':i===0?(o.total_price||0):'',
-                '時間':i===0?timeStr:'',
+                '下單時間':i===0?timeStr:'',
                 '備註':i===0?(o.note||''):''
             });
         });
-        tableRows.push({'桌號':'','姓名':'','手機':'','大人':'','小孩':'','兒童':'','活動':'','餐點':'','數量':'','金額':'','訂單合計':'','時間':'','備註':''});
+        tableRows.push({'桌號':'','姓名':'','手機':'','訂位日期':'','訂位時間':'','大人':'','小孩':'','兒童':'','活動':'','餐點':'','數量':'','金額':'','訂單合計':'','下單時間':'','備註':''});
     });
     const wsT=XLSX.utils.json_to_sheet(tableRows);
     wsT['!cols']=[{wch:8},{wch:12},{wch:14},{wch:12},{wch:10},{wch:6},{wch:6},{wch:6},{wch:10},{wch:30},{wch:6},{wch:8},{wch:10},{wch:16},{wch:20}];
