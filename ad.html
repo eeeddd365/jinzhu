@@ -1401,7 +1401,18 @@ function updatePickerStats(){document.getElementById('picker-count').textContent
 function addSelectedToPicks(){pickerSelectedItems.forEach(s=>{if(!curPicks.some(p=>p.id===s.id))curPicks.push(s);});pickerSelectedItems=[];renderTempPicks();document.querySelectorAll('.picker-item').forEach(el=>el.classList.remove('active'));updatePickerStats();}
 function renderTempPicks(){
     const container=document.getElementById('temp-pick-display');
-    container.innerHTML=curPicks.map((p,idx)=>`<div class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 cursor-grab select-none" draggable="true" data-pick-idx="${idx}" ondragstart="pickDragStart(event)" ondragover="pickDragOver(event)" ondrop="pickDrop(event)" ondragend="pickDragEnd(event)"><span class="opacity-40">⠿</span>${p.name}<span onclick="event.stopPropagation();curPicks.splice(${idx},1);renderTempPicks();" class="cursor-pointer opacity-40 font-bold ml-1">✕</span></div>`).join('');
+    container.innerHTML=curPicks.map((p,idx)=>`<div class="bg-white border border-emerald-200 rounded-xl text-[11px] font-bold flex items-center gap-2 px-3 py-1.5 shadow-sm select-none" draggable="true" data-pick-idx="${idx}" ondragstart="pickDragStart(event)" ondragover="pickDragOver(event)" ondrop="pickDrop(event)" ondragend="pickDragEnd(event)">
+        <span class="opacity-30 cursor-grab text-[9px]">⠿</span>
+        <span class="flex-1 text-slate-700 truncate max-w-[80px]" title="${p.name}">${p.name}</span>
+        <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-1.5 py-0.5" title="最多可選數量">
+            <span class="text-[9px] text-slate-400 font-bold">x</span>
+            <input type="number" min="1" max="99" value="${p.max_qty||1}"
+                onchange="event.stopPropagation();curPicks[${idx}].max_qty=parseInt(this.value)||1;"
+                onclick="event.stopPropagation()"
+                class="w-8 text-center text-xs font-bold text-slate-700 bg-transparent outline-none border-none">
+        </div>
+        <span onclick="event.stopPropagation();curPicks.splice(${idx},1);renderTempPicks();" class="cursor-pointer text-red-300 hover:text-red-500 font-bold text-sm leading-none">✕</span>
+    </div>`).join('');
 }
 let pickDragSrcIdx=null;
 function pickDragStart(e){pickDragSrcIdx=parseInt(e.currentTarget.dataset.pickIdx);e.currentTarget.style.opacity='0.4';}
@@ -1410,7 +1421,7 @@ function pickDragOver(e){e.preventDefault();}
 function pickDrop(e){e.preventDefault();const ti=parseInt(e.currentTarget.dataset.pickIdx);if(pickDragSrcIdx===null||pickDragSrcIdx===ti)return;const moved=curPicks.splice(pickDragSrcIdx,1)[0];curPicks.splice(ti,0,moved);renderTempPicks();}
 async function editSetGroup(gid){
     currentEditingGroupId=gid;
-    const{data:g}=await _s.from('set_menu_groups').select('*,set_menu_contents(menu_items(*))').eq('id',gid).single();
+    const{data:g}=await _s.from('set_menu_groups').select('*,set_menu_contents(*,menu_items(*))').eq('id',gid).single();
     if(g){
         document.getElementById('g-name').value=g.group_name;
         document.getElementById('g-limit').value=g.selection_limit;
@@ -1422,7 +1433,7 @@ async function editSetGroup(gid){
         document.getElementById('btn-save-group').textContent='儲存更新';
         document.getElementById('btn-cancel-edit').classList.remove('hidden');
         const sorted=[...g.set_menu_contents].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
-        curPicks=sorted.map(c=>({id:c.menu_items.id,name:c.menu_items.name}));
+        curPicks=sorted.map(c=>({id:c.menu_items.id,name:c.menu_items.name,max_qty:c.max_qty||1}));
         renderTempPicks();
     }
 }
@@ -1460,16 +1471,20 @@ async function saveFullSet(){
         const{data:g}=await _s.from('set_menu_groups').insert([{parent_set_id:curItem,group_name:n,selection_limit:parseInt(l),selection_type:stype}]).select();
         if(g)gid=g[0].id;
     }
-    if(gid){await _s.from('set_menu_contents').insert(curPicks.map((p,i)=>({group_id:gid,item_id:p.id,sort_order:i})));resetSetForm();loadSavedSets();toast('分組已儲存');}
+    if(gid){await _s.from('set_menu_contents').insert(curPicks.map((p,i)=>({group_id:gid,item_id:p.id,sort_order:i,max_qty:p.max_qty||1})));resetSetForm();loadSavedSets();toast('分組已儲存');}
 }
 async function loadSavedSets(){
-    const{data}=await _s.from('set_menu_groups').select('*,set_menu_contents(menu_items(*))').eq('parent_set_id',curItem).order('sort_order',{ascending:true});
+    const{data}=await _s.from('set_menu_groups').select('*,set_menu_contents(*,menu_items(*))').eq('parent_set_id',curItem).order('sort_order',{ascending:true});
     document.getElementById('saved-groups-view').innerHTML=(data||[]).map(g=>{
         const isInclude=g.selection_type==='include';
         const badge=isInclude
             ?`<span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-600">包含</span>`
             :`<span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">任選 ${g.selection_limit}</span>`;
-        return `<div class="p-3 bg-white border rounded-xl shadow-sm cursor-grab select-none" draggable="true" data-gid="${g.id}" ondragstart="grpDragStart(event)" ondragover="grpDragOver(event)" ondrop="grpDrop(event)" ondragend="grpDragEnd(event)"><div class="flex justify-between items-center"><div class="flex-1 text-left text-xs"><span class="text-slate-300 mr-2 text-[10px]">⠿</span><b style="color:var(--pine)">${g.group_name}</b> ${badge}<p class="text-[10px] text-gray-400 line-clamp-1 mt-1">${g.set_menu_contents.map(c=>c.menu_items?.name).join('、')}</p></div><div class="flex gap-2 ml-2"><button onclick="event.stopPropagation();editSetGroup('${g.id}')" class="btn btn-ghost btn-sm" style="font-size:10px">編輯</button><button onclick="event.stopPropagation();delSetGroup('${g.id}')" class="btn btn-danger btn-sm" style="font-size:10px">刪除</button></div></div></div>`;
+        const itemSummary = g.set_menu_contents.map(c => {
+            const mq = c.max_qty||1;
+            return c.menu_items?.name + (mq>1?` x${mq}`:'');
+        }).join('、');
+        return `<div class="p-3 bg-white border rounded-xl shadow-sm cursor-grab select-none" draggable="true" data-gid="${g.id}" ondragstart="grpDragStart(event)" ondragover="grpDragOver(event)" ondrop="grpDrop(event)" ondragend="grpDragEnd(event)"><div class="flex justify-between items-center"><div class="flex-1 text-left text-xs"><span class="text-slate-300 mr-2 text-[10px]">⠿</span><b style="color:var(--pine)">${g.group_name}</b> ${badge}<p class="text-[10px] text-gray-400 line-clamp-1 mt-1">${itemSummary}</p></div><div class="flex gap-2 ml-2"><button onclick="event.stopPropagation();editSetGroup('${g.id}')" class="btn btn-ghost btn-sm" style="font-size:10px">編輯</button><button onclick="event.stopPropagation();delSetGroup('${g.id}')" class="btn btn-danger btn-sm" style="font-size:10px">刪除</button></div></div></div>`;
     }).join('');
 }
 let grpDragSrcId=null;
@@ -1568,7 +1583,7 @@ function renderReports(orders){
             const qtyM=item.name.match(/ x(\d+)/),qty=qtyM?parseInt(qtyM[1]):1;
             let cleanName=item.name.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
             const pIdx=cleanName.indexOf(' ('),inner=pIdx>-1?cleanName.slice(pIdx+2,-1):null,isSet=inner&&inner.includes('、');
-            if(isSet){const brand=cleanName.slice(0,pIdx).trim();setMenuCount[brand]=(setMenuCount[brand]||0)+qty;inner.split('、').forEach(sub=>{const s=sub.replace(/\s*\[.*?\]/g,'').trim();if(s)dishCount[s]=(dishCount[s]||0)+qty;});}
+            if(isSet){const brand=cleanName.slice(0,pIdx).trim();setMenuCount[brand]=(setMenuCount[brand]||0)+qty;inner.split('、').forEach(sub=>{const subQtyM=sub.match(/ x(\d+)/);const subQty=subQtyM?parseInt(subQtyM[1]):1;const s=sub.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();if(s)dishCount[s]=(dishCount[s]||0)+qty*subQty;});}
             else{dishCount[cleanName]=(dishCount[cleanName]||0)+qty;}
         });
     });
@@ -1619,18 +1634,30 @@ function exportFullData(){
             if(isSet){
                 const brand=clean.slice(0,pIdx).trim();
                 inner.split('、').forEach((sub,si)=>{
-                    const s=sub.replace(/\s*\[.*?\]/g,'').trim();
-                    if(s)displayRows.push({dish:brand+(si===0?'':` ‣${s}`),qty:si===0?qty:'',price:si===0?item.price:''});
+                    const subQtyM=sub.match(/ x(\d+)/);
+                    const subQty=subQtyM?parseInt(subQtyM[1]):1;
+                    const s=sub.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
+                    if(s)displayRows.push({dish:brand+(si===0?'':` ‣${s}`),qty:si===0?qty*subQty:subQty,price:si===0?item.price:''});
                 });
             } else {
                 displayRows.push({dish:clean,qty,price:item.price});
             }
         });
+        // 訂位日期時間（台灣時間）
+        let bkDate='', bkTime='';
+        if(o.booking_date){
+            const utc=new Date(o.booking_date);
+            const tw=new Date(utc.getTime()+8*60*60*1000);
+            bkDate=`${tw.getUTCFullYear()}-${String(tw.getUTCMonth()+1).padStart(2,'0')}-${String(tw.getUTCDate()).padStart(2,'0')}`;
+            bkTime=`${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`;
+        }
         displayRows.forEach((row,i)=>{
             tableRows.push({
                 '桌號':i===0?(o.table_no||'—'):'',
                 '姓名':i===0?(o.customer_name||'—'):'',
                 '手機':i===0?(o.phone||'—'):'',
+                '訂位日期':i===0?bkDate:'',
+                '訂位時間':i===0?bkTime:'',
                 '大人':i===0?(o.adult_count||0):'',
                 '小孩':i===0?(o.kid_count||0):'',
                 '兒童':i===0?(o.child_count||0):'',
@@ -1639,14 +1666,14 @@ function exportFullData(){
                 '數量':row.qty,
                 '金額':row.price,
                 '訂單合計':i===0?(o.total_price||0):'',
-                '時間':i===0?timeStr:'',
+                '下單時間':i===0?timeStr:'',
                 '備註':i===0?(o.note||''):''
             });
         });
-        tableRows.push({'桌號':'','姓名':'','手機':'','大人':'','小孩':'','兒童':'','活動':'','餐點':'','數量':'','金額':'','訂單合計':'','時間':'','備註':''});
+        tableRows.push({'桌號':'','姓名':'','手機':'','訂位日期':'','訂位時間':'','大人':'','小孩':'','兒童':'','活動':'','餐點':'','數量':'','金額':'','訂單合計':'','下單時間':'','備註':''});
     });
     const wsT=XLSX.utils.json_to_sheet(tableRows);
-    wsT['!cols']=[{wch:8},{wch:12},{wch:14},{wch:6},{wch:6},{wch:6},{wch:10},{wch:30},{wch:6},{wch:8},{wch:10},{wch:16},{wch:20}];
+    wsT['!cols']=[{wch:8},{wch:12},{wch:14},{wch:12},{wch:10},{wch:6},{wch:6},{wch:6},{wch:10},{wch:30},{wch:6},{wch:8},{wch:10},{wch:16},{wch:20}];
     XLSX.utils.book_append_sheet(wb,wsT,'🪑 逐桌明細');
 
     // ── 摘要 ──
@@ -1673,9 +1700,18 @@ function exportFullData(){
         (o.order_content||[]).forEach((item,li)=>{
             const qtyM=item.name.match(/ x(\d+)/);
             const qty=qtyM?parseInt(qtyM[1]):1;
+            // 訂位日期時間
+            let bkD2='',bkT2='';
+            if(li===0&&o.booking_date){
+                const u=new Date(o.booking_date),tw2=new Date(u.getTime()+8*60*60*1000);
+                bkD2=`${tw2.getUTCFullYear()}-${String(tw2.getUTCMonth()+1).padStart(2,'0')}-${String(tw2.getUTCDate()).padStart(2,'0')}`;
+                bkT2=`${String(tw2.getUTCHours()).padStart(2,'0')}:${String(tw2.getUTCMinutes()).padStart(2,'0')}`;
+            }
             rows.push({
                 序號:li===0?idx+1:'',
-                時間:li===0?new Date(o.created_at).toLocaleString('zh-TW'):'',
+                下單時間:li===0?new Date(o.created_at).toLocaleString('zh-TW'):'',
+                訂位日期:li===0?bkD2:'',
+                訂位時間:li===0?bkT2:'',
                 姓名:li===0?(o.customer_name||''):'',
                 電話:li===0?(o.phone||''):'',
                 桌號:li===0?(o.table_no||''):'',
