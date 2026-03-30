@@ -433,14 +433,23 @@
         </div>
         <!-- 展開區 -->
         <div id="filter-expand" class="hidden px-3 pb-3 pt-2 space-y-2 bg-slate-50">
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                <div id="custom-date-box" class="hidden">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 items-end">
+                <div id="custom-date-box" class="hidden col-span-2 md:col-span-1">
                     <label class="filter-label">自選日期</label>
-                    <input type="date" id="filter-date" class="filter-input">
+                    <input type="date" id="filter-date" class="filter-input" onchange="loadOrders()">
+                </div>
+                <!-- 日期區間（自選以外的模式也可指定時間） -->
+                <div id="filter-time-range-box">
+                    <label class="filter-label">開始時間</label>
+                    <input type="time" id="filter-time-start" value="00:00" class="filter-input" onchange="loadOrders()">
+                </div>
+                <div>
+                    <label class="filter-label">結束時間</label>
+                    <input type="time" id="filter-time-end" value="23:59" class="filter-input" onchange="loadOrders()">
                 </div>
                 <div>
                     <label class="filter-label">活動代號</label>
-                    <select id="filter-campaign" class="filter-select"><option value="all">全部活動</option></select>
+                    <select id="filter-campaign" class="filter-select" onchange="loadOrders()"><option value="all">全部活動</option></select>
                 </div>
             </div>
             <div class="flex items-center gap-3 pt-2 border-t border-slate-200">
@@ -994,7 +1003,9 @@ async function switchTab(t) {
     if (t==='announce')   loadAnnouncements();
 }
 
-function setQuickDate(val) { document.getElementById('custom-date-box').classList.toggle('hidden', val!=='custom'); }
+function setQuickDate(val) {
+    document.getElementById('custom-date-box').classList.toggle('hidden', val!=='custom');
+}
 
 async function loadCampaignOptions() {
     const {data} = await _s.from('campaign_settings').select('*');
@@ -1023,25 +1034,29 @@ async function loadOrders() {
 
     if (dateType==='booking') {
         // 訂位日期篩選（帶 +08:00 時區）
+        const ts = document.getElementById('filter-time-start')?.value || '00:00';
+        const te = document.getElementById('filter-time-end')?.value || '23:59';
         if (preset==='today') {
-            q=q.gte('booking_date',`${twToday}T00:00:00+08:00`).lte('booking_date',`${twToday}T23:59:59+08:00`);
+            q=q.gte('booking_date',`${twToday}T${ts}:00+08:00`).lte('booking_date',`${twToday}T${te}:59+08:00`);
         } else if (preset==='week') {
-            q=q.gte('booking_date',`${twWeekAgo}T00:00:00+08:00`);
+            q=q.gte('booking_date',`${twWeekAgo}T${ts}:00+08:00`);
         } else if (preset==='custom') {
             const d=document.getElementById('filter-date').value;
-            if(d) q=q.gte('booking_date',`${d}T00:00:00+08:00`).lte('booking_date',`${d}T23:59:59+08:00`);
+            if(d) q=q.gte('booking_date',`${d}T${ts}:00+08:00`).lte('booking_date',`${d}T${te}:59+08:00`);
         }
         // 訂位日期「不限」時不加日期條件（顯示全部，含未填訂位日期者）
     } else {
         // 下單日期篩選（UTC）
+        const ts = document.getElementById('filter-time-start')?.value || '00:00';
+        const te = document.getElementById('filter-time-end')?.value || '23:59';
         if (preset==='today') {
             const d=new Date().toISOString().split('T')[0];
-            q=q.gte('created_at',`${d}T00:00:00`).lte('created_at',`${d}T23:59:59`);
+            q=q.gte('created_at',`${d}T${ts}:00`).lte('created_at',`${d}T${te}:59`);
         } else if (preset==='week') {
             q=q.gte('created_at',new Date(Date.now()-7*864e5).toISOString());
         } else if (preset==='custom') {
             const d=document.getElementById('filter-date').value;
-            if(d) q=q.gte('created_at',`${d}T00:00:00`).lte('created_at',`${d}T23:59:59`);
+            if(d) q=q.gte('created_at',`${d}T${ts}:00`).lte('created_at',`${d}T${te}:59`);
         }
     }
     const {data}=await q;
@@ -1229,8 +1244,12 @@ async function delOrder(id){
 function resetFilters(){
     document.getElementById('filter-search').value='';
     document.getElementById('filter-date-preset').value='all';
+    document.getElementById('filter-date-type').value='created';
     document.getElementById('filter-status').value='all';
     document.getElementById('filter-campaign').value='all';
+    document.getElementById('filter-time-start').value='00:00';
+    document.getElementById('filter-time-end').value='23:59';
+    document.getElementById('custom-date-box').classList.add('hidden');
     loadOrders();
 }
 function exportXls(){
