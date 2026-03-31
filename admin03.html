@@ -1387,14 +1387,24 @@ function openEditPop(itemId,index=-1){
     if(curEditItem.item_flavor_relation?.length>0){container.innerHTML+=curEditItem.item_flavor_relation.map(r=>`<div><p class="text-[10px] text-slate-400 mb-2 uppercase font-bold">${r.flavor_groups.name}</p><div class="flex flex-wrap gap-2">${r.flavor_groups.flavor_options.map(o=>{const isM=prevFlvs.includes(o.option_name);if(isM)curEditPopSels.flavors[r.flavor_groups.id]=o.option_name;return`<div onclick="setEditPopFlv(this,'${r.flavor_groups.id}','${o.option_name}')" class="px-4 py-1.5 border rounded-full text-xs cursor-pointer transition ${isM?'flavor-selected':'bg-slate-50'}">${o.option_name}</div>`;}).join('')}</div></div>`).join('');}
     if(curEditItem.is_set_menu&&curEditItem.set_menu_groups){
         const sortedGroups=[...curEditItem.set_menu_groups].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
-        // 用指標逐一消費 prevNames，每個分組只取自己應有的數量，避免同名跨分組誤判
-        let nameIdx=0;
+        // 用動態比對逐一分配 prevNames 給各分組，避免同名跨分組誤判
         container.innerHTML+=sortedGroups.map(g=>{
             curEditPopSels.groups[g.id]=[];
             const sortedContents=[...g.set_menu_contents].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
             const limit=g.selection_limit;
-            const groupPrev=prevNames.slice(nameIdx, nameIdx+limit);
-            nameIdx+=limit;
+            // 先找出這個分組在 prevNames 裡實際有幾個品項屬於這組
+            const groupItemNames=new Set(sortedContents.map(c=>c.menu_items.name));
+            // 從 nameIdx 開始，收集屬於這個分組的名稱，直到找完或超過 limit
+            const groupPrev=[];
+            let scan=0;
+            while(scan<prevNames.length && groupPrev.length<limit){
+                if(groupItemNames.has(prevNames[scan])){
+                    groupPrev.push(prevNames[scan]);
+                    prevNames.splice(scan,1); // 從原陣列移除，避免後面重用
+                } else {
+                    scan++;
+                }
+            }
             return`<div style="margin-bottom:16px"><p class="text-[10px] font-bold mb-2 uppercase" style="color:var(--pine)">${g.group_name} <span style="color:var(--gold)">任選${limit}</span></p><div class="grid grid-cols-2 gap-2">${sortedContents.map(c=>{
                 // 每個分組用自己的 groupPrev 比對，且比對後從中移除避免重複
                 const idx=groupPrev.indexOf(c.menu_items.name);
