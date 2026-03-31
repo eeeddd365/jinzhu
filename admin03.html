@@ -1389,15 +1389,6 @@ function openEditPop(itemId,index=-1){
     document.getElementById('edit-pop-title').textContent=curEditItem.name;
     document.getElementById('edit-flavor-popup').classList.remove('hidden');
 }
-    else{curEditItem=allMenuItems.find(i=>i.id===itemId);}
-    if(!curEditItem)return;
-    curEditPopSels={flavors:{},groups:{}};
-    const container=document.getElementById('edit-pop-content');container.innerHTML='';
-    if(curEditItem.item_flavor_relation?.length>0){container.innerHTML+=curEditItem.item_flavor_relation.map(r=>`<div><p class="text-[10px] text-slate-400 mb-2 uppercase font-bold">${r.flavor_groups.name}</p><div class="flex flex-wrap gap-2">${r.flavor_groups.flavor_options.map(o=>{const isM=prevFlvs.includes(o.option_name);if(isM)curEditPopSels.flavors[r.flavor_groups.id]=o.option_name;return`<div onclick="setEditPopFlv(this,'${r.flavor_groups.id}','${o.option_name}')" class="px-4 py-1.5 border rounded-full text-xs cursor-pointer transition ${isM?'flavor-selected':'bg-slate-50'}">${o.option_name}</div>`;}).join('')}</div></div>`).join('');}
-    if(curEditItem.is_set_menu&&curEditItem.set_menu_groups){container.innerHTML+=curEditItem.set_menu_groups.map(g=>{curEditPopSels.groups[g.id]=[];return`<div><p class="text-[10px] font-bold mb-2 uppercase" style="color:var(--pine)">${g.group_name}</p><div class="grid grid-cols-2 gap-2">${g.set_menu_contents.map(c=>{const isM=prevNames.includes(c.menu_items.name);if(isM)curEditPopSels.groups[g.id].push({name:c.menu_items.name});return`<div onclick="setEditPopGroup(this,'${g.id}','${c.menu_items.name}',${g.selection_limit})" class="p-3 border rounded-xl text-[11px] cursor-pointer text-center font-bold ${isM?'opt-selected':'bg-slate-50'}">${c.menu_items.name}</div>`;}).join('')}</div></div>`;}).join('');}
-    document.getElementById('edit-pop-title').textContent=curEditItem.name;
-    document.getElementById('edit-flavor-popup').classList.remove('hidden');
-}
 function setEditPopFlv(el,gid,name){Array.from(el.parentElement.children).forEach(c=>{c.classList.remove('flavor-selected');c.classList.add('bg-slate-50');});el.classList.add('flavor-selected');el.classList.remove('bg-slate-50');curEditPopSels.flavors[gid]=name;}
 function setEditPopGroup(el,gid,name,limit){const sibs=Array.from(el.parentElement.children);if(limit===1){sibs.forEach(s=>s.classList.remove('opt-selected'));el.classList.add('opt-selected');curEditPopSels.groups[gid]=[{name}];}else{let s=curEditPopSels.groups[gid];if(s.some(x=>x.name===name)){s=s.filter(x=>x.name!==name);el.classList.remove('opt-selected');}else if(s.length<limit){s.push({name});el.classList.add('opt-selected');}curEditPopSels.groups[gid]=s;}}
 function confirmEditPop(){
