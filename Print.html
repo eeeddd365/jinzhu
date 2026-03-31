@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>真珠 · 列印</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+    --pine:#004d40; --gold:#b89150; --ink:#1e293b; --stone:#64748b; --border:#e2e8f0;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Noto Sans TC',sans-serif; background:#f8fafc; color:var(--ink); font-size:14px; -webkit-tap-highlight-color:transparent; }
+
+/* ── HEADER ── */
+.top-bar {
+    background:var(--pine); color:white;
+    padding:14px 16px 10px;
+    display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:100;
+}
+.top-bar .logo { font-size:1.1rem; font-weight:900; letter-spacing:.15em; }
+.top-bar .sub  { font-size:10px; opacity:.55; letter-spacing:.15em; margin-top:1px; }
+
+/* ── FILTER CARD ── */
+.filter-card {
+    background:white; margin:12px; border-radius:14px;
+    border:1px solid var(--border); padding:14px 16px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.04);
+}
+.row { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
+.field { display:flex; flex-direction:column; gap:4px; flex:1; min-width:120px; }
+.label { font-size:9px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--stone); }
+.field input[type=date], .field input[type=time] {
+    border:1.5px solid var(--border); border-radius:8px;
+    padding:7px 10px; font-size:12px; color:var(--ink);
+    background:#f8fafc; outline:none; width:100%;
+    font-family:inherit;
+}
+.field input:focus { border-color:var(--pine); background:white; }
+
+.tabs { display:flex; gap:6px; margin:12px 12px 0; }
+.tab {
+    flex:1; padding:10px 6px; border-radius:10px;
+    border:1.5px solid var(--border); background:white;
+    font-size:12px; font-weight:700; color:var(--stone);
+    cursor:pointer; text-align:center; transition:all .2s;
+}
+.tab.active { background:var(--pine); color:white; border-color:var(--pine); }
+
+.btn-row { display:flex; gap:8px; margin:12px 12px 0; }
+.btn {
+    flex:1; padding:13px; border-radius:12px; border:none;
+    font-size:13px; font-weight:700; cursor:pointer;
+    font-family:inherit; transition:all .2s; letter-spacing:.05em;
+}
+.btn-query  { background:var(--gold); color:white; }
+.btn-print  { background:var(--pine); color:white; }
+.btn-query:active, .btn-print:active { opacity:.85; transform:scale(.98); }
+
+/* ── RESULT ── */
+.result-wrap { margin:12px; }
+.empty-state {
+    text-align:center; padding:48px 24px;
+    color:var(--stone); font-size:13px; font-weight:700;
+    background:white; border-radius:14px; border:1px solid var(--border);
+}
+.empty-icon { font-size:2rem; opacity:.2; margin-bottom:12px; }
+
+/* ── 備料總表 ── */
+.section-head {
+    font-size:10px; font-weight:700; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--stone); margin-bottom:8px; padding:0 2px;
+}
+.dish-table { width:100%; border-collapse:collapse; background:white;
+    border-radius:12px; overflow:hidden; border:1px solid var(--border); }
+.dish-table th { background:#f8fafc; font-size:10px; font-weight:700;
+    letter-spacing:.15em; text-transform:uppercase; color:var(--stone);
+    padding:8px 12px; text-align:left; border-bottom:1px solid var(--border); }
+.dish-table td { padding:8px 12px; font-size:13px; border-bottom:1px solid #f1f5f9; }
+.dish-table tr:last-child td { border-bottom:none; }
+.dish-table .qty { font-weight:900; color:var(--pine); font-size:15px; text-align:right; }
+
+/* ── 桌號明細 ── */
+.order-card {
+    background:white; border-radius:12px; border:1px solid var(--border);
+    margin-bottom:10px; overflow:hidden;
+}
+.order-head {
+    background:var(--pine); color:white;
+    padding:10px 14px;
+    display:flex; justify-content:space-between; align-items:center;
+}
+.order-name { font-size:14px; font-weight:900; }
+.order-meta { font-size:10px; opacity:.7; margin-top:2px; }
+.order-time { font-size:11px; opacity:.8; text-align:right; }
+.order-items { padding:10px 14px; }
+.item-row {
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:4px 0; border-bottom:1px solid #f1f5f9; font-size:12px;
+}
+.item-row:last-child { border-bottom:none; }
+.item-name { flex:1; color:var(--ink); font-weight:500; }
+.item-qty { font-weight:900; color:var(--pine); margin:0 8px; }
+.item-price { color:var(--stone); }
+.order-total {
+    padding:8px 14px; background:#f8fafc;
+    display:flex; justify-content:space-between;
+    font-size:12px; font-weight:700; border-top:1px solid var(--border);
+}
+
+/* ── KPI ── */
+.kpi-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+.kpi { background:white; border-radius:10px; border:1px solid var(--border);
+    padding:10px 12px; text-align:center; }
+.kpi-val { font-size:1.4rem; font-weight:900; color:var(--pine); line-height:1; }
+.kpi-lbl { font-size:9px; color:var(--stone); font-weight:700; letter-spacing:.15em;
+    text-transform:uppercase; margin-top:3px; }
+
+/* ══ PRINT STYLES ══ */
+@media print {
+    @page { size:58mm auto; margin:2mm 3mm; }
+    body { background:white; font-size:11px; }
+    .no-print { display:none !important; }
+    .top-bar { display:none; }
+    .filter-card,.tabs,.btn-row { display:none; }
+    .result-wrap { margin:0; }
+
+    /* 備料總表 */
+    .print-header { text-align:center; margin-bottom:6px; }
+    .print-header .shop { font-size:13px; font-weight:900; }
+    .print-header .period { font-size:9px; color:#555; margin-top:2px; }
+    .print-divider { border:none; border-top:1px dashed #aaa; margin:5px 0; }
+    .dish-table { border:none; border-radius:0; }
+    .dish-table th { font-size:9px; padding:4px 6px; }
+    .dish-table td { font-size:11px; padding:4px 6px; }
+    .dish-table .qty { font-size:13px; }
+
+    /* 桌號明細 */
+    .order-card { border:none; border-radius:0; margin-bottom:0; page-break-after:always; }
+    .order-card:last-child { page-break-after:avoid; }
+    .order-head { background:none !important; color:#000 !important;
+        border-bottom:1px solid #000; padding:4px 0; }
+    .order-name { font-size:12px; }
+    .order-meta { font-size:9px; }
+    .order-time { font-size:9px; }
+    .order-items { padding:4px 0; }
+    .item-row { font-size:10px; padding:2px 0; }
+    .order-total { padding:4px 0; font-size:10px; background:none; border-top:1px dashed #aaa; }
+    .kpi-row { display:none; }
+    .section-head { font-size:9px; }
+    .empty-state { display:none; }
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar no-print">
+    <div>
+        <div class="logo">真珠 · 列印</div>
+        <div class="sub">Jin Zhu · Print Station</div>
+    </div>
+</div>
+
+<!-- 篩選 -->
+<div class="filter-card no-print">
+    <div class="row">
+        <div class="field">
+            <span class="label">開始日期</span>
+            <input type="date" id="date-start">
+        </div>
+        <div class="field">
+            <span class="label">結束日期</span>
+            <input type="date" id="date-end">
+        </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+        <div class="field">
+            <span class="label">開始時間</span>
+            <input type="time" id="time-start" value="00:00">
+        </div>
+        <div class="field">
+            <span class="label">結束時間</span>
+            <input type="time" id="time-end" value="23:59">
+        </div>
+    </div>
+</div>
+
+<!-- 模式切換 -->
+<div class="tabs no-print">
+    <div class="tab active" id="tab-dish" onclick="switchTab('dish')">🍳 備料總表</div>
+    <div class="tab" id="tab-table" onclick="switchTab('table')">🪑 桌號明細</div>
+</div>
+
+<!-- 按鈕 -->
+<div class="btn-row no-print">
+    <button class="btn btn-query" onclick="doQuery()">▶ 查詢</button>
+    <button class="btn btn-print" onclick="doPrint()">🖨 列印</button>
+</div>
+
+<!-- 結果 -->
+<div class="result-wrap" id="result">
+    <div class="empty-state">
+        <div class="empty-icon">🖨</div>
+        選擇日期區間後點「查詢」
+    </div>
+</div>
+
+<script>
+const SB_URL='https://pydlnqriztpzgxbjuohm.supabase.co';
+const SB_KEY='sb_publishable_ISKUWOXUR9A-1y81xCOUXg_8-zNle3v';
+const _s=supabase.createClient(SB_URL,SB_KEY);
+
+let curMode='dish', curOrders=[], curPeriod='';
+
+// 預設今日
+(function(){
+    const d=new Date().toISOString().split('T')[0];
+    document.getElementById('date-start').value=d;
+    document.getElementById('date-end').value=d;
+})();
+
+function switchTab(m){
+    curMode=m;
+    document.getElementById('tab-dish').classList.toggle('active',m==='dish');
+    document.getElementById('tab-table').classList.toggle('active',m==='table');
+    if(curOrders.length) render();
+}
+
+async function doQuery(){
+    const ds=document.getElementById('date-start').value;
+    const de=document.getElementById('date-end').value;
+    const ts=document.getElementById('time-start').value||'00:00';
+    const te=document.getElementById('time-end').value||'23:59';
+    if(!ds||!de){alert('請選擇日期區間');return;}
+
+    const btn=document.querySelector('.btn-query');
+    btn.textContent='查詢中…'; btn.disabled=true;
+
+    const {data,error}=await _s.from('orders').select('*')
+        .gte('created_at',`${ds}T${ts}:00`)
+        .lte('created_at',`${de}T${te}:59`)
+        .order('booking_date',{ascending:true});
+
+    btn.textContent='▶ 查詢'; btn.disabled=false;
+    if(error){alert('查詢失敗：'+error.message);return;}
+
+    curOrders=data||[];
+    curPeriod=ds===de?ds:`${ds} ～ ${de}`;
+    render();
+}
+
+function render(){
+    if(!curOrders.length){
+        document.getElementById('result').innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div>此區間沒有訂單</div>`;
+        return;
+    }
+    if(curMode==='dish') renderDish();
+    else renderTable();
+}
+
+/* ── 備料總表 ── */
+function renderDish(){
+    const dishCount={}, setMenuCount={};
+    let totalAdult=0, totalKid=0, totalChild=0;
+    curOrders.forEach(o=>{
+        totalAdult+=(o.adult_count||0);
+        totalKid+=(o.kid_count||0);
+        totalChild+=(o.child_count||0);
+        (o.order_content||[]).forEach(item=>{
+            const qM=item.name.match(/ x(\d+)/), qty=qM?parseInt(qM[1]):1;
+            let clean=item.name.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
+            const pIdx=clean.indexOf(' ('), inner=pIdx>-1?clean.slice(pIdx+2,-1):null;
+            const isSet=inner&&inner.includes('、');
+            if(isSet){
+                const brand=clean.slice(0,pIdx).trim();
+                setMenuCount[brand]=(setMenuCount[brand]||0)+qty;
+                inner.split('、').forEach(sub=>{
+                    const sM=sub.match(/ x(\d+)/), sq=sM?parseInt(sM[1]):1;
+                    const s=sub.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
+                    if(s) dishCount[s]=(dishCount[s]||0)+qty*sq;
+                });
+            } else {
+                dishCount[clean]=(dishCount[clean]||0)+qty;
+            }
+        });
+    });
+    const sorted=Object.entries(dishCount).sort((a,b)=>b[1]-a[1]);
+    const sets=Object.entries(setMenuCount).sort((a,b)=>b[1]-a[1]);
+
+    let html=`
+    <div class="print-header">
+        <div class="shop">真珠 文心店</div>
+        <div class="period">備料總表 · ${curPeriod}</div>
+    </div>
+    <hr class="print-divider">
+    <div class="kpi-row">
+        <div class="kpi"><div class="kpi-val">${curOrders.length}</div><div class="kpi-lbl">訂單</div></div>
+        <div class="kpi"><div class="kpi-val">${totalAdult+totalKid+totalChild}</div><div class="kpi-lbl">總人數</div></div>
+        <div class="kpi"><div class="kpi-val">${Object.values(setMenuCount).reduce((a,b)=>a+b,0)}</div><div class="kpi-lbl">套餐</div></div>
+    </div>`;
+
+    if(sorted.length){
+        html+=`<div class="section-head">全品項備料</div>
+        <table class="dish-table">
+            <thead><tr><th>品名</th><th style="text-align:right">數量</th></tr></thead>
+            <tbody>`;
+        sorted.forEach(([name,count])=>{
+            html+=`<tr><td>${name}</td><td class="qty">${count}</td></tr>`;
+        });
+        html+=`</tbody></table>`;
+    }
+
+    if(sets.length){
+        html+=`<div class="section-head" style="margin-top:12px">套餐明細</div>
+        <table class="dish-table">
+            <thead><tr><th>套餐名稱</th><th style="text-align:right">組數</th></tr></thead>
+            <tbody>`;
+        sets.forEach(([name,count])=>{
+            html+=`<tr><td>${name}</td><td class="qty">${count}</td></tr>`;
+        });
+        html+=`</tbody></table>`;
+    }
+
+    document.getElementById('result').innerHTML=html;
+}
+
+/* ── 桌號明細 ── */
+function renderTable(){
+    const twStr=(iso)=>{
+        if(!iso) return '—';
+        const tw=new Date(new Date(iso).getTime()+8*3600000);
+        return `${String(tw.getUTCMonth()+1).padStart(2,'0')}/${String(tw.getUTCDate()).padStart(2,'0')} ${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`;
+    };
+
+    const sorted=[...curOrders].sort((a,b)=>{
+        const ta=a.booking_date||a.created_at;
+        const tb=b.booking_date||b.created_at;
+        return ta>tb?1:ta<tb?-1:0;
+    });
+
+    let html=`
+    <div class="print-header">
+        <div class="shop">真珠 文心店</div>
+        <div class="period">桌號明細 · ${curPeriod}</div>
+    </div>
+    <hr class="print-divider">
+    <div class="kpi-row">
+        <div class="kpi"><div class="kpi-val">${sorted.length}</div><div class="kpi-lbl">訂單</div></div>
+        <div class="kpi"><div class="kpi-val">${sorted.filter(o=>o.adult_count||o.kid_count||o.child_count).reduce((s,o)=>s+(o.adult_count||0)+(o.kid_count||0)+(o.child_count||0),0)}</div><div class="kpi-lbl">總人數</div></div>
+        <div class="kpi"><div class="kpi-val">$${sorted.reduce((s,o)=>s+(o.total_price||0),0).toLocaleString()}</div><div class="kpi-lbl">合計</div></div>
+    </div>`;
+
+    sorted.forEach(o=>{
+        const pax=[
+            o.adult_count?`大人${o.adult_count}`:'',
+            o.kid_count?`小孩${o.kid_count}`:'',
+            o.child_count?`兒童${o.child_count}`:''
+        ].filter(Boolean).join(' ');
+
+        html+=`<div class="order-card">
+        <div class="order-head">
+            <div>
+                <div class="order-name">${o.customer_name||'—'}${o.table_no?` · 桌${o.table_no}`:''}</div>
+                <div class="order-meta">${o.phone||'—'}${pax?' · '+pax:''}</div>
+            </div>
+            <div class="order-time">
+                ${o.booking_date?`訂位<br>${twStr(o.booking_date)}`:`下單<br>${twStr(o.created_at)}`}
+            </div>
+        </div>
+        <div class="order-items">`;
+
+        (o.order_content||[]).forEach(item=>{
+            const qM=item.name.match(/ x(\d+)/), qty=qM?parseInt(qM[1]):1;
+            html+=`<div class="item-row">
+                <span class="item-name">${item.name}</span>
+                <span class="item-qty">×${qty}</span>
+                <span class="item-price">$${item.price}</span>
+            </div>`;
+        });
+
+        if(o.note){
+            html+=`<div style="font-size:11px;color:var(--stone);margin-top:4px;padding-top:4px;border-top:1px dashed #e2e8f0">備註：${o.note}</div>`;
+        }
+
+        html+=`</div>
+        <div class="order-total">
+            <span>合計</span>
+            <span style="color:var(--pine)">$${o.total_price||0}</span>
+        </div>
+        </div>`;
+    });
+
+    document.getElementById('result').innerHTML=html;
+}
+
+function doPrint(){
+    if(!curOrders.length){alert('請先查詢訂單');return;}
+    window.print();
+}
+</script>
+</body>
+</html>
