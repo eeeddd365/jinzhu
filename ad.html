@@ -401,21 +401,20 @@
 
 <!-- 訂單監控 -->
 <section id="sec-orders" class="space-y-6">
-    <div class="flex justify-between items-center">
-        <h2 class="section-title">訂單監控</h2>
-        <button onclick="exportXls()" class="btn btn-primary">📊 導出 Excel</button>
-    </div>
-
-    <!-- 訂單篩選列（摺疊式） -->
+    <!-- 訂單篩選列 -->
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden mb-5">
         <!-- 常駐工具列 -->
-        <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-100">
-            <input type="text" id="filter-search" class="filter-input flex-1" placeholder="搜尋顧客姓名或電話…" style="padding:5px 10px">
+        <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-100 flex-wrap">
+            <input type="text" id="filter-search" class="filter-input flex-1 min-w-[140px]" placeholder="搜尋顧客姓名或電話…" style="padding:5px 10px">
+            <select id="filter-date-type" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700">
+                <option value="created">下單日期</option>
+                <option value="booking">訂位日期</option>
+            </select>
             <select id="filter-date-preset" onchange="setQuickDate(this.value);loadOrders()" class="filter-select" style="width:auto;padding:5px 8px">
                 <option value="all">不限</option>
                 <option value="today">今日</option>
                 <option value="week">本週</option>
-                <option value="custom">自選</option>
+                <option value="range">區間</option>
             </select>
             <select id="filter-status" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px">
                 <option value="all">全部</option>
@@ -423,20 +422,36 @@
                 <option value="synced">已完成</option>
             </select>
             <button onclick="loadOrders()" class="btn btn-primary btn-sm">篩選</button>
+            <button onclick="exportXls()" class="btn btn-ghost btn-sm">📊 Excel</button>
             <button onclick="toggleOrderFilter()" id="filter-toggle-btn" class="btn btn-ghost btn-sm px-2" title="更多篩選">
                 <svg id="filter-chevron" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
             </button>
         </div>
         <!-- 展開區 -->
         <div id="filter-expand" class="hidden px-3 pb-3 pt-2 space-y-2 bg-slate-50">
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                <div id="custom-date-box" class="hidden">
-                    <label class="filter-label">自選日期</label>
-                    <input type="date" id="filter-date" class="filter-input">
+            <!-- 日期區間（選「區間」時顯示） -->
+            <div id="date-range-box" class="hidden grid grid-cols-2 gap-2">
+                <div>
+                    <label class="filter-label">開始日期</label>
+                    <input type="date" id="filter-date-start" class="filter-input" onchange="loadOrders()">
+                </div>
+                <div>
+                    <label class="filter-label">結束日期</label>
+                    <input type="date" id="filter-date-end" class="filter-input" onchange="loadOrders()">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 items-end">
+                <div>
+                    <label class="filter-label">開始時間</label>
+                    <input type="time" id="filter-time-start" value="00:00" class="filter-input" onchange="loadOrders()">
+                </div>
+                <div>
+                    <label class="filter-label">結束時間</label>
+                    <input type="time" id="filter-time-end" value="23:59" class="filter-input" onchange="loadOrders()">
                 </div>
                 <div>
                     <label class="filter-label">活動代號</label>
-                    <select id="filter-campaign" class="filter-select"><option value="all">全部活動</option></select>
+                    <select id="filter-campaign" class="filter-select" onchange="loadOrders()"><option value="all">全部活動</option></select>
                 </div>
             </div>
             <div class="flex items-center gap-3 pt-2 border-t border-slate-200">
@@ -456,7 +471,7 @@
 
 <!-- 活動代號 -->
 <section id="sec-campaigns" class="hidden space-y-6">
-    <h2 class="section-title">活動代號管理</h2>
+    
     <div class="bg-white p-6 rounded-2xl border max-w-md shadow-sm">
         <div class="flex gap-2 mb-6">
             <input id="new-campaign" class="filter-input flex-1" placeholder="新代號（如：父親節）">
@@ -468,7 +483,7 @@
 
 <!-- 分類管理 -->
 <section id="sec-categories" class="hidden space-y-6">
-    <h2 class="section-title">分類管理</h2>
+    
     <div class="bg-white p-6 rounded-2xl border max-w-2xl shadow-sm">
         <div class="flex gap-2 mb-6">
             <input id="new-cat" class="filter-input flex-1" placeholder="新分類名稱">
@@ -484,7 +499,7 @@
 <!-- 菜單編輯 -->
 <section id="sec-menu" class="hidden space-y-6 text-left">
     <div class="flex justify-between items-center">
-        <h2 class="section-title">菜單編輯</h2>
+        
         <button onclick="openMenuModal(false)" class="btn btn-primary">+ 新增餐點</button>
     </div>
     <div class="filter-bar flex gap-4">
@@ -497,7 +512,7 @@
 <!-- 口味定義 -->
 <section id="sec-flavors" class="hidden space-y-6">
     <div class="flex justify-between items-center">
-        <h2 class="section-title">口味定義</h2>
+        
         <button onclick="addFlvGroup()" class="btn btn-gold">+ 新增選項組</button>
     </div>
     <div id="flv-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
@@ -505,7 +520,7 @@
 
 <!-- 系統設定 -->
 <section id="sec-settings" class="hidden space-y-6">
-    <h2 class="section-title">系統設定</h2>
+    
     <div class="bg-white p-8 rounded-2xl border shadow-sm max-w-xl space-y-6">
         <div>
             <p class="text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest">Logo 上傳（推薦 SVG 或去背 PNG）</p>
@@ -527,7 +542,7 @@
 
 <!-- 網址配置 -->
 <section id="sec-eventurl" class="hidden space-y-6">
-    <h2 class="section-title">活動網址配置</h2>
+    
     <div class="bg-white p-8 rounded-2xl border shadow-sm max-w-3xl space-y-8">
         <div>
             <label class="filter-label">1. 選擇活動代號</label>
@@ -556,9 +571,13 @@
             <span id="report-period-display" class="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0" style="background:rgba(184,145,80,.2);color:#d4a85a">尚未查詢</span>
             <div class="flex gap-1 ml-auto flex-shrink-0">
                 <div class="flex gap-1 mr-1">
-                    <button class="rpt-preset-btn text-[10px] px-2 py-1" onclick="rptPreset('today');fetchData()">今日</button>
-                    <button class="rpt-preset-btn text-[10px] px-2 py-1" onclick="rptPreset('week');fetchData()">本週</button>
-                    <button class="rpt-preset-btn text-[10px] px-2 py-1" onclick="rptPreset('month');fetchData()">本月</button>
+                    <select id="report-date-type-quick" onchange="document.getElementById('report-date-type').value=this.value" class="rpt-f-input text-[10px] px-2 py-1" style="min-width:80px">
+                        <option value="created">下單日</option>
+                        <option value="booking">訂位日</option>
+                    </select>
+                    <button class="rpt-preset-btn text-[10px] px-2 py-1" onclick="syncReportDateType();rptPreset('today');fetchData()">今日</button>
+                    <button class="rpt-preset-btn text-[10px] px-2 py-1" onclick="syncReportDateType();rptPreset('week');fetchData()">本週</button>
+                    <button class="rpt-preset-btn text-[10px] px-2 py-1" onclick="syncReportDateType();rptPreset('month');fetchData()">本月</button>
                 </div>
                 <button onclick="fetchData()" class="btn btn-sm" style="background:var(--gold);color:white;padding:4px 12px">
                     <span id="r-run-lbl">▶ 查詢</span>
@@ -573,6 +592,13 @@
         <!-- 展開區 -->
         <div id="report-filter-expand" class="hidden border-t border-white/10 px-4 py-3">
             <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end">
+                <div>
+                    <span class="block text-[9px] font-bold tracking-widest uppercase mb-1" style="color:rgba(255,255,255,.45)">日期類型</span>
+                    <select id="report-date-type" class="rpt-f-input w-full">
+                        <option value="created">下單日期</option>
+                        <option value="booking">訂位日期</option>
+                    </select>
+                </div>
                 <div>
                     <span class="block text-[9px] font-bold tracking-widest uppercase mb-1" style="color:rgba(255,255,255,.45)">開始日期</span>
                     <input type="date" id="r-s-date" class="rpt-f-input w-full">
@@ -589,6 +615,8 @@
                     <span class="block text-[9px] font-bold tracking-widest uppercase mb-1" style="color:rgba(255,255,255,.45)">結束時間</span>
                     <input type="time" id="r-e-time" value="23:59" class="rpt-f-input w-full">
                 </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                 <div>
                     <span class="block text-[9px] font-bold tracking-widest uppercase mb-1" style="color:rgba(255,255,255,.45)">活動代號</span>
                     <select id="report-campaign" class="rpt-f-input w-full"><option value="all">全部來源</option><option value="none">一般訂單</option></select>
@@ -658,7 +686,7 @@
 <!-- 紀念照管理 -->
 <section id="sec-photos" class="hidden space-y-5">
     <div class="flex flex-wrap justify-between items-center gap-3">
-        <h2 class="section-title">紀念照管理</h2>
+        
         <div class="flex gap-2">
             <button onclick="autoDeleteOld()" class="btn btn-danger">🗑 刪除 7 天前</button>
             <button onclick="openUploadModal()" class="btn btn-primary">📤 上傳照片</button>
@@ -688,7 +716,7 @@
 <!-- LINE 通知 -->
 <section id="sec-linenotify" class="hidden space-y-6">
     <div class="flex justify-between items-center">
-        <h2 class="section-title">LINE 通知管理</h2>
+        
         <div class="flex gap-2">
             <a href="line-bind.html" target="_blank" class="btn btn-ghost">🔗 綁定頁面</a>
             <button onclick="openAddTargetModal()" class="btn btn-primary">＋ 手動新增</button>
@@ -703,7 +731,7 @@
 <!-- 公告管理 -->
 <section id="sec-announce" class="hidden space-y-6">
     <div class="flex justify-between items-center">
-        <h2 class="section-title">公告管理</h2>
+        
         <button onclick="openAnnounceModal(false)" class="btn btn-primary">+ 新增公告</button>
     </div>
     <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800 font-semibold">
@@ -977,7 +1005,16 @@ async function switchTab(t) {
     if (t==='announce')   loadAnnouncements();
 }
 
-function setQuickDate(val) { document.getElementById('custom-date-box').classList.toggle('hidden', val!=='custom'); }
+function setQuickDate(val) {
+    const box = document.getElementById('date-range-box');
+    if (val === 'range') {
+        box.classList.remove('hidden');
+        box.classList.add('grid');
+    } else {
+        box.classList.add('hidden');
+        box.classList.remove('grid');
+    }
+}
 
 async function loadCampaignOptions() {
     const {data} = await _s.from('campaign_settings').select('*');
@@ -993,13 +1030,46 @@ async function loadOrders() {
     const status=document.getElementById('filter-status').value;
     const preset=document.getElementById('filter-date-preset').value;
     const campaign=document.getElementById('filter-campaign').value;
+    const dateType=document.getElementById('filter-date-type')?.value||'created';
+    // 台灣今日日期字串 (YYYY-MM-DD)
+    const twNow=new Date(Date.now()+8*60*60*1000);
+    const twToday=twNow.toISOString().split('T')[0];
+    const twWeekAgo=new Date(Date.now()-7*864e5+8*60*60*1000).toISOString().split('T')[0];
+
     let q=_s.from('orders').select('*').order('created_at',{ascending:false});
-    if (search)             q=q.or(`customer_name.ilike.%${search}%,phone.ilike.%${search}%`);
-    if (status!=='all')     q=q.eq('status',status);
-    if (campaign!=='all')   q=q.eq('campaign_code',campaign);
-    if (preset==='today')   { const d=new Date().toISOString().split('T')[0]; q=q.gte('created_at',`${d}T00:00:00`).lte('created_at',`${d}T23:59:59`); }
-    else if (preset==='week') { q=q.gte('created_at',new Date(Date.now()-7*864e5).toISOString()); }
-    else if (preset==='custom') { const d=document.getElementById('filter-date').value; if(d)q=q.gte('created_at',`${d}T00:00:00`).lte('created_at',`${d}T23:59:59`); }
+    if (search)           q=q.or(`customer_name.ilike.%${search}%,phone.ilike.%${search}%`);
+    if (status!=='all')   q=q.eq('status',status);
+    if (campaign!=='all') q=q.eq('campaign_code',campaign);
+
+    const ts = document.getElementById('filter-time-start')?.value || '00:00';
+    const te = document.getElementById('filter-time-end')?.value || '23:59';
+
+    if (dateType==='booking') {
+        if (preset==='today') {
+            q=q.gte('booking_date',`${twToday}T${ts}:00+08:00`).lte('booking_date',`${twToday}T${te}:59+08:00`);
+        } else if (preset==='week') {
+            q=q.gte('booking_date',`${twWeekAgo}T${ts}:00+08:00`);
+        } else if (preset==='range') {
+            const ds=document.getElementById('filter-date-start')?.value;
+            const de=document.getElementById('filter-date-end')?.value;
+            if(ds) q=q.gte('booking_date',`${ds}T${ts}:00+08:00`);
+            if(de) q=q.lte('booking_date',`${de}T${te}:59+08:00`);
+        }
+        // 不限：不加日期條件
+    } else {
+        if (preset==='today') {
+            const d=new Date().toISOString().split('T')[0];
+            q=q.gte('created_at',`${d}T${ts}:00`).lte('created_at',`${d}T${te}:59`);
+        } else if (preset==='week') {
+            q=q.gte('created_at',new Date(Date.now()-7*864e5).toISOString());
+        } else if (preset==='range') {
+            const ds=document.getElementById('filter-date-start')?.value;
+            const de=document.getElementById('filter-date-end')?.value;
+            if(ds) q=q.gte('created_at',`${ds}T${ts}:00`);
+            if(de) q=q.lte('created_at',`${de}T${te}:59`);
+        }
+        // 不限：不加日期條件
+    }
     const {data}=await q;
     window.ordersRef=data||[];
 
@@ -1043,7 +1113,7 @@ async function loadOrders() {
                             <label>訂位時間</label>
                             <select id="btime-${o.id}" onchange="saveBookingTime('${o.id}',this.value)">
                                 <option value="">-- 選擇時間 --</option>
-                                ${[11,12,13,17,18,19].flatMap(h=>[0,15,30,45].map(m=>{const hh=String(h).padStart(2,'0'),mm=String(m).padStart(2,'0'),val=`${hh}:${mm}`,cur=bTime?bTime.split('T')[1]?.slice(0,5):'';return`<option value="${val}"${cur===val?' selected':''}>${val}</option>`;})).join('')}
+                                ${[11,12,13,14,15,17,18,19,20].flatMap(h=>(h===20?[0,15,30,45]:[0,15,30,45]).map(m=>{const hh=String(h).padStart(2,'0'),mm=String(m).padStart(2,'0'),val=`${hh}:${mm}`,cur=bTime?bTime.split('T')[1]?.slice(0,5):'';return`<option value="${val}"${cur===val?' selected':''}>${val}</option>`;})).join('')}
                             </select>
                         </div>
                         <div class="order-field">
@@ -1185,8 +1255,15 @@ async function delOrder(id){
 function resetFilters(){
     document.getElementById('filter-search').value='';
     document.getElementById('filter-date-preset').value='all';
+    document.getElementById('filter-date-type').value='created';
     document.getElementById('filter-status').value='all';
     document.getElementById('filter-campaign').value='all';
+    document.getElementById('filter-time-start').value='00:00';
+    document.getElementById('filter-time-end').value='23:59';
+    const ds=document.getElementById('filter-date-start'); if(ds) ds.value='';
+    const de=document.getElementById('filter-date-end');   if(de) de.value='';
+    const box=document.getElementById('date-range-box');
+    if(box){box.classList.add('hidden');box.classList.remove('grid');}
     loadOrders();
 }
 function exportXls(){
@@ -1548,6 +1625,11 @@ async function initReport(){
     if(data)data.forEach(c=>{const opt=new Option(c.code_name,c.code_name);sel.add(opt);});
     fetchData();
 }
+function syncReportDateType(){
+    const quick=document.getElementById('report-date-type-quick');
+    const full=document.getElementById('report-date-type');
+    if(quick&&full) full.value=quick.value;
+}
 function rptPreset(type){
     document.querySelectorAll('.rpt-preset-btn').forEach(b=>b.classList.remove('on'));
     document.querySelector(`.rpt-preset-btn[onclick="rptPreset('${type}')"]`)?.classList.add('on');
@@ -1562,16 +1644,25 @@ async function fetchData(){
     const sd=document.getElementById('r-s-date').value,ed=document.getElementById('r-e-date').value;
     const st=document.getElementById('r-s-time').value||'00:00',et=document.getElementById('r-e-time').value||'23:59';
     const cam=document.getElementById('report-campaign').value;
+    const dateType=document.getElementById('report-date-type')?.value||'created';
     if(!sd||!ed){toast('請選擇日期區間','warn');return;}
     const lbl=document.getElementById('r-run-lbl');
     if(lbl) lbl.innerHTML='<span class="rpt-spin"></span>';
-    let q=_s.from('orders').select('*').gte('created_at',`${sd}T${st}:00`).lte('created_at',`${ed}T${et}:59`).order('created_at',{ascending:true});
+    let q=_s.from('orders').select('*').order('created_at',{ascending:true});
     if(cam==='none')q=q.is('campaign_code',null);else if(cam!=='all')q=q.eq('campaign_code',cam);
+    if(dateType==='booking'){
+        // 訂位日期篩選（台灣時間 +08:00）
+        q=q.gte('booking_date',`${sd}T${st}:00+08:00`).lte('booking_date',`${ed}T${et}:59+08:00`);
+    } else {
+        // 下單日期篩選（UTC）
+        q=q.gte('created_at',`${sd}T${st}:00`).lte('created_at',`${ed}T${et}:59`);
+    }
     const{data:orders,error}=await q;
     if(lbl) lbl.textContent='▶ 查詢';
     if(error){toast('查詢失敗','error');return;}
+    const typeLabel=dateType==='booking'?'訂位日':'下單日';
     const camLabel=cam==='all'?'全部':cam==='none'?'一般訂單':cam;
-    document.getElementById('report-period-display').textContent=`${sd} ～ ${ed} ｜ ${camLabel}`;
+    document.getElementById('report-period-display').textContent=`${typeLabel} ${sd} ～ ${ed} ｜ ${camLabel}`;
     renderReports(orders||[]);
 }
 function renderReports(orders){
