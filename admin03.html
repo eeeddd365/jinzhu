@@ -1387,13 +1387,24 @@ function openEditPop(itemId,index=-1){
     if(curEditItem.item_flavor_relation?.length>0){container.innerHTML+=curEditItem.item_flavor_relation.map(r=>`<div><p class="text-[10px] text-slate-400 mb-2 uppercase font-bold">${r.flavor_groups.name}</p><div class="flex flex-wrap gap-2">${r.flavor_groups.flavor_options.map(o=>{const isM=prevFlvs.includes(o.option_name);if(isM)curEditPopSels.flavors[r.flavor_groups.id]=o.option_name;return`<div onclick="setEditPopFlv(this,'${r.flavor_groups.id}','${o.option_name}')" class="px-4 py-1.5 border rounded-full text-xs cursor-pointer transition ${isM?'flavor-selected':'bg-slate-50'}">${o.option_name}</div>`;}).join('')}</div></div>`).join('');}
     if(curEditItem.is_set_menu&&curEditItem.set_menu_groups){
         const sortedGroups=[...curEditItem.set_menu_groups].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+        // 用指標逐一消費 prevNames，每個分組只取自己應有的數量，避免同名跨分組誤判
+        let nameIdx=0;
         container.innerHTML+=sortedGroups.map(g=>{
             curEditPopSels.groups[g.id]=[];
             const sortedContents=[...g.set_menu_contents].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
-            return`<div><p class="text-[10px] font-bold mb-2 uppercase" style="color:var(--pine)">${g.group_name}</p><div class="grid grid-cols-2 gap-2">${sortedContents.map(c=>{const isM=prevNames.includes(c.menu_items.name);if(isM)curEditPopSels.groups[g.id].push({name:c.menu_items.name});return`<div onclick="setEditPopGroup(this,'${g.id}','${c.menu_items.name}',${g.selection_limit})" class="p-3 border rounded-xl text-[11px] cursor-pointer text-center font-bold ${isM?'opt-selected':'bg-slate-50'}">${c.menu_items.name}</div>`;}).join('')}</div></div>`;
+            const limit=g.selection_limit;
+            const groupPrev=prevNames.slice(nameIdx, nameIdx+limit);
+            nameIdx+=limit;
+            return`<div style="margin-bottom:16px"><p class="text-[10px] font-bold mb-2 uppercase" style="color:var(--pine)">${g.group_name} <span style="color:var(--gold)">任選${limit}</span></p><div class="grid grid-cols-2 gap-2">${sortedContents.map(c=>{
+                // 每個分組用自己的 groupPrev 比對，且比對後從中移除避免重複
+                const idx=groupPrev.indexOf(c.menu_items.name);
+                const isM=idx>-1;
+                if(isM){groupPrev.splice(idx,1);curEditPopSels.groups[g.id].push({name:c.menu_items.name});}
+                return'<div onclick="setEditPopGroup(this,\''+g.id+'\',\''+c.menu_items.name+'\','+limit+')" class="p-3 border rounded-xl text-[11px] cursor-pointer text-center font-bold '+(isM?'opt-selected':'bg-slate-50')+'">'+(c.menu_items.name)+'</div>';
+            }).join('')}</div></div>`;
         }).join('');
     }
-    document.getElementById('edit-pop-title').textContent=curEditItem.name;
+    document.getElementById('edit-pop-title').textContent=curEditItem.name+(reEditIndex>-1&&editCart[reEditIndex]?.name.match(/ x(\d+)/)?` ×${editCart[reEditIndex].name.match(/ x(\d+)/)[1]}`:'');
     document.getElementById('edit-flavor-popup').classList.remove('hidden');
 }
 function setEditPopFlv(el,gid,name){Array.from(el.parentElement.children).forEach(c=>{c.classList.remove('flavor-selected');c.classList.add('bg-slate-50');});el.classList.add('flavor-selected');el.classList.remove('bg-slate-50');curEditPopSels.flavors[gid]=name;}
