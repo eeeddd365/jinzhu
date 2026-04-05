@@ -1106,7 +1106,10 @@ async function loadOrders() {
                 <span class="text-xs font-bold" style="color:var(--stone);flex-shrink:0">${o.phone}</span>
                 <span class="order-badge ${synced?'synced':'pending'}">${synced?'已完成':'準備中'}</span>
                 <div class="order-amount">$${o.total_price}</div>
-                <div class="order-time-badge ml-1">${new Date(o.created_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
+                <div class="ml-1 text-right flex-shrink-0">
+                    <div class="order-time-badge">${new Date(o.created_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
+                    ${bTime?`<div style="font-size:10px;font-weight:900;color:#dc2626;letter-spacing:0.03em;margin-top:2px">📅 ${bTime.replace('T',' ')}</div>`:''}
+                </div>
                 <svg class="w-4 h-4 text-slate-300 flex-shrink-0 ml-1 transition-transform" id="chevron-${o.id}" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
             </div>
             <div class="order-body">
