@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>真珠 ADMIN · 管理後台</title>
+    <link rel="icon" type="image/x-icon" href="https://www.jinzhu.com.tw/favicon.ico">
+    <link rel="shortcut icon" href="https://www.jinzhu.com.tw/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -221,7 +223,7 @@
         .rpt-preset-btn.on, .rpt-preset-btn:hover { background: var(--gold); border-color: var(--gold); color: white; }
         .rpt-tab { flex: 1; padding: 9px 6px; border-radius: 9px; font-size: 12px; font-weight: 700; border: none; background: transparent; color: #94a3b8; cursor: pointer; transition: all .15s; white-space: nowrap; }
         .rpt-tab.on { background: white; color: var(--pine); box-shadow: 0 1px 6px rgba(0,0,0,.1); }
-        .rpt-spin { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: rspin .6s linear infinite; vertical-align: middle; }
+        .rpt-quick-btn.on { background: var(--pine) !important; color: white !important; border-color: var(--pine) !important; }
         @keyframes rspin { to { transform: rotate(360deg); } }
 
         /* ── KPI CARDS ── */
@@ -366,7 +368,12 @@
             </div>
         </div>
         <div class="logo-icon items-center justify-center w-full">
-            <span class="font-serif font-black text-xl text-amber-400">珠</span>
+            <div style="width:38px;height:38px;border-radius:50%;background:rgba(184,145,80,0.2);border:1.5px solid rgba(184,145,80,0.4);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
+                <img src="https://www.jinzhu.com.tw/images/Jinzhu_logo.svg" alt="真珠"
+                     style="width:26px;height:26px;object-fit:contain;filter:brightness(0) invert(1)"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                <span class="font-serif font-black text-amber-400" style="display:none;font-size:15px">珠</span>
+            </div>
         </div>
         <button onclick="toggleSidebar()" class="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-amber-400 hover:bg-white/5 transition">
             <svg id="toggle-icon" class="w-4 h-4 transition-transform duration-250" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -420,6 +427,12 @@
                 <option value="all">全部</option>
                 <option value="pending">準備中</option>
                 <option value="synced">已完成</option>
+            </select>
+            <select id="filter-sort" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700" title="排序方式">
+                <option value="created_desc">下單↓新到舊</option>
+                <option value="created_asc">下單↑舊到新</option>
+                <option value="booking_asc">訂位↑早到晚</option>
+                <option value="booking_desc">訂位↓晚到早</option>
             </select>
             <button onclick="loadOrders()" class="btn btn-primary btn-sm">篩選</button>
             <button onclick="exportXls()" class="btn btn-ghost btn-sm">📊 Excel</button>
@@ -562,71 +575,69 @@
 
 <!-- 備料統計報表 -->
 <section id="sec-report" class="hidden space-y-4">
-    <!-- 報表篩選列（摺疊式） -->
-    <div class="rounded-xl overflow-hidden shadow-md" style="background:linear-gradient(135deg,#004d40,#00695c)">
+    <!-- 報表篩選列（白色卡片，與訂單監控同風格） -->
+    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden mb-2">
         <!-- 常駐列 -->
-        <div class="flex flex-wrap items-center gap-2 px-4 py-2.5">
-            <div class="w-1 h-4 rounded-full bg-amber-400 flex-shrink-0"></div>
-            <span class="font-black text-white text-sm font-serif tracking-widest flex-shrink-0">備料統計</span>
-            <span id="report-period-display" class="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0" style="background:rgba(184,145,80,.2);color:#d4a85a">尚未查詢</span>
-            <div class="flex gap-1 ml-auto flex-shrink-0">
-                <div class="flex gap-1 mr-1">
-                    <select id="report-date-type-quick" onchange="document.getElementById('report-date-type').value=this.value" class="rpt-f-input text-[10px] px-2 py-1" style="min-width:80px">
-                        <option value="created">下單日</option>
-                        <option value="booking">訂位日</option>
-                    </select>
-                    <button class="rpt-preset-btn text-[10px] px-2 py-1" onclick="syncReportDateType();rptPreset('today');fetchData()">今日</button>
-                    <button class="rpt-preset-btn text-[10px] px-2 py-1" onclick="syncReportDateType();rptPreset('week');fetchData()">本週</button>
-                    <button class="rpt-preset-btn text-[10px] px-2 py-1" onclick="syncReportDateType();rptPreset('month');fetchData()">本月</button>
-                </div>
-                <button onclick="fetchData()" class="btn btn-sm" style="background:var(--gold);color:white;padding:4px 12px">
+        <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-100 flex-wrap">
+            <select id="report-date-type-quick" onchange="document.getElementById('report-date-type').value=this.value" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700">
+                <option value="created">下單日期</option>
+                <option value="booking">訂位日期</option>
+            </select>
+            <div class="flex gap-1">
+                <button class="btn btn-ghost btn-sm rpt-quick-btn" onclick="syncReportDateType();rptPreset('today');fetchData()">今日</button>
+                <button class="btn btn-ghost btn-sm rpt-quick-btn" onclick="syncReportDateType();rptPreset('week');fetchData()">本週</button>
+                <button class="btn btn-ghost btn-sm rpt-quick-btn" onclick="syncReportDateType();rptPreset('month');fetchData()">本月</button>
+            </div>
+            <span id="report-period-display" class="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0" style="background:rgba(0,77,64,.08);color:var(--pine)">尚未查詢</span>
+            <div class="flex gap-1 ml-auto">
+                <button onclick="fetchData()" class="btn btn-primary btn-sm">
                     <span id="r-run-lbl">▶ 查詢</span>
                 </button>
-                <button onclick="reportPrint()" class="btn btn-sm" style="background:rgba(255,255,255,0.1);color:white;padding:4px 10px">🖨</button>
-                <button onclick="exportFullData()" class="btn btn-sm" style="background:rgba(255,255,255,0.1);color:white;padding:4px 10px">📊</button>
-                <button onclick="toggleReportFilter()" id="report-filter-toggle" class="btn btn-sm" style="background:rgba(255,255,255,0.1);color:white;padding:4px 10px" title="展開詳細設定">
-                    <svg id="report-chevron" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                <button onclick="reportPrint()" class="btn btn-ghost btn-sm">🖨</button>
+                <button onclick="exportFullData()" class="btn btn-ghost btn-sm">📊</button>
+                <button onclick="toggleReportFilter()" id="report-filter-toggle" class="btn btn-ghost btn-sm px-2" title="展開詳細設定">
+                    <svg id="report-chevron" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 </button>
             </div>
         </div>
         <!-- 展開區 -->
-        <div id="report-filter-expand" class="hidden border-t border-white/10 px-4 py-3">
+        <div id="report-filter-expand" class="hidden px-3 pb-3 pt-2 space-y-2 bg-slate-50">
             <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end">
                 <div>
-                    <span class="block text-[9px] font-bold tracking-widest uppercase mb-1" style="color:rgba(255,255,255,.45)">日期類型</span>
-                    <select id="report-date-type" class="rpt-f-input w-full">
+                    <label class="filter-label">日期類型</label>
+                    <select id="report-date-type" class="filter-select" style="width:100%">
                         <option value="created">下單日期</option>
                         <option value="booking">訂位日期</option>
                     </select>
                 </div>
                 <div>
-                    <span class="block text-[9px] font-bold tracking-widest uppercase mb-1" style="color:rgba(255,255,255,.45)">開始日期</span>
-                    <input type="date" id="r-s-date" class="rpt-f-input w-full">
+                    <label class="filter-label">開始日期</label>
+                    <input type="date" id="r-s-date" class="filter-input">
                 </div>
                 <div>
-                    <span class="block text-[9px] font-bold tracking-widest uppercase mb-1" style="color:rgba(255,255,255,.45)">結束日期</span>
-                    <input type="date" id="r-e-date" class="rpt-f-input w-full">
+                    <label class="filter-label">結束日期</label>
+                    <input type="date" id="r-e-date" class="filter-input">
                 </div>
                 <div>
-                    <span class="block text-[9px] font-bold tracking-widest uppercase mb-1" style="color:rgba(255,255,255,.45)">開始時間</span>
-                    <input type="time" id="r-s-time" value="00:00" class="rpt-f-input w-full">
+                    <label class="filter-label">開始時間</label>
+                    <input type="time" id="r-s-time" value="00:00" class="filter-input">
                 </div>
                 <div>
-                    <span class="block text-[9px] font-bold tracking-widest uppercase mb-1" style="color:rgba(255,255,255,.45)">結束時間</span>
-                    <input type="time" id="r-e-time" value="23:59" class="rpt-f-input w-full">
+                    <label class="filter-label">結束時間</label>
+                    <input type="time" id="r-e-time" value="23:59" class="filter-input">
                 </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end">
                 <div>
-                    <span class="block text-[9px] font-bold tracking-widest uppercase mb-1" style="color:rgba(255,255,255,.45)">活動代號</span>
-                    <select id="report-campaign" class="rpt-f-input w-full"><option value="all">全部來源</option><option value="none">一般訂單</option></select>
+                    <label class="filter-label">活動代號</label>
+                    <select id="report-campaign" class="filter-select" style="width:100%"><option value="all">全部來源</option><option value="none">一般訂單</option></select>
                 </div>
             </div>
-            <div class="flex gap-1.5 mt-2">
-                <button class="rpt-preset-btn" onclick="rptPreset('today')">今日</button>
-                <button class="rpt-preset-btn" onclick="rptPreset('yesterday')">昨日</button>
-                <button class="rpt-preset-btn" onclick="rptPreset('week')">本週</button>
-                <button class="rpt-preset-btn" onclick="rptPreset('month')">本月</button>
+            <div class="flex gap-1.5 pt-2 border-t border-slate-200">
+                <button class="btn btn-ghost btn-sm rpt-quick-btn" onclick="rptPreset('today')">今日</button>
+                <button class="btn btn-ghost btn-sm rpt-quick-btn" onclick="rptPreset('yesterday')">昨日</button>
+                <button class="btn btn-ghost btn-sm rpt-quick-btn" onclick="rptPreset('week')">本週</button>
+                <button class="btn btn-ghost btn-sm rpt-quick-btn" onclick="rptPreset('month')">本月</button>
             </div>
         </div>
     </div>
@@ -1031,12 +1042,18 @@ async function loadOrders() {
     const preset=document.getElementById('filter-date-preset').value;
     const campaign=document.getElementById('filter-campaign').value;
     const dateType=document.getElementById('filter-date-type')?.value||'created';
+    const sortVal=document.getElementById('filter-sort')?.value||'created_desc';
     // 台灣今日日期字串 (YYYY-MM-DD)
     const twNow=new Date(Date.now()+8*60*60*1000);
     const twToday=twNow.toISOString().split('T')[0];
     const twWeekAgo=new Date(Date.now()-7*864e5+8*60*60*1000).toISOString().split('T')[0];
 
-    let q=_s.from('orders').select('*').order('created_at',{ascending:false});
+    // 決定排序欄位與方向
+    const sortField = sortVal.startsWith('booking') ? 'booking_date' : 'created_at';
+    const sortAsc   = sortVal.endsWith('_asc');
+    let q=_s.from('orders').select('*').order(sortField,{ascending:sortAsc});
+    // booking_asc/desc 時 null 的訂單（沒有訂位日期）排到最後
+    if(sortField==='booking_date') q=q.order('created_at',{ascending:false});
     if (search)           q=q.or(`customer_name.ilike.%${search}%,phone.ilike.%${search}%`);
     if (status!=='all')   q=q.eq('status',status);
     if (campaign!=='all') q=q.eq('campaign_code',campaign);
@@ -1096,10 +1113,28 @@ async function loadOrders() {
                 <span class="text-xs font-bold" style="color:var(--stone);flex-shrink:0">${o.phone}</span>
                 <span class="order-badge ${synced?'synced':'pending'}">${synced?'已完成':'準備中'}</span>
                 <div class="order-amount">$${o.total_price}</div>
-                <div class="order-time-badge ml-1">${new Date(o.created_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
+                <div class="ml-1 text-right flex-shrink-0">
+                    <div class="order-time-badge">${new Date(o.created_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
+                    ${bTime?`<div style="font-size:10px;font-weight:900;color:#dc2626;letter-spacing:0.03em;margin-top:2px">📅 ${bTime.slice(5).replace('T',' ')}</div>`:''}
+                </div>
                 <svg class="w-4 h-4 text-slate-300 flex-shrink-0 ml-1 transition-transform" id="chevron-${o.id}" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
             </div>
             <div class="order-body">
+
+                <!-- 區塊0：姓名電話 -->
+                <div class="order-section">
+                    <div class="order-section-label">👤 聯絡資訊</div>
+                    <div class="order-fields-grid">
+                        <div class="order-field">
+                            <label>姓名</label>
+                            <input type="text" value="${o.customer_name||''}" onchange="updateOrderData('${o.id}','customer_name',this.value,this)" placeholder="姓名">
+                        </div>
+                        <div class="order-field">
+                            <label>電話</label>
+                            <input type="tel" value="${o.phone||''}" onchange="updateOrderData('${o.id}','phone',this.value,this)" placeholder="電話">
+                        </div>
+                    </div>
+                </div>
 
                 <!-- 區塊1：訂位資訊 -->
                 <div class="order-section">
@@ -1143,9 +1178,66 @@ async function loadOrders() {
                 <!-- 區塊3：餐點明細 -->
                 <div class="order-section">
                     <div class="order-section-label">🍱 餐點明細</div>
-                    <div class="order-items-list">
-                        ${o.order_content.map(i=>`<div class="order-item-row"><div class="order-item-dot"></div><div class="order-item-name">${i.name}</div><div class="text-slate-400 font-bold">$${i.price}</div></div>`).join('')}
-                    </div>
+                    ${(()=>{
+                        const sets=[], singles={};
+                        (o.order_content||[]).forEach(item=>{
+                            const qM=item.name.match(/ x(\d+)/), qty=qM?parseInt(qM[1]):1;
+                            let clean=item.name.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
+                            const pIdx=clean.indexOf(' ('), inner=pIdx>-1?clean.slice(pIdx+2,-1):null;
+                            const isSet=inner&&inner.includes('、');
+                            if(isSet){
+                                const brand=clean.slice(0,pIdx).trim();
+                                const subs={};
+                                inner.split('、').forEach(sub=>{
+                                    const sM=sub.match(/ x(\d+)/), sq=sM?parseInt(sM[1]):1;
+                                    const s=sub.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
+                                    if(s) subs[s]=(subs[s]||0)+qty*sq;
+                                });
+                                sets.push({brand,qty,subs});
+                            } else {
+                                singles[clean]=(singles[clean]||0)+qty;
+                            }
+                        });
+                        let html='';
+                        // 套餐區塊
+                        if(sets.length){
+                            html+=sets.map(set=>`
+                            <div style="border:1.5px solid rgba(184,145,80,0.3);border-radius:10px;overflow:hidden;margin-bottom:8px">
+                                <div style="background:rgba(184,145,80,0.08);padding:6px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(184,145,80,0.2)">
+                                    <span style="font-weight:900;font-size:12px;color:var(--gold)">🍱 ${set.brand}</span>
+                                    <span style="font-weight:900;font-size:13px;color:var(--gold)">${set.qty} 套</span>
+                                </div>
+                                <div style="padding:4px 12px">
+                                    ${Object.entries(set.subs).map(([name,count])=>`
+                                    <div class="order-item-row">
+                                        <div style="width:3px;height:3px;border-radius:50%;background:var(--gold);flex-shrink:0"></div>
+                                        <div class="order-item-name" style="font-size:11px">${name}</div>
+                                        <div style="font-weight:900;color:var(--pine);font-size:12px">${count}</div>
+                                        <div style="font-size:10px;color:var(--stone);margin-left:2px">份</div>
+                                    </div>`).join('')}
+                                </div>
+                            </div>`).join('');
+                        }
+                        // 單點區塊
+                        const singleEntries=Object.entries(singles).sort((a,b)=>b[1]-a[1]);
+                        if(singleEntries.length){
+                            html+=`<div style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden">
+                                <div style="background:#f8fafc;padding:6px 12px;border-bottom:1px solid var(--border)">
+                                    <span style="font-weight:900;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.1em">單點</span>
+                                </div>
+                                <div style="padding:4px 12px">
+                                    ${singleEntries.map(([name,count])=>`
+                                    <div class="order-item-row">
+                                        <div class="order-item-dot"></div>
+                                        <div class="order-item-name">${name}</div>
+                                        <div style="font-weight:900;color:var(--pine);font-size:13px">${count}</div>
+                                        <div style="font-size:10px;color:var(--stone);margin-left:2px">份</div>
+                                    </div>`).join('')}
+                                </div>
+                            </div>`;
+                        }
+                        return html;
+                    })()}
                     ${o.note?`<div class="px-4 py-3 rounded-xl text-xs font-bold mt-2" style="background:#f0fdf4;border-left:3px solid var(--pine);color:var(--pine)">📝 ${o.note}</div>`:''}
                 </div>
 
@@ -1260,6 +1352,7 @@ function resetFilters(){
     document.getElementById('filter-campaign').value='all';
     document.getElementById('filter-time-start').value='00:00';
     document.getElementById('filter-time-end').value='23:59';
+    const fs=document.getElementById('filter-sort'); if(fs) fs.value='created_desc';
     const ds=document.getElementById('filter-date-start'); if(ds) ds.value='';
     const de=document.getElementById('filter-date-end');   if(de) de.value='';
     const box=document.getElementById('date-range-box');
@@ -1279,7 +1372,7 @@ async function openEditOrder(id){
     curEditOrder=window.ordersRef.find(o=>o.id===id);
     editCart=JSON.parse(JSON.stringify(curEditOrder.order_content));
     document.getElementById('order-edit-modal').classList.remove('hidden');
-    const{data:items}=await _s.from('menu_items').select('*,categories(name),item_flavor_relation(flavor_groups(*,flavor_options(*))),set_menu_groups(*,set_menu_contents(menu_items(*,item_flavor_relation(flavor_groups(*,flavor_options(*))))))').eq('is_hidden',false);
+    const{data:items}=await _s.from('menu_items').select('*,categories(name),item_flavor_relation(flavor_groups(*,flavor_options(*))),set_menu_groups(*,set_menu_contents(*,menu_items(*,item_flavor_relation(flavor_groups(*,flavor_options(*))))))').eq('is_hidden',false).order('sort_order',{ascending:true});
     allMenuItems=items||[];
     const{data:cats}=await _s.from('categories').select('*').order('sort_order');
     allCategories=cats||[];
@@ -1293,14 +1386,56 @@ function refreshEditCart(){
 }
 function openEditPop(itemId,index=-1){
     reEditIndex=index;let prevNames=[],prevFlvs=[];
-    if(index>-1){const raw=editCart[index].name;const base=raw.split(' [')[0].split(' (')[0];curEditItem=allMenuItems.find(i=>i.name===base);const gM=raw.match(/\((.*?)\)/);if(gM)prevNames=gM[1].split('、').map(n=>n.split(' [')[0]);const fM=raw.match(/\[(.*?)\]/);if(fM)prevFlvs=fM[1].split('/');}
+    if(index>-1){
+        const raw=editCart[index].name;
+        // 取套餐名稱（去掉數量、口味、子品項）
+        const base=raw.split(' [')[0].split(' (')[0].replace(/ x\d+/g,'').trim();
+        curEditItem=allMenuItems.find(i=>i.name===base);
+        // 取子品項列表（括號內容，找最後一個括號區段）
+        const pStart=raw.lastIndexOf(' (');
+        if(pStart>-1){
+            const inner=raw.slice(pStart+2,-1);
+            prevNames=inner.split('、').map(n=>n.split(' [')[0].replace(/ x\d+/g,'').trim());
+        }
+        // 取口味（方括號內容）
+        const fM=raw.match(/\[(.*?)\]/);
+        if(fM)prevFlvs=fM[1].split('/');
+    }
     else{curEditItem=allMenuItems.find(i=>i.id===itemId);}
     if(!curEditItem)return;
     curEditPopSels={flavors:{},groups:{}};
     const container=document.getElementById('edit-pop-content');container.innerHTML='';
     if(curEditItem.item_flavor_relation?.length>0){container.innerHTML+=curEditItem.item_flavor_relation.map(r=>`<div><p class="text-[10px] text-slate-400 mb-2 uppercase font-bold">${r.flavor_groups.name}</p><div class="flex flex-wrap gap-2">${r.flavor_groups.flavor_options.map(o=>{const isM=prevFlvs.includes(o.option_name);if(isM)curEditPopSels.flavors[r.flavor_groups.id]=o.option_name;return`<div onclick="setEditPopFlv(this,'${r.flavor_groups.id}','${o.option_name}')" class="px-4 py-1.5 border rounded-full text-xs cursor-pointer transition ${isM?'flavor-selected':'bg-slate-50'}">${o.option_name}</div>`;}).join('')}</div></div>`).join('');}
-    if(curEditItem.is_set_menu&&curEditItem.set_menu_groups){container.innerHTML+=curEditItem.set_menu_groups.map(g=>{curEditPopSels.groups[g.id]=[];return`<div><p class="text-[10px] font-bold mb-2 uppercase" style="color:var(--pine)">${g.group_name}</p><div class="grid grid-cols-2 gap-2">${g.set_menu_contents.map(c=>{const isM=prevNames.includes(c.menu_items.name);if(isM)curEditPopSels.groups[g.id].push({name:c.menu_items.name});return`<div onclick="setEditPopGroup(this,'${g.id}','${c.menu_items.name}',${g.selection_limit})" class="p-3 border rounded-xl text-[11px] cursor-pointer text-center font-bold ${isM?'opt-selected':'bg-slate-50'}">${c.menu_items.name}</div>`;}).join('')}</div></div>`;}).join('');}
-    document.getElementById('edit-pop-title').textContent=curEditItem.name;
+    if(curEditItem.is_set_menu&&curEditItem.set_menu_groups){
+        const sortedGroups=[...curEditItem.set_menu_groups].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+        // 用動態比對逐一分配 prevNames 給各分組，避免同名跨分組誤判
+        container.innerHTML+=sortedGroups.map(g=>{
+            curEditPopSels.groups[g.id]=[];
+            const sortedContents=[...g.set_menu_contents].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+            const limit=g.selection_limit;
+            // 先找出這個分組在 prevNames 裡實際有幾個品項屬於這組
+            const groupItemNames=new Set(sortedContents.map(c=>c.menu_items.name));
+            // 從 nameIdx 開始，收集屬於這個分組的名稱，直到找完或超過 limit
+            const groupPrev=[];
+            let scan=0;
+            while(scan<prevNames.length && groupPrev.length<limit){
+                if(groupItemNames.has(prevNames[scan])){
+                    groupPrev.push(prevNames[scan]);
+                    prevNames.splice(scan,1); // 從原陣列移除，避免後面重用
+                } else {
+                    scan++;
+                }
+            }
+            return`<div style="margin-bottom:16px"><p class="text-[10px] font-bold mb-2 uppercase" style="color:var(--pine)">${g.group_name} <span style="color:var(--gold)">任選${limit}</span></p><div class="grid grid-cols-2 gap-2">${sortedContents.map(c=>{
+                // 每個分組用自己的 groupPrev 比對，且比對後從中移除避免重複
+                const idx=groupPrev.indexOf(c.menu_items.name);
+                const isM=idx>-1;
+                if(isM){groupPrev.splice(idx,1);curEditPopSels.groups[g.id].push({name:c.menu_items.name});}
+                return'<div onclick="setEditPopGroup(this,\''+g.id+'\',\''+c.menu_items.name+'\','+limit+')" class="p-3 border rounded-xl text-[11px] cursor-pointer text-center font-bold '+(isM?'opt-selected':'bg-slate-50')+'">'+(c.menu_items.name)+'</div>';
+            }).join('')}</div></div>`;
+        }).join('');
+    }
+    document.getElementById('edit-pop-title').textContent=curEditItem.name+(reEditIndex>-1&&editCart[reEditIndex]?.name.match(/ x(\d+)/)?` ×${editCart[reEditIndex].name.match(/ x(\d+)/)[1]}`:'');
     document.getElementById('edit-flavor-popup').classList.remove('hidden');
 }
 function setEditPopFlv(el,gid,name){Array.from(el.parentElement.children).forEach(c=>{c.classList.remove('flavor-selected');c.classList.add('bg-slate-50');});el.classList.add('flavor-selected');el.classList.remove('bg-slate-50');curEditPopSels.flavors[gid]=name;}
@@ -1308,8 +1443,14 @@ function setEditPopGroup(el,gid,name,limit){const sibs=Array.from(el.parentEleme
 function confirmEditPop(){
     const fn=Object.values(curEditPopSels.flavors).join('/');
     const gn=Object.values(curEditPopSels.groups).flat().map(x=>x.name).join('、');
-    const finalName=`${curEditItem.name}${fn?` [${fn}]`:''}${gn?` (${gn})`:''}`;
-    if(reEditIndex>-1)editCart[reEditIndex]={name:finalName,price:Number(curEditItem.price)};
+    // 保留原本的數量（x2、x3…）
+    let xQty='';
+    if(reEditIndex>-1){
+        const qM=editCart[reEditIndex].name.match(/ x(\d+)/);
+        if(qM) xQty=` x${qM[1]}`;
+    }
+    const finalName=`${curEditItem.name}${xQty}${fn?` [${fn}]`:''}${gn?` (${gn})`:''}`;
+    if(reEditIndex>-1)editCart[reEditIndex]={name:finalName,price:Number(curEditItem.price)*(parseInt(xQty.replace(' x','')||'1'))};
     else editCart.push({name:finalName,price:Number(curEditItem.price)});
     closeEditPop();refreshEditCart();
 }
@@ -1319,7 +1460,20 @@ async function saveOrderChange(){
     if(!error){toast('訂單已更新');closeEditModal();loadOrders();}
     else toast('更新失敗','error');
 }
-function renderEditMenu(cid){document.getElementById('edit-menu-grid').innerHTML=allMenuItems.filter(i=>i.category_id===cid).map(i=>`<div onclick="openEditPop('${i.id}')" class="bg-white p-3 rounded-xl border border-slate-100 cursor-pointer shadow-sm hover:border-amber-300 transition"><div class="font-bold text-xs line-clamp-2">${i.name}</div><div class="font-bold text-xs mt-2" style="color:var(--gold)">$${i.price}</div></div>`).join('');}
+function renderEditMenu(cid){
+    const filtered=allMenuItems.filter(i=>i.category_id===cid).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+    document.getElementById('edit-menu-grid').innerHTML=filtered.map(i=>`
+        <div onclick="openEditPop('${i.id}')" class="bg-white rounded-xl border border-slate-100 cursor-pointer shadow-sm hover:border-amber-300 transition overflow-hidden flex flex-col">
+            <div class="h-20 bg-slate-50 flex items-center justify-center overflow-hidden p-2">
+                ${i.image_url?`<img src="${i.image_url}" class="max-h-full max-w-full object-contain mix-blend-multiply" loading="lazy">`:`<span style="font-size:1.5rem;opacity:.2">🍽</span>`}
+            </div>
+            <div class="p-2 flex flex-col flex-1">
+                <div class="font-bold text-xs leading-tight line-clamp-2 flex-1">${i.name}</div>
+                <div class="font-bold text-xs mt-1" style="color:var(--gold)">$${i.price}</div>
+                ${i.is_set_menu?`<div class="text-[9px] mt-0.5 font-bold" style="color:var(--pine)">套餐</div>`:''}
+            </div>
+        </div>`).join('');
+}
 function closeEditModal(){document.getElementById('order-edit-modal').classList.add('hidden');}
 function closeEditPop(){document.getElementById('edit-flavor-popup').classList.add('hidden');}
 
@@ -1631,8 +1785,8 @@ function syncReportDateType(){
     if(quick&&full) full.value=quick.value;
 }
 function rptPreset(type){
-    document.querySelectorAll('.rpt-preset-btn').forEach(b=>b.classList.remove('on'));
-    document.querySelector(`.rpt-preset-btn[onclick="rptPreset('${type}')"]`)?.classList.add('on');
+    document.querySelectorAll('.rpt-quick-btn').forEach(b=>b.classList.remove('on'));
+    document.querySelectorAll(`.rpt-quick-btn[onclick*="'${type}'"]`).forEach(b=>b.classList.add('on'));
     const now=new Date(),today=now.toISOString().split('T')[0];
     const sd=document.getElementById('r-s-date'),ed=document.getElementById('r-e-date');
     if(type==='today'){sd.value=ed.value=today;}
