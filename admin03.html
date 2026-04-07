@@ -1063,7 +1063,7 @@ async function switchTab(t) {
     document.querySelectorAll('.nav-btn-tab').forEach(b => b.classList.remove('sidebar-active'));
     document.getElementById(`sec-${t}`).classList.remove('hidden');
     document.getElementById(`btn-${t}`).classList.add('sidebar-active');
-    if (t==='orders')     { await loadCampaignOptions(); loadOrders(); }
+    if (t==='orders')     { await loadCampaignOptions(); switchOrderView('calendar'); }
     if (t==='campaigns')  loadCampaigns();
     if (t==='categories') loadCats();
     if (t==='menu')       { await loadCats(); loadMenu(); }
@@ -2235,11 +2235,11 @@ async function renderCalendar(){
     if(noDate.length){
         bar.classList.remove('hidden');
         document.getElementById('cal-no-date-list').innerHTML=noDate.map(o=>`
-            <button onclick="openCalDayModal(null,'${o.id}')"
+            <button onclick="openOrderCardModal('${o.id}')"
                 class="flex items-center gap-2 bg-white border border-amber-200 hover:border-amber-400 rounded-xl px-3 py-1.5 text-xs font-bold transition"
                 style="color:var(--ink)">
                 <span>${o.customer_name}</span>
-                <span style="color:var(--gold)">$${o.total_price}</span>
+                <span style="color:var(--stone);font-weight:500">${o.phone||'—'}</span>
             </button>`).join('');
     } else { bar.classList.add('hidden'); }
 
@@ -2286,7 +2286,7 @@ async function renderCalendar(){
                     const hhmm=String(tw.getUTCHours()).padStart(2,'0')+':'+String(tw.getUTCMinutes()).padStart(2,'0');
                     const synced=o.status==='synced';
                     return`<div style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:${synced?'rgba(16,185,129,.1)':'rgba(0,77,64,.07)'};color:${synced?'#059669':'var(--pine)'}">
-                        ${hhmm} ${o.customer_name}${o.table_no?` ·${o.table_no}`:''}
+                        ${hhmm} ${o.customer_name} ${o.phone?'·'+o.phone.slice(-4):''}
                     </div>`;
                 }).join('')}
                 ${orders.length>3?`<div style="font-size:9px;color:#94a3b8;font-weight:700;padding-left:4px">+${orders.length-3} 筆</div>`:''}
@@ -2303,19 +2303,14 @@ async function renderCalendar(){
 
 function openCalDayModal(dateStr, focusId=null){
     const modal=document.getElementById('cal-day-modal');
-    let orders;
-
     if(dateStr){
-        // 從 DOM 中的 orders 不一定有，直接重新 fetch 然後 filter
         _s.from('orders').select('*').then(({data})=>{
-            const all=data||[];
-            orders=all.filter(o=>{
+            const orders=(data||[]).filter(o=>{
                 if(!o.booking_date)return false;
                 const tw=new Date(new Date(o.booking_date).getTime()+8*3600000);
                 const key=`${tw.getUTCFullYear()}-${String(tw.getUTCMonth()+1).padStart(2,'0')}-${String(tw.getUTCDate()).padStart(2,'0')}`;
                 return key===dateStr;
             }).sort((a,b)=>new Date(a.booking_date)-new Date(b.booking_date));
-
             const [y,m,d]=dateStr.split('-');
             const weekDay=['日','一','二','三','四','五','六'][new Date(parseInt(y),parseInt(m)-1,parseInt(d)).getDay()];
             document.getElementById('cal-day-modal-title').textContent=`${parseInt(m)}月${parseInt(d)}日（週${weekDay}）`;
@@ -2324,15 +2319,99 @@ function openCalDayModal(dateStr, focusId=null){
             renderCalDayBody(orders);
             modal.classList.remove('hidden');
         });
-    } else {
-        _s.from('orders').select('*').eq('id',focusId).single().then(({data:o})=>{
-            if(!o)return;
-            document.getElementById('cal-day-modal-title').textContent=`${o.customer_name} · 未安排訂位`;
-            document.getElementById('cal-day-modal-sub').textContent=`$${o.total_price}`;
-            renderCalDayBody([o]);
-            modal.classList.remove('hidden');
-        });
     }
+}
+
+// 開啟單一訂單的完整編輯卡片（用於未安排訂位）
+async function openOrderCardModal(orderId){
+    const{data:o}=await _s.from('orders').select('*').eq('id',orderId).single();
+    if(!o)return;
+    // 確保 ordersRef 有這筆資料
+    if(!window.ordersRef) window.ordersRef=[];
+    const existing=window.ordersRef.findIndex(x=>x.id===orderId);
+    if(existing>-1) window.ordersRef[existing]=o; else window.ordersRef.push(o);
+
+    // 建立一個輕量 modal 顯示訂單卡片
+    const existModal=document.getElementById('single-order-modal');
+    if(existModal) existModal.remove();
+
+    const bTime=(()=>{
+        if(!o.booking_date)return '';
+        const utc=new Date(o.booking_date);
+        const tw=new Date(utc.getTime()+8*3600000);
+        return `${tw.getUTCFullYear()}-${String(tw.getUTCMonth()+1).padStart(2,'0')}-${String(tw.getUTCDate()).padStart(2,'0')}T${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`;
+    })();
+    const synced=o.status==='synced';
+    const timeOpts=[11,12,13,14,15,17,18,19,20].flatMap(h=>[0,15,30,45].map(m=>{
+        const hh=String(h).padStart(2,'0'),mm=String(m).padStart(2,'0'),val=`${hh}:${mm}`,cur=bTime?bTime.split('T')[1]?.slice(0,5):'';
+        return`<option value="${val}"${cur===val?' selected':''}>${val}</option>`;
+    })).join('');
+
+    const overlay=document.createElement('div');
+    overlay.id='single-order-modal';
+    overlay.className='fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[600] backdrop-blur-sm';
+    overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};
+    overlay.innerHTML=`
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden" style="max-height:90vh;display:flex;flex-direction:column">
+        <div class="px-6 py-4 flex justify-between items-center flex-shrink-0" style="background:var(--pine)">
+            <div>
+                <div class="font-serif font-black text-white text-lg">${o.customer_name}</div>
+                <div style="color:rgba(255,255,255,.55);font-size:12px;margin-top:2px">${o.phone||'—'} · $${o.total_price}</div>
+            </div>
+            <button onclick="document.getElementById('single-order-modal').remove()" class="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition text-xl">✕</button>
+        </div>
+        <div class="overflow-y-auto flex-1 p-5 space-y-4">
+            <!-- 聯絡資訊 -->
+            <div class="order-section">
+                <div class="order-section-label">👤 聯絡資訊</div>
+                <div class="order-fields-grid">
+                    <div class="order-field"><label>姓名</label><input type="text" value="${o.customer_name||''}" onchange="updateOrderData('${o.id}','customer_name',this.value,this)" placeholder="姓名"></div>
+                    <div class="order-field"><label>電話</label><input type="tel" value="${o.phone||''}" onchange="updateOrderData('${o.id}','phone',this.value,this)" placeholder="電話"></div>
+                </div>
+            </div>
+            <!-- 訂位資訊 -->
+            <div class="order-section">
+                <div class="order-section-label">📅 訂位資訊</div>
+                <div class="order-fields-grid">
+                    <div class="order-field"><label>訂位日期</label><input type="date" id="som-bdate-${o.id}" value="${bTime.split('T')[0]||''}" onchange="saveBookingDate('${o.id}',this.value)"></div>
+                    <div class="order-field"><label>訂位時間</label>
+                        <select id="som-btime-${o.id}" onchange="saveBookingTime('${o.id}',this.value)">
+                            <option value="">-- 選擇時間 --</option>${timeOpts}
+                        </select>
+                    </div>
+                    <div class="order-field"><label>桌號</label><input type="text" value="${o.table_no||''}" onchange="updateOrderData('${o.id}','table_no',this.value,this)" placeholder="無"></div>
+                    <div class="order-field"><label>活動代號</label>
+                        <select onchange="updateOrderData('${o.id}','campaign_code',this.value,this)">
+                            <option value="">無</option>
+                            ${allCampaigns.map(c=>`<option value="${c.code_name}"${o.campaign_code===c.code_name?' selected':''}>${c.code_name}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <!-- 人數 -->
+            <div class="order-section" style="background:#f8fafc;border-radius:12px;padding:14px">
+                <div class="order-section-label">👥 用餐人數</div>
+                <div class="pax-grid">
+                    <div class="pax-field"><label>大人</label><input type="number" min="0" value="${o.adult_count||0}" onchange="updateOrderData('${o.id}','adult_count',this.value,this)"></div>
+                    <div class="pax-field"><label>小孩</label><input type="number" min="0" value="${o.kid_count||0}" onchange="updateOrderData('${o.id}','kid_count',this.value,this)"></div>
+                    <div class="pax-field"><label>兒童</label><input type="number" min="0" value="${o.child_count||0}" onchange="updateOrderData('${o.id}','child_count',this.value,this)"></div>
+                </div>
+            </div>
+            <!-- 餐點明細 -->
+            <div class="order-section">
+                <div class="order-section-label">🍱 餐點明細</div>
+                <div style="background:#f8fafc;border-radius:10px;padding:10px 14px">
+                    ${o.order_content.map(i=>`<div class="order-item-row"><div class="order-item-dot"></div><div class="order-item-name">${i.name}</div><div style="font-weight:700;color:var(--stone)">$${i.price}</div></div>`).join('')}
+                </div>
+                ${o.note?`<div class="px-4 py-3 rounded-xl text-xs font-bold mt-2" style="background:#f0fdf4;border-left:3px solid var(--pine);color:var(--pine)">📝 ${o.note}</div>`:''}
+            </div>
+        </div>
+        <div class="px-5 py-4 border-t flex gap-3 flex-shrink-0">
+            <button onclick="openEditOrder('${o.id}');document.getElementById('single-order-modal').remove()" class="btn btn-ghost btn-sm flex-1 justify-center">修改細項</button>
+            <button onclick="toggleSync('${o.id}','${o.status}');document.getElementById('single-order-modal').remove();renderCalendar()" class="btn btn-sm flex-[1.5] justify-center ${synced?'btn-ghost':'btn-primary'}">${synced?'↩ 標記未完成':'✓ 標記完成'}</button>
+        </div>
+    </div>`;
+    document.body.appendChild(overlay);
 }
 
 function renderCalDayBody(orders){
@@ -2341,67 +2420,8 @@ function renderCalDayBody(orders){
         return;
     }
     document.getElementById('cal-day-modal-body').innerHTML=orders.map((o,idx)=>{
-        const tw=o.booking_date?new Date(new Date(o.booking_date).getTime()+8*3600000):null;
-        const hhmm=tw?`${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`:'—';
-        const pax=[o.adult_count?`大人${o.adult_count}`:'',o.kid_count?`小孩${o.kid_count}`:'',o.child_count?`兒童${o.child_count}`:''].filter(Boolean).join(' ');
-        const synced=o.status==='synced';
 
-        // 解析套餐/單點
-        const sets=[], singles={};
-        (o.order_content||[]).forEach(item=>{
-            const qM=item.name.match(/ x(\d+)/),qty=qM?parseInt(qM[1]):1;
-            let clean=item.name.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
-            const pIdx=clean.indexOf(' ('),inner=pIdx>-1?clean.slice(pIdx+2,-1):null;
-            if(inner&&inner.includes('、')){
-                const brand=clean.slice(0,pIdx).trim(),subs={};
-                inner.split('、').forEach(sub=>{const sM=sub.match(/ x(\d+)/),sq=sM?parseInt(sM[1]):1;const s=sub.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();if(s)subs[s]=(subs[s]||0)+qty*sq;});
-                sets.push({brand,qty,subs});
-            } else { singles[clean]=(singles[clean]||0)+qty; }
-        });
-
-        const itemsHtml=`
-            ${sets.map(set=>`
-            <div style="border:1.5px solid rgba(184,145,80,.25);border-radius:10px;overflow:hidden;margin-bottom:6px">
-                <div style="background:rgba(184,145,80,.08);padding:6px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(184,145,80,.15)">
-                    <span style="font-weight:900;font-size:12px;color:var(--gold)">🍱 ${set.brand}</span>
-                    <span style="font-size:11px;font-weight:900;color:var(--gold)">${set.qty} 套</span>
-                </div>
-                <div style="padding:4px 12px">
-                ${Object.entries(set.subs).map(([n,c])=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #f8fafc;font-size:11px"><span style="width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0;display:block"></span><span style="flex:1;font-weight:600;color:#334155">${n}</span><span style="font-weight:900;color:var(--pine)">${c} 份</span></div>`).join('')}
-                </div>
-            </div>`).join('')}
-            ${Object.entries(singles).length?`
-            <div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden">
-                <div style="background:#f8fafc;padding:5px 12px;border-bottom:1px solid #e2e8f0">
-                    <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.1em">單點</span>
-                </div>
-                <div style="padding:4px 12px">
-                ${Object.entries(singles).map(([n,c])=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #f8fafc;font-size:11px"><span style="width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0;display:block"></span><span style="flex:1;font-weight:600;color:#334155">${n}</span><span style="font-weight:900;color:var(--pine)">${c} 份</span></div>`).join('')}
-                </div>
-            </div>`:''}`;
-
-        return`<div style="background:white;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)">
-            <!-- 訂單頭部 -->
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:${synced?'#f0fdf4':'#004d40'}">
-                <div style="display:flex;align-items:center;gap:10px">
-                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:white;flex-shrink:0">${idx+1}</div>
-                    <div>
-                        <div style="font-weight:900;font-size:14px;color:${synced?'var(--pine)':'white'}">${o.customer_name||'—'}${o.table_no?`<span style="font-size:11px;opacity:.7"> · 桌${o.table_no}</span>`:''}</div>
-                        <div style="font-size:11px;color:${synced?'#64748b':'rgba(255,255,255,.6)'};margin-top:2px">${o.phone||'—'}${pax?'　'+pax:''}</div>
-                    </div>
-                </div>
-                <div style="text-align:right;flex-shrink:0">
-                    <div style="font-size:16px;font-weight:900;color:${synced?'var(--pine)':'#d4a85a'}">${hhmm}</div>
-                    <div style="font-size:12px;font-weight:700;color:${synced?'#10b981':'rgba(255,255,255,.6)'};margin-top:1px">$${o.total_price}${synced?' ✓':''}</div>
-                </div>
-            </div>
-            <!-- 餐點明細 -->
-            <div style="padding:12px 14px">
-                ${itemsHtml}
-                ${o.note?`<div style="margin-top:8px;padding:8px 12px;background:#f0fdf4;border-left:3px solid var(--pine);border-radius:8px;font-size:11px;font-weight:700;color:var(--pine)">📝 ${o.note}</div>`:''}
-            </div>
-        </div>`;
-    }).join('');
+}).join('');
 }
 
 // ── COLLAPSIBLE FILTERS ──
