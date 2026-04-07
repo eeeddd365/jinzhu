@@ -2420,8 +2420,75 @@ function renderCalDayBody(orders){
         return;
     }
     document.getElementById('cal-day-modal-body').innerHTML=orders.map((o,idx)=>{
+        const tw=o.booking_date?new Date(new Date(o.booking_date).getTime()+8*3600000):null;
+        const hhmm=tw?`${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`:'—';
+        const pax=[o.adult_count?`大人${o.adult_count}`:'',o.kid_count?`小孩${o.kid_count}`:'',o.child_count?`兒童${o.child_count}`:''].filter(Boolean).join(' ');
+        const synced=o.status==='synced';
 
-}).join('');
+        // 解析套餐/單點
+        const sets=[], singles={};
+        (o.order_content||[]).forEach(item=>{
+            const qM=item.name.match(/ x(\d+)/),qty=qM?parseInt(qM[1]):1;
+            let clean=item.name.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
+            const pIdx=clean.indexOf(' ('),inner=pIdx>-1?clean.slice(pIdx+2,-1):null;
+            if(inner&&inner.includes('、')){
+                const brand=clean.slice(0,pIdx).trim(),subs={};
+                inner.split('、').forEach(sub=>{const sM=sub.match(/ x(\d+)/),sq=sM?parseInt(sM[1]):1;const s=sub.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();if(s)subs[s]=(subs[s]||0)+qty*sq;});
+                sets.push({brand,qty,subs});
+            } else { singles[clean]=(singles[clean]||0)+qty; }
+        });
+
+        const detailHtml=`
+            ${sets.map(set=>`
+            <div style="border:1.5px solid rgba(184,145,80,.25);border-radius:10px;overflow:hidden;margin-bottom:6px">
+                <div style="background:rgba(184,145,80,.08);padding:6px 12px;display:flex;justify-content:space-between;border-bottom:1px solid rgba(184,145,80,.15)">
+                    <span style="font-weight:900;font-size:12px;color:var(--gold)">🍱 ${set.brand}</span>
+                    <span style="font-size:11px;font-weight:900;color:var(--gold)">${set.qty} 套</span>
+                </div>
+                <div style="padding:4px 12px">
+                ${Object.entries(set.subs).map(([n,c])=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #f8fafc;font-size:11px"><span style="width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0;display:block"></span><span style="flex:1;font-weight:600;color:#334155">${n}</span><span style="font-weight:900;color:var(--pine)">${c} 份</span></div>`).join('')}
+                </div>
+            </div>`).join('')}
+            ${Object.entries(singles).length?`
+            <div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden">
+                <div style="background:#f8fafc;padding:5px 12px;border-bottom:1px solid #e2e8f0"><span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.1em">單點</span></div>
+                <div style="padding:4px 12px">
+                ${Object.entries(singles).map(([n,c])=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #f8fafc;font-size:11px"><span style="width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0;display:block"></span><span style="flex:1;font-weight:600;color:#334155">${n}</span><span style="font-weight:900;color:var(--pine)">${c} 份</span></div>`).join('')}
+                </div>
+            </div>`:''}
+            ${o.note?`<div style="margin-top:8px;padding:8px 12px;background:#f0fdf4;border-left:3px solid var(--pine);border-radius:8px;font-size:11px;font-weight:700;color:var(--pine)">📝 ${o.note}</div>`:''}`;
+
+        return`<div style="background:white;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+            <div onclick="const d=this.nextElementSibling;d.classList.toggle('hidden');this.querySelector('.cal-chevron').style.transform=d.classList.contains('hidden')?'':'rotate(180deg)'"
+                style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;background:${synced?'#f0fdf4':'white'}"
+                onmouseover="this.style.background='${synced?'#dcfce7':'#f8fafc'}'" onmouseout="this.style.background='${synced?'#f0fdf4':'white'}'">
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div style="width:28px;height:28px;border-radius:50%;background:${synced?'rgba(16,185,129,.15)':'rgba(0,77,64,.08)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:${synced?'#059669':'var(--pine)'}">${idx+1}</div>
+                    <div>
+                        <div style="font-weight:900;font-size:13px;color:${synced?'#059669':'var(--ink)'}">
+                            ${o.customer_name}${o.table_no?`<span style="font-size:11px;font-weight:500;color:var(--stone)"> · 桌${o.table_no}</span>`:''}
+                            ${synced?'<span style="font-size:10px;color:#059669;margin-left:4px">✓</span>':''}
+                        </div>
+                        <div style="font-size:11px;color:var(--stone);margin-top:1px">${o.phone||'—'}${pax?'　'+pax:''}</div>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                    <div style="text-align:right">
+                        <div style="font-size:14px;font-weight:900;color:var(--gold)">${hhmm}</div>
+                        <div style="font-size:11px;color:var(--stone)">$${o.total_price}</div>
+                    </div>
+                    <svg class="cal-chevron" style="width:14px;height:14px;color:#94a3b8;transition:transform .2s;flex-shrink:0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+            </div>
+            <div class="hidden" style="border-top:1px solid #f1f5f9;padding:12px 14px">
+                ${detailHtml}
+                <div style="display:flex;gap:8px;margin-top:12px">
+                    <button onclick="document.getElementById('cal-day-modal').classList.add('hidden');openEditOrder('${o.id}')" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center">修改細項</button>
+                    <button onclick="toggleSync('${o.id}','${o.status}');document.getElementById('cal-day-modal').classList.add('hidden');renderCalendar()" class="btn btn-sm ${synced?'btn-ghost':'btn-primary'}" style="flex:1.5;justify-content:center">${synced?'↩ 標記未完成':'✓ 標記完成'}</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
 }
 
 // ── COLLAPSIBLE FILTERS ──
