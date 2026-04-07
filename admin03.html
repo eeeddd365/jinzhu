@@ -1338,10 +1338,6 @@ async function updateOrderData(id,field,val,inputEl){
 }
 async function saveBookingDateAndClose(id, newDate){
     await saveBookingDate(id, newDate);
-    if(newDate){
-        // 已安排訂位日期，關閉 modal 讓日曆更新後顯示正確位置
-        setTimeout(()=>{ document.getElementById('single-order-modal')?.remove(); },400);
-    }
 }
 async function saveBookingDate(id, newDate){
     if(!newDate) return;
@@ -2364,7 +2360,7 @@ async function openOrderCardModal(orderId){
     const overlay=document.createElement('div');
     overlay.id='single-order-modal';
     overlay.className='fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[600] backdrop-blur-sm';
-    overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};
+    overlay.onclick=e=>{if(e.target===overlay){overlay.remove();if(curOrderView==='calendar')renderCalendar();}};
     overlay.innerHTML=`
     <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden" style="max-height:90vh;display:flex;flex-direction:column">
         <div class="px-6 py-4 flex justify-between items-center flex-shrink-0" style="background:var(--pine)">
@@ -2372,7 +2368,7 @@ async function openOrderCardModal(orderId){
                 <div class="font-serif font-black text-white text-lg">${o.customer_name}</div>
                 <div style="color:rgba(255,255,255,.55);font-size:12px;margin-top:2px">${o.phone||'—'} · $${o.total_price}</div>
             </div>
-            <button onclick="document.getElementById('single-order-modal').remove()" class="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition text-xl">✕</button>
+            <button onclick="document.getElementById('single-order-modal').remove();if(curOrderView==='calendar')renderCalendar();" class="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition text-xl">✕</button>
         </div>
         <div class="overflow-y-auto flex-1 p-5 space-y-4">
             <!-- 聯絡資訊 -->
