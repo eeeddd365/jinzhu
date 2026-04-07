@@ -2234,7 +2234,37 @@ async function renderCalendar(){
     const monthNames=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
     document.getElementById('cal-month-label').textContent=`${calYear} 年 ${monthNames[calMonth]}`;
 
-    // 抓當月前後各一點範圍的訂單
+    // 台灣國定假日（固定日期，不含農曆）
+    const twHolidays={
+        '01-01':'元旦','02-28':'和平紀念日',
+        '04-04':'兒童節','04-05':'清明節',
+        '05-01':'勞動節','06-10':'端午節',
+        '07-28':'中秋節','10-10':'國慶日',
+        '12-25':'行憲紀念日'
+    };
+    // 農曆假日（每年不同，手動維護近年）
+    const lunarHolidays={
+        '2024-02-08':'除夕','2024-02-09':'春節','2024-02-10':'春節',
+        '2024-02-11':'春節','2024-02-12':'春節','2024-02-13':'初四',
+        '2024-04-04':'兒童節/清明','2024-06-10':'端午節',
+        '2024-09-17':'中秋節','2025-01-28':'除夕',
+        '2025-01-29':'春節','2025-01-30':'春節','2025-01-31':'春節',
+        '2025-02-01':'春節','2025-02-02':'初五',
+        '2025-04-03':'兒童節','2025-04-04':'清明節',
+        '2025-05-31':'端午節','2025-10-06':'中秋節',
+        '2026-02-16':'除夕','2026-02-17':'春節','2026-02-18':'春節',
+        '2026-02-19':'春節','2026-02-20':'春節',
+        '2026-04-03':'兒童節','2026-04-05':'清明節',
+        '2026-06-19':'端午節','2026-09-25':'中秋節',
+    };
+
+    const getHolidayName=(dateStr)=>{
+        if(lunarHolidays[dateStr]) return lunarHolidays[dateStr];
+        const mmdd=dateStr.slice(5);
+        return twHolidays[mmdd]||'';
+    };
+
+    // 抓全部訂單
     const {data} = await _s.from('orders').select('*').order('booking_date',{ascending:true});
     const allOrders = data||[];
 
@@ -2267,7 +2297,7 @@ async function renderCalendar(){
     const today=new Date();
     const todayStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
     const rowCount=Math.ceil((firstDay+daysInMonth)/7);
-    const cellH=Math.max(100, Math.floor(580/rowCount));
+    const cellH=Math.max(120, Math.floor(640/rowCount));
 
     let html='';
     for(let i=0;i<firstDay;i++){
@@ -2278,16 +2308,21 @@ async function renderCalendar(){
         const orders=(orderMap[dateStr]||[]).sort((a,b)=>new Date(a.booking_date)-new Date(b.booking_date));
         const isToday=dateStr===todayStr;
         const dow=(firstDay+d-1)%7;
+        const holiday=getHolidayName(dateStr);
+        const isHoliday=!!(holiday||(dow===0||dow===6));
         const numStyle=isToday
             ?'display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--pine);color:white;font-size:11px;font-weight:900'
-            :`font-size:13px;font-weight:900;color:${dow===0?'#dc2626':dow===6?'#2563eb':'#334155'}`;
-        const totalPax=orders.reduce((s,o)=>s+(o.adult_count||0)+(o.kid_count||0)+(o.child_count||0),0);
+            :`font-size:13px;font-weight:900;color:${dow===0||holiday?'#dc2626':dow===6?'#2563eb':'#334155'}`;
+        const cellBg=isToday?'#f0fdf4':holiday?'#fff8f8':'';
 
         html+=`<div onclick="openCalDayModal('${dateStr}')"
-            style="min-height:${cellH}px;border-bottom:1px solid #f1f5f9;border-right:1px solid #f1f5f9;padding:6px 5px;cursor:pointer;transition:background .15s;${isToday?'background:#f0fdf4':''}"
-            onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='${isToday?'#f0fdf4':''}'">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-                <span style="${numStyle}">${d}</span>
+            style="min-height:${cellH}px;border-bottom:1px solid #f1f5f9;border-right:1px solid #f1f5f9;padding:6px 5px;cursor:pointer;transition:background .15s;${cellBg?'background:'+cellBg:''}"
+            onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='${cellBg}'">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
+                <div>
+                    <span style="${numStyle}">${d}</span>
+                    ${holiday?`<span style="font-size:8px;font-weight:700;color:#dc2626;margin-left:3px">${holiday}</span>`:''}
+                </div>
                 ${orders.length?`<span style="font-size:9px;font-weight:900;padding:1px 6px;border-radius:999px;background:var(--pine);color:white">${orders.length}</span>`:''}
             </div>
             ${orders.length?`<div style="display:flex;flex-direction:column;gap:2px">
@@ -2295,8 +2330,9 @@ async function renderCalendar(){
                     const tw=new Date(new Date(o.booking_date).getTime()+8*3600000);
                     const hhmm=String(tw.getUTCHours()).padStart(2,'0')+':'+String(tw.getUTCMinutes()).padStart(2,'0');
                     const synced=o.status==='synced';
-                    return`<div style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:${synced?'rgba(16,185,129,.1)':'rgba(0,77,64,.07)'};color:${synced?'#059669':'var(--pine)'}">
-                        ${hhmm} ${o.customer_name} ${o.phone?'·'+o.phone.slice(-4):''}
+                    return`<div style="font-size:9px;padding:3px 5px;border-radius:5px;background:${synced?'rgba(16,185,129,.1)':'rgba(0,77,64,.07)'};color:${synced?'#059669':'var(--pine)'}">
+                        <div style="font-weight:900">${o.customer_name}</div>
+                        <div style="font-weight:500;opacity:.8">${o.phone||'—'} · ${hhmm}</div>
                     </div>`;
                 }).join('')}
                 ${orders.length>3?`<div style="font-size:9px;color:#94a3b8;font-weight:700;padding-left:4px">+${orders.length-3} 筆</div>`:''}
@@ -2495,6 +2531,7 @@ function renderCalDayBody(orders){
                 <div style="display:flex;gap:8px;margin-top:12px">
                     <button onclick="document.getElementById('cal-day-modal').classList.add('hidden');openEditOrder('${o.id}')" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center">修改細項</button>
                     <button onclick="toggleSync('${o.id}','${o.status}');document.getElementById('cal-day-modal').classList.add('hidden');renderCalendar()" class="btn btn-sm ${synced?'btn-ghost':'btn-primary'}" style="flex:1.5;justify-content:center">${synced?'↩ 標記未完成':'✓ 標記完成'}</button>
+                    <button onclick="confirm2({icon:'🗑',title:'刪除訂單',msg:'確定永久刪除此筆訂單？此操作無法復原。',okText:'刪除',danger:true}).then(ok=>{if(ok){_s.from('orders').delete().eq('id','${o.id}').then(()=>{document.getElementById('cal-day-modal').classList.add('hidden');renderCalendar();toast('訂單已刪除');});}})" class="btn btn-danger btn-sm px-3">🗑</button>
                 </div>
             </div>
         </div>`;
@@ -2519,6 +2556,20 @@ function toggleReportFilter() {
 switchTab('orders');
 loadSidebarLogo();
 checkLogin();
+
+// ── REALTIME：新訂單自動通知 ──
+_s.channel('orders-realtime')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'orders'}, (payload)=>{
+        const o = payload.new;
+        toast(`🔔 新訂單：${o.customer_name} $${o.total_price}`, 'info', 5000);
+        if(curOrderView==='calendar') renderCalendar();
+        else loadOrders();
+    })
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'orders'}, ()=>{
+        if(curOrderView==='calendar') renderCalendar();
+        else loadOrders();
+    })
+    .subscribe();
 </script>
 
 </body>
