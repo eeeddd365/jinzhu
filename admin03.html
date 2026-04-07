@@ -1327,34 +1327,48 @@ async function updateOrderData(id,field,val,inputEl){
     if(inputEl){
         inputEl.classList.remove('field-saving');
         if(!error){
-            // flash a brief green border
             inputEl.style.borderColor='#10b981';
             setTimeout(()=>inputEl.style.borderColor='',1200);
         }
     }
-    if(!error)toast('已更新');else toast('更新失敗','error');
+    if(!error){
+        toast('已更新');
+        if(curOrderView==='calendar') renderCalendar();
+    } else toast('更新失敗','error');
+}
+async function saveBookingDateAndClose(id, newDate){
+    await saveBookingDate(id, newDate);
+    if(newDate){
+        // 已安排訂位日期，關閉 modal 讓日曆更新後顯示正確位置
+        setTimeout(()=>{ document.getElementById('single-order-modal')?.remove(); },400);
+    }
 }
 async function saveBookingDate(id, newDate){
     if(!newDate) return;
-    const time = document.getElementById(`btime-${id}`)?.value || '00:00';
+    // 同時支援訂單卡片（btime-）和 modal（som-btime-）兩種 id 格式
+    const timeEl = document.getElementById(`btime-${id}`) || document.getElementById(`som-btime-${id}`);
+    const time = timeEl?.value || '00:00';
     const isoStr = `${newDate}T${time}:00+08:00`;
     const{error}=await _s.from('orders').update({booking_date: isoStr}).eq('id',id);
-    const el = document.getElementById(`bdate-${id}`);
+    const el = document.getElementById(`bdate-${id}`) || document.getElementById(`som-bdate-${id}`);
     if(!error){
         if(el){ el.style.borderColor='#10b981'; setTimeout(()=>el.style.borderColor='',1200); }
         toast('訂位日期已更新');
+        if(curOrderView==='calendar') renderCalendar();
     } else toast('更新失敗','error');
 }
 async function saveBookingTime(id, newTime){
     if(!newTime) return;
-    const date = document.getElementById(`bdate-${id}`)?.value;
+    const dateEl = document.getElementById(`bdate-${id}`) || document.getElementById(`som-bdate-${id}`);
+    const date = dateEl?.value;
     if(!date){ toast('請先填寫訂位日期','warn'); return; }
     const isoStr = `${date}T${newTime}:00+08:00`;
     const{error}=await _s.from('orders').update({booking_date: isoStr}).eq('id',id);
-    const el = document.getElementById(`btime-${id}`);
+    const el = document.getElementById(`btime-${id}`) || document.getElementById(`som-btime-${id}`);
     if(!error){
         if(el){ el.style.borderColor='#10b981'; setTimeout(()=>el.style.borderColor='',1200); }
         toast('訂位時間已更新');
+        if(curOrderView==='calendar') renderCalendar();
     } else toast('更新失敗','error');
 }
 async function toggleSync(id,cur){
@@ -2373,7 +2387,7 @@ async function openOrderCardModal(orderId){
             <div class="order-section">
                 <div class="order-section-label">📅 訂位資訊</div>
                 <div class="order-fields-grid">
-                    <div class="order-field"><label>訂位日期</label><input type="date" id="som-bdate-${o.id}" value="${bTime.split('T')[0]||''}" onchange="saveBookingDate('${o.id}',this.value)"></div>
+                    <div class="order-field"><label>訂位日期</label><input type="date" id="som-bdate-${o.id}" value="${bTime.split('T')[0]||''}" onchange="saveBookingDateAndClose('${o.id}',this.value)"></div>
                     <div class="order-field"><label>訂位時間</label>
                         <select id="som-btime-${o.id}" onchange="saveBookingTime('${o.id}',this.value)">
                             <option value="">-- 選擇時間 --</option>${timeOpts}
