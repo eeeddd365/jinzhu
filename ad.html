@@ -407,42 +407,80 @@
 <main class="flex-1 overflow-y-auto">
 
 <!-- 訂單監控 -->
-<section id="sec-orders" class="space-y-6">
+<section id="sec-orders" class="space-y-4">
+    <!-- 即時 KPI 橫條 -->
+    <div class="bg-white rounded-2xl border shadow-sm px-4 py-2.5 flex items-center gap-5">
+        <div class="flex items-center gap-2">
+            <span style="font-size:14px">📋</span>
+            <span class="text-xs font-bold text-slate-400">今日訂位</span>
+            <span id="kpi-today-bookings" class="font-serif font-black text-base" style="color:var(--pine)">—</span>
+            <span class="text-xs text-slate-400">筆</span>
+        </div>
+        <div style="width:1px;height:16px;background:var(--border)"></div>
+        <div class="flex items-center gap-2">
+            <span style="font-size:14px">⏳</span>
+            <span class="text-xs font-bold text-slate-400">尚未處理</span>
+            <span id="kpi-pending-orders" class="font-serif font-black text-base" style="color:var(--gold)">—</span>
+            <span class="text-xs text-slate-400">筆</span>
+        </div>
+        <div class="ml-auto text-[10px] text-slate-300 font-bold" id="kpi-update-time"></div>
+    </div>
+
     <!-- 訂單篩選列 -->
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden mb-5">
         <!-- 常駐工具列 -->
         <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-100 flex-wrap">
-            <input type="text" id="filter-search" class="filter-input flex-1 min-w-[140px]" placeholder="搜尋顧客姓名或電話…" style="padding:5px 10px">
-            <select id="filter-date-type" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700">
-                <option value="created">下單日期</option>
-                <option value="booking">訂位日期</option>
-            </select>
-            <select id="filter-date-preset" onchange="setQuickDate(this.value);loadOrders()" class="filter-select" style="width:auto;padding:5px 8px">
-                <option value="all">不限</option>
-                <option value="today">今日</option>
-                <option value="week">本週</option>
-                <option value="range">區間</option>
-            </select>
-            <select id="filter-status" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px">
-                <option value="all">全部</option>
-                <option value="pending">準備中</option>
-                <option value="synced">已完成</option>
-            </select>
-            <select id="filter-sort" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700" title="排序方式">
-                <option value="created_desc">下單↓新到舊</option>
-                <option value="created_asc">下單↑舊到新</option>
-                <option value="booking_asc">訂位↑早到晚</option>
-                <option value="booking_desc">訂位↓晚到早</option>
-            </select>
-            <button onclick="loadOrders()" class="btn btn-primary btn-sm">篩選</button>
-            <button onclick="exportXls()" class="btn btn-ghost btn-sm">📊 Excel</button>
-            <button onclick="toggleOrderFilter()" id="filter-toggle-btn" class="btn btn-ghost btn-sm px-2" title="更多篩選">
-                <svg id="filter-chevron" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-            </button>
+            <!-- 檢視切換 -->
+            <div class="flex bg-slate-100 rounded-lg p-0.5 gap-0.5 flex-shrink-0">
+                <button id="view-btn-list" onclick="switchOrderView('list')"
+                    class="px-3 py-1 rounded-md text-xs font-bold transition-all"
+                    style="background:var(--pine);color:white">
+                    📋
+                </button>
+                <button id="view-btn-calendar" onclick="switchOrderView('calendar')"
+                    class="px-3 py-1 rounded-md text-xs font-bold transition-all text-slate-400 hover:text-slate-600">
+                    📅
+                </button>
+            </div>
+            <!-- 月份導覽（日曆模式才顯示） -->
+            <span id="cal-month-nav" class="hidden items-center gap-1 flex-shrink-0">
+                <button onclick="calPrevMonth()" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-100 font-bold transition text-sm">‹</button>
+                <span id="cal-month-label" class="font-serif font-black text-sm px-1" style="color:var(--pine)"></span>
+                <button onclick="calNextMonth()" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-100 font-bold transition text-sm">›</button>
+            </span>
+            <!-- 列表篩選（日曆模式時隱藏） -->
+            <div id="list-filters" class="flex items-center gap-2 flex-1 flex-wrap">
+                <input type="text" id="filter-search" class="filter-input flex-1 min-w-[140px]" placeholder="搜尋顧客姓名或電話…" style="padding:5px 10px">
+                <select id="filter-date-type" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700">
+                    <option value="created">下單日期</option>
+                    <option value="booking">訂位日期</option>
+                </select>
+                <select id="filter-date-preset" onchange="setQuickDate(this.value);loadOrders()" class="filter-select" style="width:auto;padding:5px 8px">
+                    <option value="all">不限</option>
+                    <option value="today">今日</option>
+                    <option value="week">本週</option>
+                    <option value="range">區間</option>
+                </select>
+                <select id="filter-status" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px">
+                    <option value="all">全部</option>
+                    <option value="pending">準備中</option>
+                    <option value="synced">已完成</option>
+                </select>
+                <select id="filter-sort" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700" title="排序方式">
+                    <option value="created_desc">下單↓新到舊</option>
+                    <option value="created_asc">下單↑舊到新</option>
+                    <option value="booking_asc">訂位↑早到晚</option>
+                    <option value="booking_desc">訂位↓晚到早</option>
+                </select>
+                <button onclick="loadOrders()" class="btn btn-primary btn-sm">篩選</button>
+                <button onclick="exportXls()" class="btn btn-ghost btn-sm">📊 Excel</button>
+                <button onclick="toggleOrderFilter()" id="filter-toggle-btn" class="btn btn-ghost btn-sm px-2" title="更多篩選">
+                    <svg id="filter-chevron" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+            </div>
         </div>
-        <!-- 展開區 -->
+        <!-- 展開區（列表模式） -->
         <div id="filter-expand" class="hidden px-3 pb-3 pt-2 space-y-2 bg-slate-50">
-            <!-- 日期區間（選「區間」時顯示） -->
             <div id="date-range-box" class="hidden grid grid-cols-2 gap-2">
                 <div>
                     <label class="filter-label">開始日期</label>
@@ -479,12 +517,52 @@
         </div>
     </div>
 
-    <div id="order-list" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></div>
+    <!-- 列表檢視 -->
+    <div id="view-list">
+        <div id="order-list" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></div>
+    </div>
+
+    <!-- 日曆檢視 -->
+    <div id="view-calendar" class="hidden space-y-3">
+        <!-- 無訂位日期橫條 -->
+        <div id="cal-no-date-bar" class="hidden bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
+            <div class="flex items-center gap-2 mb-2">
+                <span style="font-size:10px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:.1em">⚠ 尚未安排訂位日期</span>
+                <span id="cal-no-date-count" class="text-[10px] font-bold bg-amber-400 text-white px-2 py-0.5 rounded-full">0</span>
+            </div>
+            <div id="cal-no-date-list" class="flex flex-wrap gap-2"></div>
+        </div>
+        <!-- 日曆本體 -->
+        <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+            <div class="grid grid-cols-7 border-b border-slate-100 bg-slate-50">
+                <div class="text-center py-2.5 text-[11px] font-bold text-red-400">日</div>
+                <div class="text-center py-2.5 text-[11px] font-bold text-slate-500">一</div>
+                <div class="text-center py-2.5 text-[11px] font-bold text-slate-500">二</div>
+                <div class="text-center py-2.5 text-[11px] font-bold text-slate-500">三</div>
+                <div class="text-center py-2.5 text-[11px] font-bold text-slate-500">四</div>
+                <div class="text-center py-2.5 text-[11px] font-bold text-slate-500">五</div>
+                <div class="text-center py-2.5 text-[11px] font-bold text-blue-400">六</div>
+            </div>
+            <div id="cal-grid" class="grid grid-cols-7" style="min-height:640px"></div>
+        </div>
+    </div>
 </section>
 
+<!-- 日曆：日期訂單 Modal -->
+<div id="cal-day-modal" class="fixed inset-0 bg-black/75 hidden flex items-center justify-center p-4 z-[500] backdrop-blur-sm">
+    <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col overflow-hidden" style="max-height:88vh">
+        <div class="px-6 py-4 flex justify-between items-center flex-shrink-0" style="background:var(--pine)">
+            <div>
+                <h3 class="font-serif font-black text-white text-lg" id="cal-day-modal-title"></h3>
+                <p class="text-white/50 text-xs mt-0.5" id="cal-day-modal-sub"></p>
+            </div>
+            <button onclick="document.getElementById('cal-day-modal').classList.add('hidden')" class="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition text-xl">✕</button>
+        </div>
+        <div id="cal-day-modal-body" class="overflow-y-auto flex-1 p-5 space-y-3 bg-slate-50"></div>
+    </div>
+</div>
 <!-- 活動代號 -->
 <section id="sec-campaigns" class="hidden space-y-6">
-    
     <div class="bg-white p-6 rounded-2xl border max-w-md shadow-sm">
         <div class="flex gap-2 mb-6">
             <input id="new-campaign" class="filter-input flex-1" placeholder="新代號（如：父親節）">
@@ -1003,7 +1081,7 @@ async function switchTab(t) {
     document.querySelectorAll('.nav-btn-tab').forEach(b => b.classList.remove('sidebar-active'));
     document.getElementById(`sec-${t}`).classList.remove('hidden');
     document.getElementById(`btn-${t}`).classList.add('sidebar-active');
-    if (t==='orders')     { await loadCampaignOptions(); loadOrders(); }
+    if (t==='orders')     { await loadCampaignOptions(); switchOrderView('calendar'); updateOrdersKpi(); }
     if (t==='campaigns')  loadCampaigns();
     if (t==='categories') loadCats();
     if (t==='menu')       { await loadCats(); loadMenu(); }
@@ -1267,34 +1345,44 @@ async function updateOrderData(id,field,val,inputEl){
     if(inputEl){
         inputEl.classList.remove('field-saving');
         if(!error){
-            // flash a brief green border
             inputEl.style.borderColor='#10b981';
             setTimeout(()=>inputEl.style.borderColor='',1200);
         }
     }
-    if(!error)toast('已更新');else toast('更新失敗','error');
+    if(!error){
+        toast('已更新');
+        if(curOrderView==='calendar') renderCalendar();
+    } else toast('更新失敗','error');
+}
+async function saveBookingDateAndClose(id, newDate){
+    await saveBookingDate(id, newDate);
 }
 async function saveBookingDate(id, newDate){
     if(!newDate) return;
-    const time = document.getElementById(`btime-${id}`)?.value || '00:00';
+    // 同時支援訂單卡片（btime-）和 modal（som-btime-）兩種 id 格式
+    const timeEl = document.getElementById(`btime-${id}`) || document.getElementById(`som-btime-${id}`);
+    const time = timeEl?.value || '00:00';
     const isoStr = `${newDate}T${time}:00+08:00`;
     const{error}=await _s.from('orders').update({booking_date: isoStr}).eq('id',id);
-    const el = document.getElementById(`bdate-${id}`);
+    const el = document.getElementById(`bdate-${id}`) || document.getElementById(`som-bdate-${id}`);
     if(!error){
         if(el){ el.style.borderColor='#10b981'; setTimeout(()=>el.style.borderColor='',1200); }
         toast('訂位日期已更新');
+        if(curOrderView==='calendar') renderCalendar();
     } else toast('更新失敗','error');
 }
 async function saveBookingTime(id, newTime){
     if(!newTime) return;
-    const date = document.getElementById(`bdate-${id}`)?.value;
+    const dateEl = document.getElementById(`bdate-${id}`) || document.getElementById(`som-bdate-${id}`);
+    const date = dateEl?.value;
     if(!date){ toast('請先填寫訂位日期','warn'); return; }
     const isoStr = `${date}T${newTime}:00+08:00`;
     const{error}=await _s.from('orders').update({booking_date: isoStr}).eq('id',id);
-    const el = document.getElementById(`btime-${id}`);
+    const el = document.getElementById(`btime-${id}`) || document.getElementById(`som-btime-${id}`);
     if(!error){
         if(el){ el.style.borderColor='#10b981'; setTimeout(()=>el.style.borderColor='',1200); }
         toast('訂位時間已更新');
+        if(curOrderView==='calendar') renderCalendar();
     } else toast('更新失敗','error');
 }
 async function toggleSync(id,cur){
@@ -2117,6 +2205,356 @@ async function doLogin(){
     else{document.getElementById('login-screen').classList.add('hidden');}
 }
 
+// ── CALENDAR VIEW ──
+let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
+let curOrderView='list';
+
+function switchOrderView(mode){
+    curOrderView=mode;
+    const listEl=document.getElementById('view-list');
+    const calEl=document.getElementById('view-calendar');
+    const monthNav=document.getElementById('cal-month-nav');
+    const listFilters=document.getElementById('list-filters');
+    const filterExpand=document.getElementById('filter-expand');
+    const btnList=document.getElementById('view-btn-list');
+    const btnCal=document.getElementById('view-btn-calendar');
+
+    if(mode==='list'){
+        listEl.classList.remove('hidden');
+        calEl.classList.add('hidden');
+        monthNav.classList.remove('flex');monthNav.classList.add('hidden');
+        listFilters.classList.remove('hidden');
+        btnList.style.cssText='background:var(--pine);color:white';
+        btnCal.style.cssText='color:#64748b';
+        loadOrders();
+    } else {
+        listEl.classList.add('hidden');
+        calEl.classList.remove('hidden');
+        monthNav.classList.remove('hidden');monthNav.classList.add('flex');
+        listFilters.classList.add('hidden');
+        filterExpand.classList.add('hidden'); // 收合展開區
+        btnCal.style.cssText='background:var(--pine);color:white';
+        btnList.style.cssText='color:#64748b';
+        renderCalendar();
+    }
+}
+
+function calPrevMonth(){
+    calMonth--; if(calMonth<0){calMonth=11;calYear--;}
+    renderCalendar();
+}
+function calNextMonth(){
+    calMonth++; if(calMonth>11){calMonth=0;calYear++;}
+    renderCalendar();
+}
+
+async function renderCalendar(){
+    const monthNames=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+    document.getElementById('cal-month-label').textContent=`${calYear} 年 ${monthNames[calMonth]}`;
+
+    // 台灣國定假日（僅固定不變的，兒童節/清明因年份不同放 lunarHolidays）
+    const twHolidays={
+        '01-01':'元旦',
+        '02-28':'和平紀念日',
+        '05-01':'勞動節',
+        '10-10':'國慶日',
+        '12-25':'行憲紀念日'
+    };
+    // 農曆 & 彈性假日（兒童節、清明、端午、中秋每年日期不同）
+    const lunarHolidays={
+        '2024-02-08':'除夕','2024-02-09':'春節','2024-02-10':'春節',
+        '2024-02-11':'春節','2024-02-12':'春節',
+        '2024-04-04':'兒童節·清明','2024-06-10':'端午節','2024-09-17':'中秋節',
+        '2025-01-28':'除夕','2025-01-29':'春節','2025-01-30':'春節',
+        '2025-01-31':'春節','2025-02-01':'春節',
+        '2025-04-03':'兒童節','2025-04-04':'清明節',
+        '2025-05-31':'端午節','2025-10-06':'中秋節',
+        '2026-02-16':'除夕','2026-02-17':'春節','2026-02-18':'春節',
+        '2026-02-19':'春節','2026-02-20':'春節',
+        '2026-04-03':'兒童節','2026-04-05':'清明節',
+        '2026-06-19':'端午節','2026-09-25':'中秋節',
+    };
+
+    const getHolidayName=(dateStr)=>{
+        if(lunarHolidays[dateStr]) return lunarHolidays[dateStr];
+        const mmdd=dateStr.slice(5);
+        return twHolidays[mmdd]||'';
+    };
+
+    // 抓全部訂單
+    const {data} = await _s.from('orders').select('*').order('booking_date',{ascending:true});
+    const allOrders = data||[];
+
+    // 無訂位日期
+    const noDate=allOrders.filter(o=>!o.booking_date);
+    const bar=document.getElementById('cal-no-date-bar');
+    document.getElementById('cal-no-date-count').textContent=noDate.length;
+    if(noDate.length){
+        bar.classList.remove('hidden');
+        document.getElementById('cal-no-date-list').innerHTML=noDate.map(o=>`
+            <button onclick="openOrderCardModal('${o.id}')"
+                class="flex items-center gap-2 bg-white border border-amber-200 hover:border-amber-400 rounded-xl px-3 py-1.5 text-xs font-bold transition"
+                style="color:var(--ink)">
+                <span>${o.customer_name}</span>
+                <span style="color:var(--stone);font-weight:500">${o.phone||'—'}</span>
+            </button>`).join('');
+    } else { bar.classList.add('hidden'); }
+
+    // 建立 dateKey → orders map
+    const orderMap={};
+    allOrders.filter(o=>o.booking_date).forEach(o=>{
+        const tw=new Date(new Date(o.booking_date).getTime()+8*3600000);
+        const key=`${tw.getUTCFullYear()}-${String(tw.getUTCMonth()+1).padStart(2,'0')}-${String(tw.getUTCDate()).padStart(2,'0')}`;
+        if(!orderMap[key])orderMap[key]=[];
+        orderMap[key].push(o);
+    });
+
+    const firstDay=new Date(calYear,calMonth,1).getDay();
+    const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+    const today=new Date();
+    const todayStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    const rowCount=Math.ceil((firstDay+daysInMonth)/7);
+    const cellH=Math.max(120, Math.floor(640/rowCount));
+
+    let html='';
+    for(let i=0;i<firstDay;i++){
+        html+=`<div style="min-height:${cellH}px;border-bottom:1px solid #f1f5f9;border-right:1px solid #f1f5f9;background:#fafafa"></div>`;
+    }
+    for(let d=1;d<=daysInMonth;d++){
+        const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const orders=(orderMap[dateStr]||[]).sort((a,b)=>new Date(a.booking_date)-new Date(b.booking_date));
+        const isToday=dateStr===todayStr;
+        const dow=(firstDay+d-1)%7;
+        const holiday=getHolidayName(dateStr);
+        const isHoliday=!!(holiday||(dow===0||dow===6));
+        const numStyle=isToday
+            ?'display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--pine);color:white;font-size:11px;font-weight:900'
+            :`font-size:13px;font-weight:900;color:${dow===0||holiday?'#dc2626':dow===6?'#2563eb':'#334155'}`;
+        const cellBg=isToday?'#f0fdf4':holiday?'#fff8f8':'';
+
+        html+=`<div onclick="openCalDayModal('${dateStr}')"
+            style="min-height:${cellH}px;border-bottom:1px solid #f1f5f9;border-right:1px solid #f1f5f9;padding:6px 5px;cursor:pointer;transition:background .15s;${cellBg?'background:'+cellBg:''}"
+            onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='${cellBg}'">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
+                <div>
+                    <span style="${numStyle}">${d}</span>
+                    ${holiday?`<span style="font-size:8px;font-weight:700;color:#dc2626;margin-left:3px">${holiday}</span>`:''}
+                </div>
+                ${orders.length?`<span style="font-size:9px;font-weight:900;padding:1px 6px;border-radius:999px;background:var(--pine);color:white">${orders.length}</span>`:''}
+            </div>
+            ${orders.length?`<div style="display:flex;flex-direction:column;gap:2px">
+                ${orders.slice(0,3).map(o=>{
+                    const tw=new Date(new Date(o.booking_date).getTime()+8*3600000);
+                    const hhmm=String(tw.getUTCHours()).padStart(2,'0')+':'+String(tw.getUTCMinutes()).padStart(2,'0');
+                    const synced=o.status==='synced';
+                    return`<div style="font-size:9px;padding:3px 5px;border-radius:5px;background:${synced?'rgba(16,185,129,.1)':'rgba(0,77,64,.07)'};color:${synced?'#059669':'var(--pine)'}">
+                        <div style="font-weight:900">${o.customer_name}</div>
+                        <div style="font-weight:500;opacity:.8">${o.phone||'—'} · ${hhmm}</div>
+                    </div>`;
+                }).join('')}
+                ${orders.length>3?`<div style="font-size:9px;color:#94a3b8;font-weight:700;padding-left:4px">+${orders.length-3} 筆</div>`:''}
+            </div>`:''}
+        </div>`;
+    }
+    const totalCells=firstDay+daysInMonth;
+    const remain=(7-totalCells%7)%7;
+    for(let i=0;i<remain;i++){
+        html+=`<div style="min-height:${cellH}px;border-bottom:1px solid #f1f5f9;border-right:1px solid #f1f5f9;background:#fafafa"></div>`;
+    }
+    document.getElementById('cal-grid').innerHTML=html;
+}
+
+function openCalDayModal(dateStr, focusId=null){
+    const modal=document.getElementById('cal-day-modal');
+    if(dateStr){
+        _s.from('orders').select('*').then(({data})=>{
+            const orders=(data||[]).filter(o=>{
+                if(!o.booking_date)return false;
+                const tw=new Date(new Date(o.booking_date).getTime()+8*3600000);
+                const key=`${tw.getUTCFullYear()}-${String(tw.getUTCMonth()+1).padStart(2,'0')}-${String(tw.getUTCDate()).padStart(2,'0')}`;
+                return key===dateStr;
+            }).sort((a,b)=>new Date(a.booking_date)-new Date(b.booking_date));
+            const [y,m,d]=dateStr.split('-');
+            const weekDay=['日','一','二','三','四','五','六'][new Date(parseInt(y),parseInt(m)-1,parseInt(d)).getDay()];
+            document.getElementById('cal-day-modal-title').textContent=`${parseInt(m)}月${parseInt(d)}日（週${weekDay}）`;
+            const totalPax=orders.reduce((s,o)=>s+(o.adult_count||0)+(o.kid_count||0)+(o.child_count||0),0);
+            document.getElementById('cal-day-modal-sub').textContent=`${orders.length} 筆訂單　共 ${totalPax} 人`;
+            renderCalDayBody(orders);
+            modal.classList.remove('hidden');
+        });
+    }
+}
+
+// 開啟單一訂單的完整編輯卡片（用於未安排訂位）
+async function openOrderCardModal(orderId){
+    const{data:o}=await _s.from('orders').select('*').eq('id',orderId).single();
+    if(!o)return;
+    // 確保 ordersRef 有這筆資料
+    if(!window.ordersRef) window.ordersRef=[];
+    const existing=window.ordersRef.findIndex(x=>x.id===orderId);
+    if(existing>-1) window.ordersRef[existing]=o; else window.ordersRef.push(o);
+
+    // 建立一個輕量 modal 顯示訂單卡片
+    const existModal=document.getElementById('single-order-modal');
+    if(existModal) existModal.remove();
+
+    const bTime=(()=>{
+        if(!o.booking_date)return '';
+        const utc=new Date(o.booking_date);
+        const tw=new Date(utc.getTime()+8*3600000);
+        return `${tw.getUTCFullYear()}-${String(tw.getUTCMonth()+1).padStart(2,'0')}-${String(tw.getUTCDate()).padStart(2,'0')}T${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`;
+    })();
+    const synced=o.status==='synced';
+    const timeOpts=[11,12,13,14,15,17,18,19,20].flatMap(h=>[0,15,30,45].map(m=>{
+        const hh=String(h).padStart(2,'0'),mm=String(m).padStart(2,'0'),val=`${hh}:${mm}`,cur=bTime?bTime.split('T')[1]?.slice(0,5):'';
+        return`<option value="${val}"${cur===val?' selected':''}>${val}</option>`;
+    })).join('');
+
+    const overlay=document.createElement('div');
+    overlay.id='single-order-modal';
+    overlay.className='fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[600] backdrop-blur-sm';
+    overlay.onclick=e=>{if(e.target===overlay){overlay.remove();if(curOrderView==='calendar')renderCalendar();}};
+    overlay.innerHTML=`
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden" style="max-height:90vh;display:flex;flex-direction:column">
+        <div class="px-6 py-4 flex justify-between items-center flex-shrink-0" style="background:var(--pine)">
+            <div>
+                <div class="font-serif font-black text-white text-lg">${o.customer_name}</div>
+                <div style="color:rgba(255,255,255,.55);font-size:12px;margin-top:2px">${o.phone||'—'} · $${o.total_price}</div>
+            </div>
+            <button onclick="document.getElementById('single-order-modal').remove();if(curOrderView==='calendar')renderCalendar();" class="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition text-xl">✕</button>
+        </div>
+        <div class="overflow-y-auto flex-1 p-5 space-y-4">
+            <!-- 聯絡資訊 -->
+            <div class="order-section">
+                <div class="order-section-label">👤 聯絡資訊</div>
+                <div class="order-fields-grid">
+                    <div class="order-field"><label>姓名</label><input type="text" value="${o.customer_name||''}" onchange="updateOrderData('${o.id}','customer_name',this.value,this)" placeholder="姓名"></div>
+                    <div class="order-field"><label>電話</label><input type="tel" value="${o.phone||''}" onchange="updateOrderData('${o.id}','phone',this.value,this)" placeholder="電話"></div>
+                </div>
+            </div>
+            <!-- 訂位資訊 -->
+            <div class="order-section">
+                <div class="order-section-label">📅 訂位資訊</div>
+                <div class="order-fields-grid">
+                    <div class="order-field"><label>訂位日期</label><input type="date" id="som-bdate-${o.id}" value="${bTime.split('T')[0]||''}" onchange="saveBookingDateAndClose('${o.id}',this.value)"></div>
+                    <div class="order-field"><label>訂位時間</label>
+                        <select id="som-btime-${o.id}" onchange="saveBookingTime('${o.id}',this.value)">
+                            <option value="">-- 選擇時間 --</option>${timeOpts}
+                        </select>
+                    </div>
+                    <div class="order-field"><label>桌號</label><input type="text" value="${o.table_no||''}" onchange="updateOrderData('${o.id}','table_no',this.value,this)" placeholder="無"></div>
+                    <div class="order-field"><label>活動代號</label>
+                        <select onchange="updateOrderData('${o.id}','campaign_code',this.value,this)">
+                            <option value="">無</option>
+                            ${allCampaigns.map(c=>`<option value="${c.code_name}"${o.campaign_code===c.code_name?' selected':''}>${c.code_name}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <!-- 人數 -->
+            <div class="order-section" style="background:#f8fafc;border-radius:12px;padding:14px">
+                <div class="order-section-label">👥 用餐人數</div>
+                <div class="pax-grid">
+                    <div class="pax-field"><label>大人</label><input type="number" min="0" value="${o.adult_count||0}" onchange="updateOrderData('${o.id}','adult_count',this.value,this)"></div>
+                    <div class="pax-field"><label>小孩</label><input type="number" min="0" value="${o.kid_count||0}" onchange="updateOrderData('${o.id}','kid_count',this.value,this)"></div>
+                    <div class="pax-field"><label>兒童</label><input type="number" min="0" value="${o.child_count||0}" onchange="updateOrderData('${o.id}','child_count',this.value,this)"></div>
+                </div>
+            </div>
+            <!-- 餐點明細 -->
+            <div class="order-section">
+                <div class="order-section-label">🍱 餐點明細</div>
+                <div style="background:#f8fafc;border-radius:10px;padding:10px 14px">
+                    ${o.order_content.map(i=>`<div class="order-item-row"><div class="order-item-dot"></div><div class="order-item-name">${i.name}</div><div style="font-weight:700;color:var(--stone)">$${i.price}</div></div>`).join('')}
+                </div>
+                ${o.note?`<div class="px-4 py-3 rounded-xl text-xs font-bold mt-2" style="background:#f0fdf4;border-left:3px solid var(--pine);color:var(--pine)">📝 ${o.note}</div>`:''}
+            </div>
+        </div>
+        <div class="px-5 py-4 border-t flex gap-3 flex-shrink-0">
+            <button onclick="openEditOrder('${o.id}');document.getElementById('single-order-modal').remove()" class="btn btn-ghost btn-sm flex-1 justify-center">修改細項</button>
+            <button onclick="toggleSync('${o.id}','${o.status}');document.getElementById('single-order-modal').remove();renderCalendar()" class="btn btn-sm flex-[1.5] justify-center ${synced?'btn-ghost':'btn-primary'}">${synced?'↩ 標記未完成':'✓ 標記完成'}</button>
+        </div>
+    </div>`;
+    document.body.appendChild(overlay);
+}
+
+function renderCalDayBody(orders){
+    if(!orders.length){
+        document.getElementById('cal-day-modal-body').innerHTML=`<div style="text-align:center;padding:48px;color:#94a3b8;font-weight:700">當日無訂單</div>`;
+        return;
+    }
+    document.getElementById('cal-day-modal-body').innerHTML=orders.map((o,idx)=>{
+        const tw=o.booking_date?new Date(new Date(o.booking_date).getTime()+8*3600000):null;
+        const hhmm=tw?`${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`:'—';
+        const pax=[o.adult_count?`大人${o.adult_count}`:'',o.kid_count?`小孩${o.kid_count}`:'',o.child_count?`兒童${o.child_count}`:''].filter(Boolean).join(' ');
+        const synced=o.status==='synced';
+
+        // 解析套餐/單點
+        const sets=[], singles={};
+        (o.order_content||[]).forEach(item=>{
+            const qM=item.name.match(/ x(\d+)/),qty=qM?parseInt(qM[1]):1;
+            let clean=item.name.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
+            const pIdx=clean.indexOf(' ('),inner=pIdx>-1?clean.slice(pIdx+2,-1):null;
+            if(inner&&inner.includes('、')){
+                const brand=clean.slice(0,pIdx).trim(),subs={};
+                inner.split('、').forEach(sub=>{const sM=sub.match(/ x(\d+)/),sq=sM?parseInt(sM[1]):1;const s=sub.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();if(s)subs[s]=(subs[s]||0)+qty*sq;});
+                sets.push({brand,qty,subs});
+            } else { singles[clean]=(singles[clean]||0)+qty; }
+        });
+
+        const detailHtml=`
+            ${sets.map(set=>`
+            <div style="border:1.5px solid rgba(184,145,80,.25);border-radius:10px;overflow:hidden;margin-bottom:6px">
+                <div style="background:rgba(184,145,80,.08);padding:6px 12px;display:flex;justify-content:space-between;border-bottom:1px solid rgba(184,145,80,.15)">
+                    <span style="font-weight:900;font-size:12px;color:var(--gold)">🍱 ${set.brand}</span>
+                    <span style="font-size:11px;font-weight:900;color:var(--gold)">${set.qty} 套</span>
+                </div>
+                <div style="padding:4px 12px">
+                ${Object.entries(set.subs).map(([n,c])=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #f8fafc;font-size:11px"><span style="width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0;display:block"></span><span style="flex:1;font-weight:600;color:#334155">${n}</span><span style="font-weight:900;color:var(--pine)">${c} 份</span></div>`).join('')}
+                </div>
+            </div>`).join('')}
+            ${Object.entries(singles).length?`
+            <div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden">
+                <div style="background:#f8fafc;padding:5px 12px;border-bottom:1px solid #e2e8f0"><span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.1em">單點</span></div>
+                <div style="padding:4px 12px">
+                ${Object.entries(singles).map(([n,c])=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #f8fafc;font-size:11px"><span style="width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0;display:block"></span><span style="flex:1;font-weight:600;color:#334155">${n}</span><span style="font-weight:900;color:var(--pine)">${c} 份</span></div>`).join('')}
+                </div>
+            </div>`:''}
+            ${o.note?`<div style="margin-top:8px;padding:8px 12px;background:#f0fdf4;border-left:3px solid var(--pine);border-radius:8px;font-size:11px;font-weight:700;color:var(--pine)">📝 ${o.note}</div>`:''}`;
+
+        return`<div style="background:white;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+            <div onclick="const d=this.nextElementSibling;d.classList.toggle('hidden');this.querySelector('.cal-chevron').style.transform=d.classList.contains('hidden')?'':'rotate(180deg)'"
+                style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;background:${synced?'#f0fdf4':'white'}"
+                onmouseover="this.style.background='${synced?'#dcfce7':'#f8fafc'}'" onmouseout="this.style.background='${synced?'#f0fdf4':'white'}'">
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div style="width:28px;height:28px;border-radius:50%;background:${synced?'rgba(16,185,129,.15)':'rgba(0,77,64,.08)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:${synced?'#059669':'var(--pine)'}">${idx+1}</div>
+                    <div>
+                        <div style="font-weight:900;font-size:13px;color:${synced?'#059669':'var(--ink)'}">
+                            ${o.customer_name}${o.table_no?`<span style="font-size:11px;font-weight:500;color:var(--stone)"> · 桌${o.table_no}</span>`:''}
+                            ${synced?'<span style="font-size:10px;color:#059669;margin-left:4px">✓</span>':''}
+                        </div>
+                        <div style="font-size:11px;color:var(--stone);margin-top:1px">${o.phone||'—'}${pax?'　'+pax:''}</div>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                    <div style="text-align:right">
+                        <div style="font-size:14px;font-weight:900;color:var(--gold)">${hhmm}</div>
+                        <div style="font-size:11px;color:var(--stone)">$${o.total_price}</div>
+                    </div>
+                    <svg class="cal-chevron" style="width:14px;height:14px;color:#94a3b8;transition:transform .2s;flex-shrink:0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+            </div>
+            <div class="hidden" style="border-top:1px solid #f1f5f9;padding:12px 14px">
+                ${detailHtml}
+                <div style="display:flex;gap:8px;margin-top:12px">
+                    <button onclick="document.getElementById('cal-day-modal').classList.add('hidden');openEditOrder('${o.id}')" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center">修改細項</button>
+                    <button onclick="toggleSync('${o.id}','${o.status}');document.getElementById('cal-day-modal').classList.add('hidden');renderCalendar()" class="btn btn-sm ${synced?'btn-ghost':'btn-primary'}" style="flex:1.5;justify-content:center">${synced?'↩ 標記未完成':'✓ 標記完成'}</button>
+                    <button onclick="confirm2({icon:'🗑',title:'刪除訂單',msg:'確定永久刪除此筆訂單？此操作無法復原。',okText:'刪除',danger:true}).then(ok=>{if(ok){_s.from('orders').delete().eq('id','${o.id}').then(()=>{document.getElementById('cal-day-modal').classList.add('hidden');renderCalendar();toast('訂單已刪除');});}})" class="btn btn-danger btn-sm px-3">🗑</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
 // ── COLLAPSIBLE FILTERS ──
 function toggleOrderFilter() {
     const panel = document.getElementById('filter-expand');
@@ -2135,6 +2573,42 @@ function toggleReportFilter() {
 switchTab('orders');
 loadSidebarLogo();
 checkLogin();
+
+// ── REALTIME：新訂單自動通知 ──
+_s.channel('orders-realtime')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'orders'}, (payload)=>{
+        const o = payload.new;
+        toast(`🔔 新訂單：${o.customer_name} $${o.total_price}`, 'info', 5000);
+        updateOrdersKpi();
+        if(curOrderView==='calendar') renderCalendar();
+        else loadOrders();
+    })
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'orders'}, ()=>{
+        updateOrdersKpi();
+        if(curOrderView==='calendar') renderCalendar();
+        else loadOrders();
+    })
+    .subscribe();
+
+async function updateOrdersKpi(){
+    const twNow=new Date(Date.now()+8*60*60*1000);
+    const twToday=twNow.toISOString().split('T')[0];
+    // 今日訂位筆數（booking_date 在今天台灣時間）
+    const {count:todayCount} = await _s.from('orders')
+        .select('*',{count:'exact',head:true})
+        .gte('booking_date',`${twToday}T00:00:00+08:00`)
+        .lte('booking_date',`${twToday}T23:59:59+08:00`);
+    // 尚未處理（status = pending）
+    const {count:pendingCount} = await _s.from('orders')
+        .select('*',{count:'exact',head:true})
+        .eq('status','pending');
+    const todayEl=document.getElementById('kpi-today-bookings');
+    const pendingEl=document.getElementById('kpi-pending-orders');
+    if(todayEl) todayEl.textContent=todayCount??0;
+    if(pendingEl) pendingEl.textContent=pendingCount??0;
+    const timeEl=document.getElementById('kpi-update-time');
+    if(timeEl) timeEl.textContent='更新 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+}
 </script>
 
 </body>
