@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -23,282 +24,287 @@
             --border: #e2e8f0;
         }
 
-        * { box-sizing: border-box; }
-        body { font-family: 'Noto Sans TC', sans-serif; background: var(--paper); color: var(--ink); }
-        .font-serif { font-family: 'Noto Serif TC', serif; }
+```
+    * { box-sizing: border-box; }
+    body { font-family: 'Noto Sans TC', sans-serif; background: var(--paper); color: var(--ink); }
+    .font-serif { font-family: 'Noto Serif TC', serif; }
 
-        /* ── TOAST SYSTEM ── */
-        #toast-container {
-            position: fixed; bottom: 24px; right: 24px;
-            z-index: 99999; display: flex; flex-direction: column; gap: 10px;
-            pointer-events: none;
-        }
-        .toast-item {
-            display: flex; align-items: center; gap: 10px;
-            padding: 12px 18px;
-            border-radius: 12px;
-            font-size: 13px; font-weight: 700;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            animation: toastIn 0.35s cubic-bezier(0.25,0.46,0.45,0.94) both;
-            pointer-events: all; min-width: 220px; max-width: 360px;
-        }
-        .toast-item.success { background: #004d40; color: white; }
-        .toast-item.error   { background: #dc2626; color: white; }
-        .toast-item.warn    { background: #d97706; color: white; }
-        .toast-item.info    { background: #1e40af; color: white; }
-        .toast-item.out     { animation: toastOut 0.3s ease forwards; }
-        @keyframes toastIn  { from { opacity:0; transform: translateX(30px); } to { opacity:1; transform: translateX(0); } }
-        @keyframes toastOut { from { opacity:1; transform: translateX(0); }    to { opacity:0; transform: translateX(30px); } }
+    /* ── TOAST SYSTEM ── */
+    #toast-container {
+        position: fixed; bottom: 24px; right: 24px;
+        z-index: 99999; display: flex; flex-direction: column; gap: 10px;
+        pointer-events: none;
+    }
+    .toast-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 12px 18px;
+        border-radius: 12px;
+        font-size: 13px; font-weight: 700;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        animation: toastIn 0.35s cubic-bezier(0.25,0.46,0.45,0.94) both;
+        pointer-events: all; min-width: 220px; max-width: 360px;
+    }
+    .toast-item.success { background: #004d40; color: white; }
+    .toast-item.error   { background: #dc2626; color: white; }
+    .toast-item.warn    { background: #d97706; color: white; }
+    .toast-item.info    { background: #1e40af; color: white; }
+    .toast-item.out     { animation: toastOut 0.3s ease forwards; }
+    @keyframes toastIn  { from { opacity:0; transform: translateX(30px); } to { opacity:1; transform: translateX(0); } }
+    @keyframes toastOut { from { opacity:1; transform: translateX(0); }    to { opacity:0; transform: translateX(30px); } }
 
-        /* ── CONFIRM DIALOG ── */
-        #confirm-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.6);
-            z-index: 99998; display: none;
-            align-items: center; justify-content: center; padding: 16px;
-            backdrop-filter: blur(4px);
-        }
-        #confirm-overlay.visible { display: flex; }
-        #confirm-box {
-            background: white; border-radius: 20px; padding: 32px 28px;
-            width: 100%; max-width: 380px;
-            box-shadow: 0 24px 64px rgba(0,0,0,0.2);
-            animation: scaleIn 0.25s ease both;
-        }
-        @keyframes scaleIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        #confirm-icon   { font-size: 2rem; margin-bottom: 12px; }
-        #confirm-title  { font-size: 1rem; font-weight: 900; color: var(--ink); margin-bottom: 8px; }
-        #confirm-msg    { font-size: 13px; color: var(--stone); line-height: 1.7; margin-bottom: 24px; }
-        .confirm-actions { display: flex; gap: 10px; }
-        .confirm-cancel {
-            flex: 1; padding: 12px; border-radius: 12px;
-            border: 1.5px solid var(--border); background: white;
-            color: var(--stone); font-weight: 700; font-size: 13px;
-            cursor: pointer; font-family: 'Noto Sans TC', sans-serif;
-        }
-        .confirm-ok {
-            flex: 1.5; padding: 12px; border-radius: 12px; border: none;
-            font-weight: 700; font-size: 13px;
-            cursor: pointer; transition: opacity 0.2s;
-            font-family: 'Noto Sans TC', sans-serif;
-        }
-        .confirm-ok:active { opacity: 0.85; }
-        .confirm-ok.danger { background: #dc2626; color: white; }
-        .confirm-ok.primary { background: var(--pine); color: white; }
+    /* ── CONFIRM DIALOG ── */
+    #confirm-overlay {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.6);
+        z-index: 99998; display: none;
+        align-items: center; justify-content: center; padding: 16px;
+        backdrop-filter: blur(4px);
+    }
+    #confirm-overlay.visible { display: flex; }
+    #confirm-box {
+        background: white; border-radius: 20px; padding: 32px 28px;
+        width: 100%; max-width: 380px;
+        box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+        animation: scaleIn 0.25s ease both;
+    }
+    @keyframes scaleIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    #confirm-icon   { font-size: 2rem; margin-bottom: 12px; }
+    #confirm-title  { font-size: 1rem; font-weight: 900; color: var(--ink); margin-bottom: 8px; }
+    #confirm-msg    { font-size: 13px; color: var(--stone); line-height: 1.7; margin-bottom: 24px; }
+    .confirm-actions { display: flex; gap: 10px; }
+    .confirm-cancel {
+        flex: 1; padding: 12px; border-radius: 12px;
+        border: 1.5px solid var(--border); background: white;
+        color: var(--stone); font-weight: 700; font-size: 13px;
+        cursor: pointer; font-family: 'Noto Sans TC', sans-serif;
+    }
+    .confirm-ok {
+        flex: 1.5; padding: 12px; border-radius: 12px; border: none;
+        font-weight: 700; font-size: 13px;
+        cursor: pointer; transition: opacity 0.2s;
+        font-family: 'Noto Sans TC', sans-serif;
+    }
+    .confirm-ok:active { opacity: 0.85; }
+    .confirm-ok.danger { background: #dc2626; color: white; }
+    .confirm-ok.primary { background: var(--pine); color: white; }
 
-        /* ── LOGIN ── */
-        #login-screen {
-            position: fixed; inset: 0; z-index: 9999;
-            background: linear-gradient(135deg, var(--pine-dark) 0%, var(--pine) 50%, var(--pine-light) 100%);
-            display: flex; align-items: center; justify-content: center;
-        }
-        #login-screen.hidden { display: none; }
-        .login-card {
-            background: rgba(255,255,255,0.07);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 24px; padding: 3rem 2.5rem;
-            width: 100%; max-width: 400px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
-        }
-        .login-field-label { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 8px; }
-        .login-input { width: 100%; padding: 13px 16px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: white; font-size: 14px; outline: none; transition: border 0.2s; font-family: 'Noto Sans TC', sans-serif; }
-        .login-input::placeholder { color: rgba(255,255,255,0.3); }
-        .login-input:focus { border-color: var(--gold); }
-        .login-btn { width: 100%; padding: 15px; background: var(--gold); color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; font-family: 'Noto Sans TC', sans-serif; }
-        .login-btn:hover { opacity: 0.9; }
-        .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    /* ── LOGIN ── */
+    #login-screen {
+        position: fixed; inset: 0; z-index: 9999;
+        background: linear-gradient(135deg, var(--pine-dark) 0%, var(--pine) 50%, var(--pine-light) 100%);
+        display: flex; align-items: center; justify-content: center;
+    }
+    #login-screen.hidden { display: none; }
+    .login-card {
+        background: rgba(255,255,255,0.07);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 24px; padding: 3rem 2.5rem;
+        width: 100%; max-width: 400px;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    }
+    .login-field-label { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 8px; }
+    .login-input { width: 100%; padding: 13px 16px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: white; font-size: 14px; outline: none; transition: border 0.2s; font-family: 'Noto Sans TC', sans-serif; }
+    .login-input::placeholder { color: rgba(255,255,255,0.3); }
+    .login-input:focus { border-color: var(--gold); }
+    .login-btn { width: 100%; padding: 15px; background: var(--gold); color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; font-family: 'Noto Sans TC', sans-serif; }
+    .login-btn:hover { opacity: 0.9; }
+    .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* ── SIDEBAR ── */
-        #sidebar { width: 240px; transition: width 0.25s ease; overflow: hidden; background: var(--pine-dark); }
-        #sidebar.collapsed { width: 64px; }
-        #sidebar.collapsed .nav-label,
-        #sidebar.collapsed .logo-full { display: none; }
-        #sidebar.collapsed .logo-icon { display: flex !important; }
-        #sidebar.collapsed .nav-btn   { justify-content: center; padding-left: 0; padding-right: 0; }
-        #sidebar.collapsed .sidebar-active { border-left: none; border-bottom: 3px solid var(--gold); }
-        .logo-icon { display: none; }
+    /* ── SIDEBAR ── */
+    #sidebar { width: 240px; transition: width 0.25s ease; overflow: hidden; background: var(--pine-dark); }
+    #sidebar.collapsed { width: 64px; }
+    #sidebar.collapsed .nav-label,
+    #sidebar.collapsed .logo-full { display: none; }
+    #sidebar.collapsed .logo-icon { display: flex !important; }
+    #sidebar.collapsed .nav-btn   { justify-content: center; padding-left: 0; padding-right: 0; }
+    #sidebar.collapsed .sidebar-active { border-left: none; border-bottom: 3px solid var(--gold); }
+    .logo-icon { display: none; }
 
-        .nav-btn {
-            display: flex; align-items: center; gap: 10px;
-            width: 100%; padding: 10px 12px; border-radius: 10px;
-            color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 700;
-            border: none; background: none; cursor: pointer;
-            transition: all 0.2s; text-decoration: none;
-        }
-        .nav-btn:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.9); }
-        .sidebar-active { background: rgba(184,145,80,0.15) !important; color: var(--gold) !important; border-left: 3px solid var(--gold); }
-        .nav-emoji { font-size: 16px; flex-shrink: 0; }
+    .nav-btn {
+        display: flex; align-items: center; gap: 10px;
+        width: 100%; padding: 10px 12px; border-radius: 10px;
+        color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 700;
+        border: none; background: none; cursor: pointer;
+        transition: all 0.2s; text-decoration: none;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.9); }
+    .sidebar-active { background: rgba(184,145,80,0.15) !important; color: var(--gold) !important; border-left: 3px solid var(--gold); }
+    .nav-emoji { font-size: 16px; flex-shrink: 0; }
 
-        #sidebar-logo { max-height: 32px; width: auto; object-fit: contain; filter: brightness(0) invert(1); display: none; }
+    #sidebar-logo { max-height: 32px; width: auto; object-fit: contain; filter: brightness(0) invert(1); display: none; }
 
-        /* ── MAIN CONTENT ── */
-        main { flex: 1; overflow-y: auto; padding: 32px; }
-        .section-title { font-family: 'Noto Serif TC', serif; font-size: 1.6rem; font-weight: 900; color: var(--pine); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
-        .section-title::before { content: ''; display: block; width: 4px; height: 24px; background: var(--gold); border-radius: 2px; }
+    /* ── MAIN CONTENT ── */
+    main { flex: 1; overflow-y: auto; padding: 32px; }
+    .section-title { font-family: 'Noto Serif TC', serif; font-size: 1.6rem; font-weight: 900; color: var(--pine); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+    .section-title::before { content: ''; display: block; width: 4px; height: 24px; background: var(--gold); border-radius: 2px; }
 
-        /* ── FILTER BAR ── */
-        .filter-bar { background: white; border-radius: 14px; padding: 14px 16px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .filter-label { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--stone); margin-bottom: 4px; }
-        .filter-input { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; background: #f8fafc; outline: none; transition: border 0.2s; font-family: 'Noto Sans TC', sans-serif; color: var(--ink); }
-        .filter-input:focus { border-color: var(--pine); background: white; }
-        .filter-select { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; background: #f8fafc; outline: none; font-family: 'Noto Sans TC', sans-serif; color: var(--ink); cursor: pointer; }
+    /* ── FILTER BAR ── */
+    .filter-bar { background: white; border-radius: 14px; padding: 14px 16px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .filter-label { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--stone); margin-bottom: 4px; }
+    .filter-input { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; background: #f8fafc; outline: none; transition: border 0.2s; font-family: 'Noto Sans TC', sans-serif; color: var(--ink); }
+    .filter-input:focus { border-color: var(--pine); background: white; }
+    .filter-select { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; background: #f8fafc; outline: none; font-family: 'Noto Sans TC', sans-serif; color: var(--ink); cursor: pointer; }
 
-        /* ── BUTTONS ── */
-        .btn { padding: 9px 20px; border-radius: 10px; font-weight: 700; font-size: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.05em; font-family: 'Noto Sans TC', sans-serif; display: inline-flex; align-items: center; gap: 6px; }
-        .btn:active { transform: scale(0.97); }
-        .btn-primary   { background: var(--pine); color: white; box-shadow: 0 4px 12px rgba(0,77,64,0.25); }
-        .btn-gold      { background: var(--gold); color: white; box-shadow: 0 4px 12px rgba(184,145,80,0.3); }
-        .btn-danger    { background: #fee2e2; color: #dc2626; }
-        .btn-danger:hover { background: #fecaca; }
-        .btn-ghost     { background: white; color: var(--stone); border: 1.5px solid var(--border); }
-        .btn-sm        { padding: 6px 14px; font-size: 11px; border-radius: 8px; }
+    /* ── BUTTONS ── */
+    .btn { padding: 9px 20px; border-radius: 10px; font-weight: 700; font-size: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.05em; font-family: 'Noto Sans TC', sans-serif; display: inline-flex; align-items: center; gap: 6px; }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary   { background: var(--pine); color: white; box-shadow: 0 4px 12px rgba(0,77,64,0.25); }
+    .btn-gold      { background: var(--gold); color: white; box-shadow: 0 4px 12px rgba(184,145,80,0.3); }
+    .btn-danger    { background: #fee2e2; color: #dc2626; }
+    .btn-danger:hover { background: #fecaca; }
+    .btn-ghost     { background: white; color: var(--stone); border: 1.5px solid var(--border); }
+    .btn-sm        { padding: 6px 14px; font-size: 11px; border-radius: 8px; }
 
-        /* ── ORDER CARD ── */
-        .order-card {
-            background: white; border-radius: 18px; border: 1px solid var(--border);
-            overflow: hidden; transition: all 0.3s;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-        .order-card.completed { opacity: 0.55; filter: grayscale(0.5); }
-        .order-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    /* ── ORDER CARD ── */
+    .order-card {
+        background: white; border-radius: 18px; border: 1px solid var(--border);
+        overflow: hidden; transition: all 0.3s;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .order-card.completed { opacity: 0.55; filter: grayscale(0.5); }
+    .order-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
 
-        .order-header {
-            display: flex; align-items: center; gap: 12px;
-            padding: 16px 20px; cursor: pointer;
-            border-bottom: 1px solid transparent;
-            transition: background 0.2s;
-        }
-        .order-card:not(.collapsed) .order-header { border-bottom-color: var(--border); }
-        .order-header:hover { background: #f8fafc; }
+    .order-header {
+        display: flex; align-items: center; gap: 12px;
+        padding: 16px 20px; cursor: pointer;
+        border-bottom: 1px solid transparent;
+        transition: background 0.2s;
+    }
+    .order-card:not(.collapsed) .order-header { border-bottom-color: var(--border); }
+    .order-header:hover { background: #f8fafc; }
 
-        .order-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-        .order-status-dot.pending { background: var(--gold); box-shadow: 0 0 0 3px rgba(184,145,80,0.2); }
-        .order-status-dot.synced  { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.2); }
+    .order-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .order-status-dot.pending { background: var(--gold); box-shadow: 0 0 0 3px rgba(184,145,80,0.2); }
+    .order-status-dot.synced  { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.2); }
 
-        .order-name { font-weight: 900; font-size: 1rem; color: var(--ink); flex: 1; }
-        .order-amount { font-family: 'Noto Serif TC', serif; font-size: 1.1rem; font-weight: 900; color: var(--gold); }
-        .order-time-badge { font-size: 10px; font-weight: 700; color: var(--stone); letter-spacing: 0.05em; }
+    .order-name { font-weight: 900; font-size: 1rem; color: var(--ink); flex: 1; }
+    .order-amount { font-family: 'Noto Serif TC', serif; font-size: 1.1rem; font-weight: 900; color: var(--gold); }
+    .order-time-badge { font-size: 10px; font-weight: 700; color: var(--stone); letter-spacing: 0.05em; }
 
-        .order-badge {
-            font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
-        }
-        .order-badge.pending { background: #fef3c7; color: #d97706; }
-        .order-badge.synced  { background: #d1fae5; color: #059669; }
+    .order-badge {
+        font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+    }
+    .order-badge.pending { background: #fef3c7; color: #d97706; }
+    .order-badge.synced  { background: #d1fae5; color: #059669; }
 
-        .order-body { padding: 20px; display: none; }
-        .order-card:not(.collapsed) .order-body { display: block; }
+    .order-body { padding: 20px; display: none; }
+    .order-card:not(.collapsed) .order-body { display: block; }
 
-        .order-fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-        .order-field { }
-        .order-field label { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--stone); margin-bottom: 5px; }
-        .order-field input, .order-field select { width: 100%; font-size: 12px; padding: 7px 10px; border-radius: 8px; border: 1.5px solid var(--border); background: #f8fafc; outline: none; transition: border 0.2s; font-family: 'Noto Sans TC', sans-serif; }
-        .order-field input:focus, .order-field select:focus { border-color: var(--pine); background: white; }
+    .order-fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .order-field { }
+    .order-field label { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--stone); margin-bottom: 5px; }
+    .order-field input, .order-field select { width: 100%; font-size: 12px; padding: 7px 10px; border-radius: 8px; border: 1.5px solid var(--border); background: #f8fafc; outline: none; transition: border 0.2s; font-family: 'Noto Sans TC', sans-serif; }
+    .order-field input:focus, .order-field select:focus { border-color: var(--pine); background: white; }
 
-        .pax-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
-        .pax-field { text-align: center; }
-        .pax-field label { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--stone); margin-bottom: 4px; }
-        .pax-field input { width: 100%; text-align: center; font-size: 14px; font-weight: 900; padding: 8px; border-radius: 8px; border: 1.5px solid var(--border); background: #f8fafc; outline: none; font-family: 'Noto Serif TC', serif; transition: border 0.2s; }
-        .pax-field input:focus { border-color: var(--gold); background: white; }
+    .pax-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .pax-field { text-align: center; }
+    .pax-field label { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--stone); margin-bottom: 4px; }
+    .pax-field input { width: 100%; text-align: center; font-size: 14px; font-weight: 900; padding: 8px; border-radius: 8px; border: 1.5px solid var(--border); background: #f8fafc; outline: none; font-family: 'Noto Serif TC', serif; transition: border 0.2s; }
+    .pax-field input:focus { border-color: var(--gold); background: white; }
 
-        .order-items-list { background: #f8fafc; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; }
-        .order-item-row { display: flex; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 12px; }
-        .order-item-row:last-child { border-bottom: none; }
-        .order-item-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
-        .order-item-name { flex: 1; font-weight: 700; color: var(--ink); }
+    .order-items-list { background: #f8fafc; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; }
+    .order-item-row { display: flex; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 12px; }
+    .order-item-row:last-child { border-bottom: none; }
+    .order-item-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+    .order-item-name { flex: 1; font-weight: 700; color: var(--ink); }
 
-        .order-actions { display: flex; gap: 8px; }
+    .order-actions { display: flex; gap: 8px; }
 
-        /* ── STATUS BADGE ── */
-        .status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
-        .status-badge.pending { background: #fef3c7; color: #d97706; }
-        .status-badge.synced  { background: #d1fae5; color: #059669; }
-        .status-badge::before { content: '●'; font-size: 7px; }
+    /* ── STATUS BADGE ── */
+    .status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+    .status-badge.pending { background: #fef3c7; color: #d97706; }
+    .status-badge.synced  { background: #d1fae5; color: #059669; }
+    .status-badge::before { content: '●'; font-size: 7px; }
 
-        /* ── REPORT STYLES ── */
-        .rpt-f-input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); color: white; border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 600; outline: none; transition: border .2s; font-family: 'Noto Sans TC', sans-serif; }
-        .rpt-f-input:focus { border-color: var(--gold-light); }
-        .rpt-f-input option { background: #1a2e2b; }
-        .rpt-preset-btn { padding: 5px 14px; border-radius: 999px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.55); background: transparent; transition: all .15s; white-space: nowrap; }
-        .rpt-preset-btn.on, .rpt-preset-btn:hover { background: var(--gold); border-color: var(--gold); color: white; }
-        .rpt-tab { flex: 1; padding: 9px 6px; border-radius: 9px; font-size: 12px; font-weight: 700; border: none; background: transparent; color: #94a3b8; cursor: pointer; transition: all .15s; white-space: nowrap; }
-        .rpt-tab.on { background: white; color: var(--pine); box-shadow: 0 1px 6px rgba(0,0,0,.1); }
-        .rpt-quick-btn.on { background: var(--pine) !important; color: white !important; border-color: var(--pine) !important; }
-        @keyframes rspin { to { transform: rotate(360deg); } }
+    /* ── REPORT STYLES ── */
+    .rpt-f-input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); color: white; border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 600; outline: none; transition: border .2s; font-family: 'Noto Sans TC', sans-serif; }
+    .rpt-f-input:focus { border-color: var(--gold-light); }
+    .rpt-f-input option { background: #1a2e2b; }
+    .rpt-preset-btn { padding: 5px 14px; border-radius: 999px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.55); background: transparent; transition: all .15s; white-space: nowrap; }
+    .rpt-preset-btn.on, .rpt-preset-btn:hover { background: var(--gold); border-color: var(--gold); color: white; }
+    .rpt-tab { flex: 1; padding: 9px 6px; border-radius: 9px; font-size: 12px; font-weight: 700; border: none; background: transparent; color: #94a3b8; cursor: pointer; transition: all .15s; white-space: nowrap; }
+    .rpt-tab.on { background: white; color: var(--pine); box-shadow: 0 1px 6px rgba(0,0,0,.1); }
+    .rpt-quick-btn.on { background: var(--pine) !important; color: white !important; border-color: var(--pine) !important; }
+    @keyframes rspin { to { transform: rotate(360deg); } }
 
-        /* ── KPI CARDS ── */
-        .kpi-card { background: white; border-radius: 14px; padding: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
-        .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-        .kpi-card.green::before  { background: var(--pine); }
-        .kpi-card.gold::before   { background: var(--gold); }
-        .kpi-card.blue::before   { background: #3b82f6; }
-        .kpi-card.red::before    { background: #f43f5e; }
-        .kpi-card.slate::before  { background: #94a3b8; }
-        .kpi-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em; color: var(--stone); margin-bottom: 4px; }
-        .kpi-value { font-family: 'Noto Serif TC', serif; font-size: 1.6rem; font-weight: 900; color: var(--pine); line-height: 1.1; }
-        .kpi-unit  { font-size: 10px; color: var(--stone); margin-top: 2px; }
+    /* ── KPI CARDS ── */
+    .kpi-card { background: white; border-radius: 14px; padding: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+    .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .kpi-card.green::before  { background: var(--pine); }
+    .kpi-card.gold::before   { background: var(--gold); }
+    .kpi-card.blue::before   { background: #3b82f6; }
+    .kpi-card.red::before    { background: #f43f5e; }
+    .kpi-card.slate::before  { background: #94a3b8; }
+    .kpi-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em; color: var(--stone); margin-bottom: 4px; }
+    .kpi-value { font-family: 'Noto Serif TC', serif; font-size: 1.6rem; font-weight: 900; color: var(--pine); line-height: 1.1; }
+    .kpi-unit  { font-size: 10px; color: var(--stone); margin-top: 2px; }
 
-        /* ── MISC ── */
-        .img-contain { object-fit: contain; background: white; }
-        .input-mini { font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); width: 100%; outline: none; background: white; }
-        .order-card-completed { opacity: 0.5; filter: grayscale(0.8); }
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        #edit-cat-nav { display: flex; overflow-x: auto; white-space: nowrap; padding-bottom: 10px; }
-        .picker-item.active { border-color: var(--gold); background: #fffbeb; }
-        .picker-item.active .check-mark { display: block; }
-        .flavor-selected { border-color: var(--gold) !important; background: var(--pine) !important; color: white !important; }
-        .opt-selected { border: 2.5px solid var(--gold) !important; background: #fdf6e9 !important; font-weight: bold; }
+    /* ── MISC ── */
+    .img-contain { object-fit: contain; background: white; }
+    .input-mini { font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); width: 100%; outline: none; background: white; }
+    .order-card-completed { opacity: 0.5; filter: grayscale(0.8); }
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    #edit-cat-nav { display: flex; overflow-x: auto; white-space: nowrap; padding-bottom: 10px; }
+    .picker-item.active { border-color: var(--gold); background: #fffbeb; }
+    .picker-item.active .check-mark { display: block; }
+    .flavor-selected { border-color: var(--gold) !important; background: var(--pine) !important; color: white !important; }
+    .opt-selected { border: 2.5px solid var(--gold) !important; background: #fdf6e9 !important; font-weight: bold; }
 
-        /* ── PHOTO GRID ── */
-        .photo-card-admin { background: white; border-radius: 14px; border: 1px solid var(--border); overflow: hidden; transition: all 0.2s; }
-        .photo-card-admin:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        .photo-card-admin.selected { outline: 3px solid var(--gold); }
+    /* ── PHOTO GRID ── */
+    .photo-card-admin { background: white; border-radius: 14px; border: 1px solid var(--border); overflow: hidden; transition: all 0.2s; }
+    .photo-card-admin:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .photo-card-admin.selected { outline: 3px solid var(--gold); }
 
-        /* ── AUTO-SAVE FEEDBACK ── */
-        .field-saved {
-            position: relative;
-        }
-        .save-tick {
-            position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-            color: #10b981; font-size: 11px; font-weight: 900;
-            opacity: 0; transition: opacity 0.2s;
-            pointer-events: none;
-        }
-        .save-tick.show { opacity: 1; }
-        .field-saving { border-color: var(--gold) !important; }
+    /* ── AUTO-SAVE FEEDBACK ── */
+    .field-saved {
+        position: relative;
+    }
+    .save-tick {
+        position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+        color: #10b981; font-size: 11px; font-weight: 900;
+        opacity: 0; transition: opacity 0.2s;
+        pointer-events: none;
+    }
+    .save-tick.show { opacity: 1; }
+    .field-saving { border-color: var(--gold) !important; }
 
-        /* ── ORDER CARD SECTIONS ── */
-        .order-section-label {
-            font-size: 9px; font-weight: 700; letter-spacing: 0.25em;
-            text-transform: uppercase; color: var(--stone); margin-bottom: 8px;
-        }
-        .order-section { margin-bottom: 14px; }
-        .order-section:last-child { margin-bottom: 0; }
+    /* ── ORDER CARD SECTIONS ── */
+    .order-section-label {
+        font-size: 9px; font-weight: 700; letter-spacing: 0.25em;
+        text-transform: uppercase; color: var(--stone); margin-bottom: 8px;
+    }
+    .order-section { margin-bottom: 14px; }
+    .order-section:last-child { margin-bottom: 0; }
 
-        /* ── EMPTY STATES ── */
-        .empty-state {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 64px 24px; text-align: center;
-            background: white; border-radius: 20px; border: 1px solid var(--border);
-        }
-        .empty-state-icon { font-size: 3rem; opacity: 0.15; margin-bottom: 16px; }
-        .empty-state-title { font-size: 14px; font-weight: 900; color: var(--stone); margin-bottom: 6px; }
-        .empty-state-sub { font-size: 12px; color: #94a3b8; }
+    /* ── EMPTY STATES ── */
+    .empty-state {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 64px 24px; text-align: center;
+        background: white; border-radius: 20px; border: 1px solid var(--border);
+    }
+    .empty-state-icon { font-size: 3rem; opacity: 0.15; margin-bottom: 16px; }
+    .empty-state-title { font-size: 14px; font-weight: 900; color: var(--stone); margin-bottom: 6px; }
+    .empty-state-sub { font-size: 12px; color: #94a3b8; }
 
-        /* ── FLAVOR MODAL ── */
-        #flavor-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 600; display: none; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px); }
-        #flavor-modal.visible { display: flex; }
-        #flavor-modal-box { background: white; border-radius: 20px; padding: 28px; width: 100%; max-width: 420px; box-shadow: 0 24px 64px rgba(0,0,0,0.2); animation: scaleIn 0.25s ease both; }
-    </style>
+    /* ── FLAVOR MODAL ── */
+    #flavor-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 600; display: none; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px); }
+    #flavor-modal.visible { display: flex; }
+    #flavor-modal-box { background: white; border-radius: 20px; padding: 28px; width: 100%; max-width: 420px; box-shadow: 0 24px 64px rgba(0,0,0,0.2); animation: scaleIn 0.25s ease both; }
+</style>
+```
+
 </head>
 <body class="min-h-screen flex text-slate-700">
 
 <!-- ── TOAST CONTAINER ── -->
+
 <div id="toast-container"></div>
 
 <!-- ── CONFIRM DIALOG ── -->
+
 <div id="confirm-overlay">
     <div id="confirm-box">
         <div id="confirm-icon">⚠️</div>
@@ -312,6 +318,7 @@
 </div>
 
 <!-- ── FLAVOR GROUP MODAL ── -->
+
 <div id="flavor-modal">
     <div id="flavor-modal-box">
         <h3 style="font-family:'Noto Serif TC',serif;font-size:1.1rem;font-weight:900;color:var(--pine);margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)">新增口味選項組</h3>
@@ -332,6 +339,7 @@
 </div>
 
 <!-- ── LOGIN ── -->
+
 <div id="login-screen">
     <div class="login-card">
         <div class="text-center mb-8">
@@ -354,6 +362,7 @@
 </div>
 
 <!-- ── SIDEBAR ── -->
+
 <aside id="sidebar" class="sticky top-0 h-screen shadow-2xl flex flex-col flex-shrink-0">
     <div class="flex items-center justify-between px-4 py-4 border-b border-white/10">
         <div class="logo-full flex items-center gap-3 overflow-hidden min-w-0 flex-1">
@@ -382,31 +391,36 @@
         </button>
     </div>
 
-    <nav class="flex-1 py-4 px-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
-        <button id="btn-orders"     onclick="switchTab('orders')"     class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">📋</span><span class="nav-label">訂單監控</span></button>
-        <button id="btn-campaigns"  onclick="switchTab('campaigns')"  class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">🎗️</span><span class="nav-label">活動代號</span></button>
-        <button id="btn-categories" onclick="switchTab('categories')" class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">🗂️</span><span class="nav-label">分類管理</span></button>
-        <button id="btn-menu"       onclick="switchTab('menu')"       class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">🍱</span><span class="nav-label">菜單編輯</span></button>
-        <button id="btn-flavors"    onclick="switchTab('flavors')"    class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">🌶️</span><span class="nav-label">口味定義</span></button>
-        <button id="btn-settings"   onclick="switchTab('settings')"   class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">⚙️</span><span class="nav-label">系統設定</span></button>
-        <button id="btn-eventurl"   onclick="switchTab('eventurl')"   class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">🔗</span><span class="nav-label">網址配置</span></button>
-        <button id="btn-report"     onclick="switchTab('report')"     class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">📊</span><span class="nav-label">統計報表</span></button>
-        <button id="btn-photos"     onclick="switchTab('photos')"     class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">📸</span><span class="nav-label">照片管理</span></button>
-        <button id="btn-linenotify" onclick="switchTab('linenotify')" class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">💬</span><span class="nav-label">通知管理</span></button>
-        <button id="btn-announce"   onclick="switchTab('announce')"   class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">📢</span><span class="nav-label">公告管理</span></button>
-        <div class="border-t border-white/10 my-2"></div>
-        <a href="monitor.html" target="_blank" class="nav-btn"><span class="nav-emoji">🖥️</span><span class="nav-label">看板模式</span></a>
-    </nav>
+```
+<nav class="flex-1 py-4 px-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
+    <button id="btn-orders"     onclick="switchTab('orders')"     class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">📋</span><span class="nav-label">訂單監控</span></button>
+    <button id="btn-campaigns"  onclick="switchTab('campaigns')"  class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">🎗️</span><span class="nav-label">活動代號</span></button>
+    <button id="btn-categories" onclick="switchTab('categories')" class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">🗂️</span><span class="nav-label">分類管理</span></button>
+    <button id="btn-menu"       onclick="switchTab('menu')"       class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">🍱</span><span class="nav-label">菜單編輯</span></button>
+    <button id="btn-flavors"    onclick="switchTab('flavors')"    class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">🌶️</span><span class="nav-label">口味定義</span></button>
+    <button id="btn-settings"   onclick="switchTab('settings')"   class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">⚙️</span><span class="nav-label">系統設定</span></button>
+    <button id="btn-eventurl"   onclick="switchTab('eventurl')"   class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">🔗</span><span class="nav-label">網址配置</span></button>
+    <button id="btn-report"     onclick="switchTab('report')"     class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">📊</span><span class="nav-label">統計報表</span></button>
+    <button id="btn-photos"     onclick="switchTab('photos')"     class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">📸</span><span class="nav-label">照片管理</span></button>
+    <button id="btn-linenotify" onclick="switchTab('linenotify')" class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">💬</span><span class="nav-label">通知管理</span></button>
+    <button id="btn-announce"   onclick="switchTab('announce')"   class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">📢</span><span class="nav-label">公告管理</span></button>
+    <div class="border-t border-white/10 my-2"></div>
+    <a href="monitor.html" target="_blank" class="nav-btn"><span class="nav-emoji">🖥️</span><span class="nav-label">看板模式</span></a>
+</nav>
 
-    <div class="px-4 py-3 border-t border-white/10">
-        <div class="text-[9px] text-white/20 uppercase tracking-widest text-center">Jin Zhu · Admin</div>
-    </div>
+<div class="px-4 py-3 border-t border-white/10">
+    <div class="text-[9px] text-white/20 uppercase tracking-widest text-center">Jin Zhu · Admin</div>
+</div>
+```
+
 </aside>
 
 <!-- ── MAIN ── -->
+
 <main class="flex-1 overflow-y-auto">
 
 <!-- 訂單監控 -->
+
 <section id="sec-orders" class="space-y-4">
     <!-- 即時 KPI 橫條 -->
     <div class="bg-white rounded-2xl border shadow-sm px-4 py-2.5 flex items-center gap-5">
@@ -426,129 +440,133 @@
         <div class="ml-auto text-[10px] text-slate-300 font-bold" id="kpi-update-time"></div>
     </div>
 
-    <!-- 訂單篩選列 -->
-    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden mb-5">
-        <!-- 常駐工具列 -->
-        <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-100 flex-wrap">
-            <!-- 檢視切換 -->
-            <div class="flex bg-slate-100 rounded-lg p-0.5 gap-0.5 flex-shrink-0">
-                <button id="view-btn-list" onclick="switchOrderView('list')"
-                    class="px-3 py-1 rounded-md text-xs font-bold transition-all"
-                    style="background:var(--pine);color:white">
-                    📋
-                </button>
-                <button id="view-btn-calendar" onclick="switchOrderView('calendar')"
-                    class="px-3 py-1 rounded-md text-xs font-bold transition-all text-slate-400 hover:text-slate-600">
-                    📅
-                </button>
-            </div>
-            <!-- 月份導覽（日曆模式才顯示） -->
-            <span id="cal-month-nav" class="hidden items-center gap-1 flex-shrink-0">
-                <button onclick="calPrevMonth()" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-100 font-bold transition text-sm">‹</button>
-                <span id="cal-month-label" class="font-serif font-black text-sm px-1" style="color:var(--pine)"></span>
-                <button onclick="calNextMonth()" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-100 font-bold transition text-sm">›</button>
-            </span>
-            <!-- 列表篩選（日曆模式時隱藏） -->
-            <div id="list-filters" class="flex items-center gap-2 flex-1 flex-wrap">
-                <input type="text" id="filter-search" class="filter-input flex-1 min-w-[140px]" placeholder="搜尋顧客姓名或電話…" style="padding:5px 10px">
-                <select id="filter-date-type" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700">
-                    <option value="created">下單日期</option>
-                    <option value="booking">訂位日期</option>
-                </select>
-                <select id="filter-date-preset" onchange="setQuickDate(this.value);loadOrders()" class="filter-select" style="width:auto;padding:5px 8px">
-                    <option value="all">不限</option>
-                    <option value="today">今日</option>
-                    <option value="week">本週</option>
-                    <option value="range">區間</option>
-                </select>
-                <select id="filter-status" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px">
-                    <option value="all">全部</option>
-                    <option value="pending">準備中</option>
-                    <option value="synced">已完成</option>
-                </select>
-                <select id="filter-sort" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700" title="排序方式">
-                    <option value="created_desc">下單↓新到舊</option>
-                    <option value="created_asc">下單↑舊到新</option>
-                    <option value="booking_asc">訂位↑早到晚</option>
-                    <option value="booking_desc">訂位↓晚到早</option>
-                </select>
-                <button onclick="loadOrders()" class="btn btn-primary btn-sm">篩選</button>
-                <button onclick="exportXls()" class="btn btn-ghost btn-sm">📊 Excel</button>
-                <button onclick="toggleOrderFilter()" id="filter-toggle-btn" class="btn btn-ghost btn-sm px-2" title="更多篩選">
-                    <svg id="filter-chevron" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                </button>
-            </div>
+```
+<!-- 訂單篩選列 -->
+<div class="bg-white rounded-2xl border shadow-sm overflow-hidden mb-5">
+    <!-- 常駐工具列 -->
+    <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-100 flex-wrap">
+        <!-- 檢視切換 -->
+        <div class="flex bg-slate-100 rounded-lg p-0.5 gap-0.5 flex-shrink-0">
+            <button id="view-btn-list" onclick="switchOrderView('list')"
+                class="px-3 py-1 rounded-md text-xs font-bold transition-all"
+                style="background:var(--pine);color:white">
+                📋
+            </button>
+            <button id="view-btn-calendar" onclick="switchOrderView('calendar')"
+                class="px-3 py-1 rounded-md text-xs font-bold transition-all text-slate-400 hover:text-slate-600">
+                📅
+            </button>
         </div>
-        <!-- 展開區（列表模式） -->
-        <div id="filter-expand" class="hidden px-3 pb-3 pt-2 space-y-2 bg-slate-50">
-            <div id="date-range-box" class="hidden grid grid-cols-2 gap-2">
-                <div>
-                    <label class="filter-label">開始日期</label>
-                    <input type="date" id="filter-date-start" class="filter-input" onchange="loadOrders()">
-                </div>
-                <div>
-                    <label class="filter-label">結束日期</label>
-                    <input type="date" id="filter-date-end" class="filter-input" onchange="loadOrders()">
-                </div>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 items-end">
-                <div>
-                    <label class="filter-label">開始時間</label>
-                    <input type="time" id="filter-time-start" value="00:00" class="filter-input" onchange="loadOrders()">
-                </div>
-                <div>
-                    <label class="filter-label">結束時間</label>
-                    <input type="time" id="filter-time-end" value="23:59" class="filter-input" onchange="loadOrders()">
-                </div>
-                <div>
-                    <label class="filter-label">活動代號</label>
-                    <select id="filter-campaign" class="filter-select" onchange="loadOrders()"><option value="all">全部活動</option></select>
-                </div>
-            </div>
-            <div class="flex items-center gap-3 pt-2 border-t border-slate-200">
-                <label class="flex items-center gap-2 cursor-pointer select-none">
-                    <input type="checkbox" id="order-select-all" onchange="toggleOrderSelectAll(this.checked)" class="accent-red-400 w-4 h-4">
-                    <span class="text-xs font-bold text-slate-500">全選</span>
-                </label>
-                <span id="order-selected-count" class="text-xs font-bold text-red-500 hidden">已選 0 筆</span>
-                <button id="order-batch-delete-btn" onclick="batchDeleteOrders()" class="hidden btn btn-danger btn-sm">🗑 批次刪除</button>
-                <button onclick="resetFilters()" class="btn btn-ghost btn-sm ml-auto">重置篩選</button>
-            </div>
+        <!-- 月份導覽（日曆模式才顯示） -->
+        <span id="cal-month-nav" class="hidden items-center gap-1 flex-shrink-0">
+            <button onclick="calPrevMonth()" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-100 font-bold transition text-sm">‹</button>
+            <span id="cal-month-label" class="font-serif font-black text-sm px-1" style="color:var(--pine)"></span>
+            <button onclick="calNextMonth()" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-100 font-bold transition text-sm">›</button>
+        </span>
+        <!-- 列表篩選（日曆模式時隱藏） -->
+        <div id="list-filters" class="flex items-center gap-2 flex-1 flex-wrap">
+            <input type="text" id="filter-search" class="filter-input flex-1 min-w-[140px]" placeholder="搜尋顧客姓名或電話…" style="padding:5px 10px">
+            <select id="filter-date-type" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700">
+                <option value="created">下單日期</option>
+                <option value="booking">訂位日期</option>
+            </select>
+            <select id="filter-date-preset" onchange="setQuickDate(this.value);loadOrders()" class="filter-select" style="width:auto;padding:5px 8px">
+                <option value="all">不限</option>
+                <option value="today">今日</option>
+                <option value="week">本週</option>
+                <option value="range">區間</option>
+            </select>
+            <select id="filter-status" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px">
+                <option value="all">全部</option>
+                <option value="pending">準備中</option>
+                <option value="synced">已完成</option>
+            </select>
+            <select id="filter-sort" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700" title="排序方式">
+                <option value="created_desc">下單↓新到舊</option>
+                <option value="created_asc">下單↑舊到新</option>
+                <option value="booking_asc">訂位↑早到晚</option>
+                <option value="booking_desc">訂位↓晚到早</option>
+            </select>
+            <button onclick="loadOrders()" class="btn btn-primary btn-sm">篩選</button>
+            <button onclick="exportXls()" class="btn btn-ghost btn-sm">📊 Excel</button>
+            <button onclick="toggleOrderFilter()" id="filter-toggle-btn" class="btn btn-ghost btn-sm px-2" title="更多篩選">
+                <svg id="filter-chevron" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </button>
         </div>
     </div>
+    <!-- 展開區（列表模式） -->
+    <div id="filter-expand" class="hidden px-3 pb-3 pt-2 space-y-2 bg-slate-50">
+        <div id="date-range-box" class="hidden grid grid-cols-2 gap-2">
+            <div>
+                <label class="filter-label">開始日期</label>
+                <input type="date" id="filter-date-start" class="filter-input" onchange="loadOrders()">
+            </div>
+            <div>
+                <label class="filter-label">結束日期</label>
+                <input type="date" id="filter-date-end" class="filter-input" onchange="loadOrders()">
+            </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 items-end">
+            <div>
+                <label class="filter-label">開始時間</label>
+                <input type="time" id="filter-time-start" value="00:00" class="filter-input" onchange="loadOrders()">
+            </div>
+            <div>
+                <label class="filter-label">結束時間</label>
+                <input type="time" id="filter-time-end" value="23:59" class="filter-input" onchange="loadOrders()">
+            </div>
+            <div>
+                <label class="filter-label">活動代號</label>
+                <select id="filter-campaign" class="filter-select" onchange="loadOrders()"><option value="all">全部活動</option></select>
+            </div>
+        </div>
+        <div class="flex items-center gap-3 pt-2 border-t border-slate-200">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" id="order-select-all" onchange="toggleOrderSelectAll(this.checked)" class="accent-red-400 w-4 h-4">
+                <span class="text-xs font-bold text-slate-500">全選</span>
+            </label>
+            <span id="order-selected-count" class="text-xs font-bold text-red-500 hidden">已選 0 筆</span>
+            <button id="order-batch-delete-btn" onclick="batchDeleteOrders()" class="hidden btn btn-danger btn-sm">🗑 批次刪除</button>
+            <button onclick="resetFilters()" class="btn btn-ghost btn-sm ml-auto">重置篩選</button>
+        </div>
+    </div>
+</div>
 
-    <!-- 列表檢視 -->
-    <div id="view-list">
-        <div id="order-list" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></div>
-    </div>
+<!-- 列表檢視 -->
+<div id="view-list">
+    <div id="order-list" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></div>
+</div>
 
-    <!-- 日曆檢視 -->
-    <div id="view-calendar" class="hidden space-y-3">
-        <!-- 無訂位日期橫條 -->
-        <div id="cal-no-date-bar" class="hidden bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
-            <div class="flex items-center gap-2 mb-2">
-                <span style="font-size:10px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:.1em">⚠ 尚未安排訂位日期</span>
-                <span id="cal-no-date-count" class="text-[10px] font-bold bg-amber-400 text-white px-2 py-0.5 rounded-full">0</span>
-            </div>
-            <div id="cal-no-date-list" class="flex flex-wrap gap-2"></div>
+<!-- 日曆檢視 -->
+<div id="view-calendar" class="hidden space-y-3">
+    <!-- 無訂位日期橫條 -->
+    <div id="cal-no-date-bar" class="hidden bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
+        <div class="flex items-center gap-2 mb-2">
+            <span style="font-size:10px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:.1em">⚠ 尚未安排訂位日期</span>
+            <span id="cal-no-date-count" class="text-[10px] font-bold bg-amber-400 text-white px-2 py-0.5 rounded-full">0</span>
         </div>
-        <!-- 日曆本體 -->
-        <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
-            <div class="grid grid-cols-7 border-b border-slate-100 bg-slate-50">
-                <div class="text-center py-2.5 text-[11px] font-bold text-red-400">日</div>
-                <div class="text-center py-2.5 text-[11px] font-bold text-slate-500">一</div>
-                <div class="text-center py-2.5 text-[11px] font-bold text-slate-500">二</div>
-                <div class="text-center py-2.5 text-[11px] font-bold text-slate-500">三</div>
-                <div class="text-center py-2.5 text-[11px] font-bold text-slate-500">四</div>
-                <div class="text-center py-2.5 text-[11px] font-bold text-slate-500">五</div>
-                <div class="text-center py-2.5 text-[11px] font-bold text-blue-400">六</div>
-            </div>
-            <div id="cal-grid" class="grid grid-cols-7" style="min-height:640px"></div>
-        </div>
+        <div id="cal-no-date-list" class="flex flex-wrap gap-2"></div>
     </div>
+    <!-- 日曆本體 -->
+    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+        <div class="grid grid-cols-7 border-b border-slate-100 bg-slate-50">
+            <div class="text-center py-2.5 text-[11px] font-bold text-red-400">日</div>
+            <div class="text-center py-2.5 text-[11px] font-bold text-slate-500">一</div>
+            <div class="text-center py-2.5 text-[11px] font-bold text-slate-500">二</div>
+            <div class="text-center py-2.5 text-[11px] font-bold text-slate-500">三</div>
+            <div class="text-center py-2.5 text-[11px] font-bold text-slate-500">四</div>
+            <div class="text-center py-2.5 text-[11px] font-bold text-slate-500">五</div>
+            <div class="text-center py-2.5 text-[11px] font-bold text-blue-400">六</div>
+        </div>
+        <div id="cal-grid" class="grid grid-cols-7" style="min-height:640px"></div>
+    </div>
+</div>
+```
+
 </section>
 
 <!-- 日曆：日期訂單 Modal -->
+
 <div id="cal-day-modal" class="fixed inset-0 bg-black/75 hidden flex items-center justify-center p-4 z-[500] backdrop-blur-sm">
     <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col overflow-hidden" style="max-height:88vh">
         <div class="px-6 py-4 flex justify-between items-center flex-shrink-0" style="background:var(--pine)">
@@ -573,85 +591,106 @@
 </section>
 
 <!-- 分類管理 -->
+
 <section id="sec-categories" class="hidden space-y-6">
-    
-    <div class="bg-white p-6 rounded-2xl border max-w-2xl shadow-sm">
-        <div class="flex gap-2 mb-6">
-            <input id="new-cat" class="filter-input flex-1" placeholder="新分類名稱">
-            <button onclick="addCat()" class="btn btn-primary">新增</button>
-        </div>
-        <table class="w-full text-sm text-left">
-            <thead><tr class="text-slate-400 border-b text-xs uppercase tracking-widest"><th class="p-3">排序</th><th class="p-3">名稱</th><th class="p-3">顯示</th><th class="p-3">操作</th></tr></thead>
-            <tbody id="cat-list-table"></tbody>
-        </table>
+
+```
+<div class="bg-white p-6 rounded-2xl border max-w-2xl shadow-sm">
+    <div class="flex gap-2 mb-6">
+        <input id="new-cat" class="filter-input flex-1" placeholder="新分類名稱">
+        <button onclick="addCat()" class="btn btn-primary">新增</button>
     </div>
+    <table class="w-full text-sm text-left">
+        <thead><tr class="text-slate-400 border-b text-xs uppercase tracking-widest"><th class="p-3">排序</th><th class="p-3">名稱</th><th class="p-3">顯示</th><th class="p-3">操作</th></tr></thead>
+        <tbody id="cat-list-table"></tbody>
+    </table>
+</div>
+```
+
 </section>
 
 <!-- 菜單編輯 -->
+
 <section id="sec-menu" class="hidden space-y-6 text-left">
     <div class="flex justify-between items-center">
-        
-        <button onclick="openMenuModal(false)" class="btn btn-primary">+ 新增餐點</button>
-    </div>
-    <div class="filter-bar flex gap-4">
-        <input type="text" id="menu-search" oninput="loadMenu()" class="filter-input flex-1" placeholder="搜尋菜名…">
-        <select id="menu-cat-filter" onchange="loadMenu()" class="filter-select w-40"></select>
-    </div>
-    <div id="menu-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+
+```
+    <button onclick="openMenuModal(false)" class="btn btn-primary">+ 新增餐點</button>
+</div>
+<div class="filter-bar flex gap-4">
+    <input type="text" id="menu-search" oninput="loadMenu()" class="filter-input flex-1" placeholder="搜尋菜名…">
+    <select id="menu-cat-filter" onchange="loadMenu()" class="filter-select w-40"></select>
+</div>
+<div id="menu-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+```
+
 </section>
 
 <!-- 口味定義 -->
+
 <section id="sec-flavors" class="hidden space-y-6">
     <div class="flex justify-between items-center">
-        
-        <button onclick="addFlvGroup()" class="btn btn-gold">+ 新增選項組</button>
-    </div>
-    <div id="flv-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+```
+    <button onclick="addFlvGroup()" class="btn btn-gold">+ 新增選項組</button>
+</div>
+<div id="flv-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+```
+
 </section>
 
 <!-- 系統設定 -->
+
 <section id="sec-settings" class="hidden space-y-6">
-    
-    <div class="bg-white p-8 rounded-2xl border shadow-sm max-w-xl space-y-6">
-        <div>
-            <p class="text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest">Logo 上傳（推薦 SVG 或去背 PNG）</p>
-            <input type="file" id="logo-file" class="w-full border-2 border-dashed border-slate-200 p-5 rounded-xl text-sm mb-4" accept=".svg,.png,.jpg,.jpeg">
-            <div id="current-logo-preview" class="hidden mb-4 text-center bg-slate-50 p-4 rounded-xl">
-                <img id="admin-logo-img" src="" class="max-h-20 mx-auto object-contain bg-white">
-            </div>
-            <button onclick="uploadLogo()" class="btn btn-primary w-full justify-center py-4">確認更新 Logo</button>
+
+```
+<div class="bg-white p-8 rounded-2xl border shadow-sm max-w-xl space-y-6">
+    <div>
+        <p class="text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest">Logo 上傳（推薦 SVG 或去背 PNG）</p>
+        <input type="file" id="logo-file" class="w-full border-2 border-dashed border-slate-200 p-5 rounded-xl text-sm mb-4" accept=".svg,.png,.jpg,.jpeg">
+        <div id="current-logo-preview" class="hidden mb-4 text-center bg-slate-50 p-4 rounded-xl">
+            <img id="admin-logo-img" src="" class="max-h-20 mx-auto object-contain bg-white">
         </div>
-        <div class="border-t pt-6">
-            <p class="text-xs font-bold text-slate-400 mb-3 uppercase tracking-widest">側欄 Logo 模式</p>
-            <div class="flex gap-3">
-                <button onclick="setSidebarLogoMode('white')"    class="flex-1 py-2 bg-emerald-900 text-white text-xs font-bold rounded-xl border-2 border-transparent hover:border-amber-400 transition">轉白色</button>
-                <button onclick="setSidebarLogoMode('original')" class="flex-1 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-xl border-2 border-transparent hover:border-amber-400 transition">原始顏色</button>
-            </div>
+        <button onclick="uploadLogo()" class="btn btn-primary w-full justify-center py-4">確認更新 Logo</button>
+    </div>
+    <div class="border-t pt-6">
+        <p class="text-xs font-bold text-slate-400 mb-3 uppercase tracking-widest">側欄 Logo 模式</p>
+        <div class="flex gap-3">
+            <button onclick="setSidebarLogoMode('white')"    class="flex-1 py-2 bg-emerald-900 text-white text-xs font-bold rounded-xl border-2 border-transparent hover:border-amber-400 transition">轉白色</button>
+            <button onclick="setSidebarLogoMode('original')" class="flex-1 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-xl border-2 border-transparent hover:border-amber-400 transition">原始顏色</button>
         </div>
     </div>
+</div>
+```
+
 </section>
 
 <!-- 網址配置 -->
+
 <section id="sec-eventurl" class="hidden space-y-6">
-    
-    <div class="bg-white p-8 rounded-2xl border shadow-sm max-w-3xl space-y-8">
-        <div>
-            <label class="filter-label">1. 選擇活動代號</label>
-            <select id="sel-campaign" class="filter-select mt-2 max-w-xs"></select>
-        </div>
-        <div>
-            <label class="filter-label">2. 勾選欲顯示的分類（可多選，僅列隱藏分類）</label>
-            <div id="cat-checkbox-list" class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3"></div>
-        </div>
-        <button onclick="bindEvent()" class="btn btn-primary w-full justify-center py-4 text-base">確認綁定並產生活動連結</button>
+
+```
+<div class="bg-white p-8 rounded-2xl border shadow-sm max-w-3xl space-y-8">
+    <div>
+        <label class="filter-label">1. 選擇活動代號</label>
+        <select id="sel-campaign" class="filter-select mt-2 max-w-xs"></select>
     </div>
-    <div class="max-w-3xl">
-        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">目前運作中的活動</h3>
-        <div id="active-event-list" class="space-y-4"></div>
+    <div>
+        <label class="filter-label">2. 勾選欲顯示的分類（可多選，僅列隱藏分類）</label>
+        <div id="cat-checkbox-list" class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3"></div>
     </div>
+    <button onclick="bindEvent()" class="btn btn-primary w-full justify-center py-4 text-base">確認綁定並產生活動連結</button>
+</div>
+<div class="max-w-3xl">
+    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">目前運作中的活動</h3>
+    <div id="active-event-list" class="space-y-4"></div>
+</div>
+```
+
 </section>
 
 <!-- 備料統計報表 -->
+
 <section id="sec-report" class="hidden space-y-4">
     <!-- 報表篩選列（白色卡片，與訂單監控同風格） -->
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden mb-2">
@@ -727,116 +766,131 @@
     </div>
     <input type="hidden" id="r-run-btn">
 
-    <div class="bg-white rounded-2xl border shadow-sm px-4 py-2.5 flex items-center flex-wrap gap-x-5 gap-y-2">
-        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">訂單</span><span class="font-serif font-black text-base" style="color:var(--pine)" id="kpi-orders">—</span><span class="text-[10px] text-slate-400">筆</span></div>
-        <div style="width:1px;height:14px;background:var(--border)"></div>
-        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">大人</span><span class="font-serif font-black text-base" style="color:var(--gold)" id="kpi-adult">—</span></div>
-        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400">小孩</span><span class="font-serif font-black text-base" style="color:var(--gold)" id="kpi-kid">—</span></div>
-        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400">兒童</span><span class="font-serif font-black text-base" style="color:var(--gold)" id="kpi-child">—</span></div>
-        <div style="width:1px;height:14px;background:var(--border)"></div>
-        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">總人數</span><span class="font-serif font-black text-base" style="color:#3b82f6" id="kpi-people">—</span><span class="text-[10px] text-slate-400">位</span></div>
-        <div style="width:1px;height:14px;background:var(--border)"></div>
-        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">套餐</span><span class="font-serif font-black text-base" style="color:var(--pine)" id="kpi-sets">—</span><span class="text-[10px] text-slate-400">組</span></div>
-        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">品項</span><span class="font-serif font-black text-base" style="color:var(--stone)" id="kpi-items">—</span><span class="text-[10px] text-slate-400">種</span></div>
-        <div style="width:1px;height:14px;background:var(--border)"></div>
-        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">預估營收</span><span class="font-serif font-black text-base" style="color:#f43f5e" id="kpi-rev">—</span></div>
-    </div>
+```
+<div class="bg-white rounded-2xl border shadow-sm px-4 py-2.5 flex items-center flex-wrap gap-x-5 gap-y-2">
+    <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">訂單</span><span class="font-serif font-black text-base" style="color:var(--pine)" id="kpi-orders">—</span><span class="text-[10px] text-slate-400">筆</span></div>
+    <div style="width:1px;height:14px;background:var(--border)"></div>
+    <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">大人</span><span class="font-serif font-black text-base" style="color:var(--gold)" id="kpi-adult">—</span></div>
+    <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400">小孩</span><span class="font-serif font-black text-base" style="color:var(--gold)" id="kpi-kid">—</span></div>
+    <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400">兒童</span><span class="font-serif font-black text-base" style="color:var(--gold)" id="kpi-child">—</span></div>
+    <div style="width:1px;height:14px;background:var(--border)"></div>
+    <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">總人數</span><span class="font-serif font-black text-base" style="color:#3b82f6" id="kpi-people">—</span><span class="text-[10px] text-slate-400">位</span></div>
+    <div style="width:1px;height:14px;background:var(--border)"></div>
+    <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">套餐</span><span class="font-serif font-black text-base" style="color:var(--pine)" id="kpi-sets">—</span><span class="text-[10px] text-slate-400">組</span></div>
+    <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">品項</span><span class="font-serif font-black text-base" style="color:var(--stone)" id="kpi-items">—</span><span class="text-[10px] text-slate-400">種</span></div>
+    <div style="width:1px;height:14px;background:var(--border)"></div>
+    <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">預估營收</span><span class="font-serif font-black text-base" style="color:#f43f5e" id="kpi-rev">—</span></div>
+</div>
 
-    <div class="flex gap-1 bg-slate-100 rounded-xl p-1">
-        <button class="rpt-tab on" onclick="rptTab('prepare')">🍳 備料總表</button>
-        <button class="rpt-tab"    onclick="rptTab('setmenu')">🍱 套餐明細</button>
-        <button class="rpt-tab"    onclick="rptTab('orders')">📋 訂單流水帳</button>
-    </div>
+<div class="flex gap-1 bg-slate-100 rounded-xl p-1">
+    <button class="rpt-tab on" onclick="rptTab('prepare')">🍳 備料總表</button>
+    <button class="rpt-tab"    onclick="rptTab('setmenu')">🍱 套餐明細</button>
+    <button class="rpt-tab"    onclick="rptTab('orders')">📋 訂單流水帳</button>
+</div>
 
-    <div id="rtab-prepare">
-        <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
-            <div class="flex justify-between items-center px-5 py-4 bg-slate-800">
-                <span class="font-bold font-serif text-white text-sm">🍳 全品項備料總量（含套餐拆解）</span>
-                <span id="ingredient-total" class="bg-slate-600 text-white px-3 py-0.5 rounded-full text-xs font-bold">0 項</span>
-            </div>
-            <div class="overflow-y-auto" style="max-height:60vh">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-50 text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                        <tr><th class="px-5 py-3 w-10">#</th><th class="px-5 py-3">品名</th><th class="px-5 py-3 text-right w-28">備料數</th><th class="px-5 py-3 w-40">佔比</th></tr>
-                    </thead>
-                    <tbody id="dish-summary-body" class="divide-y divide-slate-50"></tbody>
-                </table>
-            </div>
+<div id="rtab-prepare">
+    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+        <div class="flex justify-between items-center px-5 py-4 bg-slate-800">
+            <span class="font-bold font-serif text-white text-sm">🍳 全品項備料總量（含套餐拆解）</span>
+            <span id="ingredient-total" class="bg-slate-600 text-white px-3 py-0.5 rounded-full text-xs font-bold">0 項</span>
+        </div>
+        <div class="overflow-y-auto" style="max-height:60vh">
+            <table class="w-full text-left">
+                <thead class="bg-slate-50 text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                    <tr><th class="px-5 py-3 w-10">#</th><th class="px-5 py-3">品名</th><th class="px-5 py-3 text-right w-28">備料數</th><th class="px-5 py-3 w-40">佔比</th></tr>
+                </thead>
+                <tbody id="dish-summary-body" class="divide-y divide-slate-50"></tbody>
+            </table>
         </div>
     </div>
-    <div id="rtab-setmenu" class="hidden">
-        <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
-            <div class="flex justify-between items-center px-5 py-4" style="background:var(--pine)">
-                <span class="font-bold font-serif text-white text-sm">🍱 套餐銷售明細</span>
-                <span id="set-menu-total" class="bg-amber-500 text-white px-3 py-0.5 rounded-full text-xs font-bold">0 套</span>
-            </div>
-            <div id="set-menu-body" class="p-5 space-y-3"></div>
+</div>
+<div id="rtab-setmenu" class="hidden">
+    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+        <div class="flex justify-between items-center px-5 py-4" style="background:var(--pine)">
+            <span class="font-bold font-serif text-white text-sm">🍱 套餐銷售明細</span>
+            <span id="set-menu-total" class="bg-amber-500 text-white px-3 py-0.5 rounded-full text-xs font-bold">0 套</span>
         </div>
+        <div id="set-menu-body" class="p-5 space-y-3"></div>
     </div>
-    <div id="rtab-orders" class="hidden space-y-4">
-        <div class="flex justify-between items-center">
-            <div class="flex items-center gap-2"><div class="w-1 h-5 bg-amber-500 rounded-full"></div><span class="font-bold font-serif" style="color:var(--pine)">訂單詳細流水帳</span></div>
-            <span id="order-count-tag" class="text-white px-3 py-0.5 rounded-full text-xs font-bold" style="background:var(--pine)">0 筆</span>
-        </div>
-        <div id="order-detail-container" class="space-y-4"></div>
+</div>
+<div id="rtab-orders" class="hidden space-y-4">
+    <div class="flex justify-between items-center">
+        <div class="flex items-center gap-2"><div class="w-1 h-5 bg-amber-500 rounded-full"></div><span class="font-bold font-serif" style="color:var(--pine)">訂單詳細流水帳</span></div>
+        <span id="order-count-tag" class="text-white px-3 py-0.5 rounded-full text-xs font-bold" style="background:var(--pine)">0 筆</span>
     </div>
+    <div id="order-detail-container" class="space-y-4"></div>
+</div>
+```
+
 </section>
 
 <!-- 紀念照管理 -->
+
 <section id="sec-photos" class="hidden space-y-5">
     <div class="flex flex-wrap justify-between items-center gap-3">
-        
-        <div class="flex gap-2">
-            <button onclick="autoDeleteOld()" class="btn btn-danger">🗑 刪除 7 天前</button>
-            <button onclick="openUploadModal()" class="btn btn-primary">📤 上傳照片</button>
-        </div>
+
+```
+    <div class="flex gap-2">
+        <button onclick="autoDeleteOld()" class="btn btn-danger">🗑 刪除 7 天前</button>
+        <button onclick="openUploadModal()" class="btn btn-primary">📤 上傳照片</button>
     </div>
-    <div class="filter-bar space-y-3">
-        <div class="flex flex-wrap gap-3 items-center">
-            <input type="text" id="photo-admin-search" oninput="filterPhotos()" placeholder="搜尋姓名、電話、訂單號…" class="filter-input flex-1 min-w-[180px]">
-            <input type="date" id="photo-filter-from" onchange="filterPhotos()" class="filter-input w-40">
-            <span class="text-slate-300 font-bold text-xs">至</span>
-            <input type="date" id="photo-filter-to" onchange="filterPhotos()" class="filter-input w-40">
-            <button onclick="clearPhotoFilters()" class="btn btn-ghost btn-sm">清除</button>
-        </div>
-        <div class="flex items-center gap-3 pt-3 border-t border-slate-100">
-            <label class="flex items-center gap-2 cursor-pointer select-none">
-                <input type="checkbox" id="photo-select-all" onchange="toggleSelectAll(this.checked)" class="accent-amber-500 w-4 h-4">
-                <span class="text-xs font-bold text-slate-500">全選</span>
-            </label>
-            <span id="photo-selected-count" class="text-xs font-bold text-amber-600 hidden">已選 0 張</span>
-            <button id="batch-delete-btn" onclick="batchDelete()" class="hidden btn btn-danger btn-sm">🗑 批次刪除</button>
-            <span class="ml-auto text-xs text-slate-400 font-bold" id="photo-count-tag">共 0 張</span>
-        </div>
+</div>
+<div class="filter-bar space-y-3">
+    <div class="flex flex-wrap gap-3 items-center">
+        <input type="text" id="photo-admin-search" oninput="filterPhotos()" placeholder="搜尋姓名、電話、訂單號…" class="filter-input flex-1 min-w-[180px]">
+        <input type="date" id="photo-filter-from" onchange="filterPhotos()" class="filter-input w-40">
+        <span class="text-slate-300 font-bold text-xs">至</span>
+        <input type="date" id="photo-filter-to" onchange="filterPhotos()" class="filter-input w-40">
+        <button onclick="clearPhotoFilters()" class="btn btn-ghost btn-sm">清除</button>
     </div>
-    <div id="photo-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+    <div class="flex items-center gap-3 pt-3 border-t border-slate-100">
+        <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" id="photo-select-all" onchange="toggleSelectAll(this.checked)" class="accent-amber-500 w-4 h-4">
+            <span class="text-xs font-bold text-slate-500">全選</span>
+        </label>
+        <span id="photo-selected-count" class="text-xs font-bold text-amber-600 hidden">已選 0 張</span>
+        <button id="batch-delete-btn" onclick="batchDelete()" class="hidden btn btn-danger btn-sm">🗑 批次刪除</button>
+        <span class="ml-auto text-xs text-slate-400 font-bold" id="photo-count-tag">共 0 張</span>
+    </div>
+</div>
+<div id="photo-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+```
+
 </section>
 
 <!-- LINE 通知 -->
+
 <section id="sec-linenotify" class="hidden space-y-6">
     <div class="flex justify-between items-center">
-        
-        <div class="flex gap-2">
-            <a href="line-bind.html" target="_blank" class="btn btn-ghost">🔗 綁定頁面</a>
-            <button onclick="openAddTargetModal()" class="btn btn-primary">＋ 手動新增</button>
-        </div>
+
+```
+    <div class="flex gap-2">
+        <a href="line-bind.html" target="_blank" class="btn btn-ghost">🔗 綁定頁面</a>
+        <button onclick="openAddTargetModal()" class="btn btn-primary">＋ 手動新增</button>
     </div>
-    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800 font-semibold">
-        💡 讓對方加 Bot 好友並傳訊息，從 Edge Function Logs 取得 User ID
-    </div>
-    <div id="line-targets-list" class="space-y-3"></div>
+</div>
+<div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800 font-semibold">
+    💡 讓對方加 Bot 好友並傳訊息，從 Edge Function Logs 取得 User ID
+</div>
+<div id="line-targets-list" class="space-y-3"></div>
+```
+
 </section>
 
 <!-- 公告管理 -->
+
 <section id="sec-announce" class="hidden space-y-6">
     <div class="flex justify-between items-center">
-        
-        <button onclick="openAnnounceModal(false)" class="btn btn-primary">+ 新增公告</button>
-    </div>
-    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800 font-semibold">
-        💡 啟用中的公告會在顧客進入點餐頁面時自動彈出顯示
-    </div>
-    <div id="announce-list" class="space-y-4"></div>
+
+```
+    <button onclick="openAnnounceModal(false)" class="btn btn-primary">+ 新增公告</button>
+</div>
+<div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800 font-semibold">
+    💡 啟用中的公告會在顧客進入點餐頁面時自動彈出顯示
+</div>
+<div id="announce-list" class="space-y-4"></div>
+```
+
 </section>
 
 </main>
@@ -844,6 +898,7 @@
 <!-- ── MODALS ── -->
 
 <!-- 新增 LINE 通知對象 -->
+
 <div id="line-target-modal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-4 z-[500] backdrop-blur-sm">
     <div class="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl space-y-5">
         <h3 class="text-xl font-bold font-serif border-b pb-3" style="color:var(--pine)">新增通知對象</h3>
@@ -864,6 +919,7 @@
 </div>
 
 <!-- 上傳照片 -->
+
 <div id="upload-photo-modal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-4 z-[500] backdrop-blur-sm">
     <div class="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl space-y-5">
         <h3 class="text-xl font-bold font-serif border-b pb-3" style="color:var(--pine)">上傳紀念照片</h3>
@@ -890,6 +946,7 @@
 </div>
 
 <!-- 修改訂單細項 -->
+
 <div id="order-edit-modal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4 z-[300] backdrop-blur-sm text-left">
     <div class="bg-white w-full max-w-6xl rounded-3xl overflow-hidden flex flex-col max-h-[95vh] shadow-2xl">
         <div class="p-6 flex justify-between items-center" style="background:var(--pine)">
@@ -914,6 +971,7 @@
 </div>
 
 <!-- 口味選擇 -->
+
 <div id="edit-flavor-popup" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-4 z-[400] backdrop-blur-sm text-left">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 flex flex-col max-h-[85vh] shadow-2xl">
         <h4 class="font-bold text-lg mb-4 font-serif" style="color:var(--pine)" id="edit-pop-title">口味選擇</h4>
@@ -926,6 +984,7 @@
 </div>
 
 <!-- 套餐分組 -->
+
 <div id="set-modal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4 z-[200]">
     <div class="bg-white w-full max-w-5xl rounded-3xl shadow-2xl text-left flex flex-col overflow-hidden" style="max-height:90vh">
         <div class="flex justify-between items-center px-8 py-5 border-b bg-slate-50 flex-shrink-0">
@@ -991,6 +1050,7 @@
 </div>
 
 <!-- 餐點資料 -->
+
 <div id="menu-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-[100] text-left">
     <div class="bg-white w-full max-w-lg rounded-3xl p-8 flex flex-col max-h-[90vh] shadow-2xl">
         <h3 class="font-bold text-xl mb-6 font-serif border-l-4 pl-3" style="color:var(--pine);border-color:var(--gold)">餐點基本資料</h3>
@@ -1021,6 +1081,7 @@
 </div>
 
 <!-- 公告 -->
+
 <div id="announce-modal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-4 z-[500] backdrop-blur-sm">
     <div class="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl space-y-5">
         <h3 class="text-xl font-bold font-serif border-b pb-3" style="color:var(--pine)">公告內容</h3>
@@ -1039,6 +1100,7 @@
 </div>
 
 <!-- ── SCRIPTS ── -->
+
 <script>
 const SUPABASE_URL = 'https://pydlnqriztpzgxbjuohm.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_ISKUWOXUR9A-1y81xCOUXg_8-zNle3v';
@@ -1870,7 +1932,18 @@ function copyEventLink(code){const url=`https://jinzhu.vercel.app/event.html?cod
 
 // ── REPORT ──
 async function initReport(){
-    rptPreset('today');
+    // 只有第一次進入才設定預設日期，避免每次切換都重置
+    if(!document.getElementById('r-s-date').value){
+        rptPreset('today');
+    }
+    // 預設下單日期（created）
+    const quick=document.getElementById('report-date-type-quick');
+    const full=document.getElementById('report-date-type');
+    if(quick&&!quick.dataset.init){
+        quick.value='created';
+        if(full) full.value='created';
+        quick.dataset.init='1';
+    }
     const{data}=await _s.from('campaign_settings').select('*');
     const sel=document.getElementById('report-campaign');
     while(sel.options.length>2)sel.remove(2);
@@ -2097,17 +2170,30 @@ function exportFullData(){
     XLSX.utils.book_append_sheet(wb,wsT,'🪑 逐桌明細');
 
     // ── 摘要 ──
+    // dishCount 是拆解後子品項；setMenuCount 是套餐本身
+    // 合計品項種數 = 子品項 + 套餐種數
+    const allItemKinds = sorted.length + Object.keys(setMenuCount).length;
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet([
         {項目:'訂單數',數值:orders.length},
         {項目:'大人',數值:totalAdult},{項目:'小孩',數值:totalKid},{項目:'兒童',數值:totalChild},
         {項目:'總人數',數值:totalAdult+totalKid+totalChild},
-        {項目:'套餐',數值:totalSets},{項目:'品項數',數值:sorted.length},{項目:'預估營收',數值:totalRev}
+        {項目:'套餐種數',數值:Object.keys(setMenuCount).length},
+        {項目:'套餐總組數',數值:totalSets},
+        {項目:'品項種數（含套餐子品項）',數值:allItemKinds},
+        {項目:'預估營收',數值:totalRev}
     ]),'📊 摘要');
 
-    // ── 備料總表 ──
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(
-        sorted.map(([name,count],i)=>({排名:i+1,品名:name,備料數量:count}))
-    ),'🍳 備料總表');
+    // ── 備料總表（套餐名稱 + 子品項）──
+    const prepRows=[];
+    // 先列套餐本身
+    Object.entries(setMenuCount).sort((a,b)=>b[1]-a[1]).forEach(([name,count])=>{
+        prepRows.push({排名:'',類型:'套餐',品名:name,備料數量:count});
+    });
+    // 再列所有子品項（已含套餐拆解）
+    sorted.forEach(([name,count],i)=>{
+        prepRows.push({排名:i+1,類型:'品項',品名:name,備料數量:count});
+    });
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(prepRows),'🍳 備料總表');
 
     // ── 套餐明細 ──
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(
