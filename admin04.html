@@ -581,7 +581,7 @@
             <button onclick="addCat()" class="btn btn-primary">新增</button>
         </div>
         <table class="w-full text-sm text-left">
-            <thead><tr class="text-slate-400 border-b text-xs uppercase tracking-widest"><th class="p-3">排序</th><th class="p-3">名稱</th><th class="p-3">顯示</th><th class="p-3">操作</th></tr></thead>
+            <thead><tr class="text-slate-400 border-b text-xs uppercase tracking-widest"><th class="p-3">排序</th><th class="p-3">名稱（中）</th><th class="p-3">EN</th><th class="p-3">日本語</th><th class="p-3">한국어</th><th class="p-3">顯示</th><th class="p-3">操作</th></tr></thead>
             <tbody id="cat-list-table"></tbody>
         </table>
     </div>
@@ -993,11 +993,36 @@
 <!-- 餐點資料 -->
 <div id="menu-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-[100] text-left">
     <div class="bg-white w-full max-w-lg rounded-3xl p-8 flex flex-col max-h-[90vh] shadow-2xl">
-        <h3 class="font-bold text-xl mb-6 font-serif border-l-4 pl-3" style="color:var(--pine);border-color:var(--gold)">餐點基本資料</h3>
+        <h3 class="font-bold text-xl mb-4 font-serif border-l-4 pl-3" style="color:var(--pine);border-color:var(--gold)">餐點基本資料</h3>
         <input type="hidden" id="m-id">
         <div class="space-y-4 overflow-y-auto pr-2 custom-scrollbar">
-            <input id="m-name"  placeholder="餐點名稱" class="filter-input font-bold">
-            <textarea id="m-desc" placeholder="描述" class="filter-input h-20 resize-none"></textarea>
+            <!-- 語言 tab -->
+            <div class="flex bg-slate-100 rounded-xl p-1 gap-0.5">
+                <button onclick="switchLangTab('zh')" id="ltab-zh" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-slate-700 shadow-sm">🇹🇼 中文</button>
+                <button onclick="switchLangTab('en')" id="ltab-en" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400">🇺🇸 EN</button>
+                <button onclick="switchLangTab('ja')" id="ltab-ja" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400">🇯🇵 日本語</button>
+                <button onclick="switchLangTab('ko')" id="ltab-ko" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400">🇰🇷 한국어</button>
+            </div>
+            <!-- 中文 -->
+            <div id="mlang-zh">
+                <input id="m-name" placeholder="餐點名稱（中文）" class="filter-input font-bold mb-3">
+                <textarea id="m-desc" placeholder="描述（中文）" class="filter-input h-20 resize-none"></textarea>
+            </div>
+            <!-- 英文 -->
+            <div id="mlang-en" class="hidden">
+                <input id="m-name-en" placeholder="Item Name (English)" class="filter-input font-bold mb-3">
+                <textarea id="m-desc-en" placeholder="Description (English)" class="filter-input h-20 resize-none"></textarea>
+            </div>
+            <!-- 日文 -->
+            <div id="mlang-ja" class="hidden">
+                <input id="m-name-ja" placeholder="料理名（日本語）" class="filter-input font-bold mb-3">
+                <textarea id="m-desc-ja" placeholder="説明（日本語）" class="filter-input h-20 resize-none"></textarea>
+            </div>
+            <!-- 韓文 -->
+            <div id="mlang-ko" class="hidden">
+                <input id="m-name-ko" placeholder="메뉴 이름（한국어）" class="filter-input font-bold mb-3">
+                <textarea id="m-desc-ko" placeholder="설명（한국어）" class="filter-input h-20 resize-none"></textarea>
+            </div>
             <div class="grid grid-cols-2 gap-4">
                 <input id="m-price" type="number" placeholder="價格" class="filter-input">
                 <select id="m-cat" class="filter-select"></select>
@@ -1590,12 +1615,21 @@ async function delCampaign(id){const ok=await confirm2({icon:'🗑',title:'刪�
 async function loadCats(){
     const{data}=await _s.from('categories').select('*').order('sort_order');
     allCategories=data||[];
-    document.getElementById('cat-list-table').innerHTML=data.map(c=>`<tr class="border-b hover:bg-slate-50 transition text-sm text-left"><td class="p-3"><input type="number" value="${c.sort_order||0}" onchange="updateCatSort('${c.id}',this.value)" class="w-14 border rounded-lg text-xs p-1 text-center"></td><td class="p-3 font-bold" style="color:var(--pine)">${c.name}</td><td class="p-3"><input type="checkbox" ${c.is_visible?'checked':''} onchange="updateCatVis('${c.id}',this.checked)" class="accent-green-700 w-4 h-4"></td><td class="p-3"><button onclick="delCat('${c.id}')" class="btn btn-danger btn-sm">刪除</button></td></tr>`).join('');
+    document.getElementById('cat-list-table').innerHTML=data.map(c=>`<tr class="border-b hover:bg-slate-50 transition text-sm text-left">
+        <td class="p-3"><input type="number" value="${c.sort_order||0}" onchange="updateCatSort('${c.id}',this.value)" class="w-14 border rounded-lg text-xs p-1 text-center"></td>
+        <td class="p-3 font-bold" style="color:var(--pine)">${c.name}</td>
+        <td class="p-3"><input type="text" value="${c.name_en||''}" onchange="updateCatLang('${c.id}','name_en',this.value)" placeholder="English" class="border rounded-lg text-xs p-1 w-24"></td>
+        <td class="p-3"><input type="text" value="${c.name_ja||''}" onchange="updateCatLang('${c.id}','name_ja',this.value)" placeholder="日本語" class="border rounded-lg text-xs p-1 w-24"></td>
+        <td class="p-3"><input type="text" value="${c.name_ko||''}" onchange="updateCatLang('${c.id}','name_ko',this.value)" placeholder="한국어" class="border rounded-lg text-xs p-1 w-24"></td>
+        <td class="p-3"><input type="checkbox" ${c.is_visible?'checked':''} onchange="updateCatVis('${c.id}',this.checked)" class="accent-green-700 w-4 h-4"></td>
+        <td class="p-3"><button onclick="delCat('${c.id}')" class="btn btn-danger btn-sm">刪除</button></td>
+    </tr>`).join('');
     document.getElementById('m-cat').innerHTML=(data||[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
     document.getElementById('menu-cat-filter').innerHTML='<option value="all">所有分類</option>'+(data||[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
 }
 async function updateCatVis(id,b){await _s.from('categories').update({is_visible:b}).eq('id',id);toast(b?'分類已顯示':'分類已隱藏');}
 async function updateCatSort(id,v){await _s.from('categories').update({sort_order:parseInt(v)}).eq('id',id);toast('排序已更新');}
+async function updateCatLang(id,field,val){await _s.from('categories').update({[field]:val||null}).eq('id',id);toast('已更新');}
 async function addCat(){const n=document.getElementById('new-cat').value.trim();if(!n)return;await _s.from('categories').insert([{name:n,sort_order:99,is_visible:true}]);loadCats();toast(`分類「${n}」已新增`);}
 async function delCat(id){const ok=await confirm2({icon:'🗑',title:'刪除分類',msg:'確定刪除此分類？',okText:'刪除',danger:true});if(ok){await _s.from('categories').delete().eq('id',id);loadCats();toast('已刪除');}}
 
@@ -1642,6 +1676,14 @@ async function loadSidebarLogo(){
     else{img.style.display='none';fallback.style.display='flex';}
 }
 
+function switchLangTab(lang){
+    ['zh','en','ja','ko'].forEach(l=>{
+        document.getElementById(`mlang-${l}`)?.classList.toggle('hidden',l!==lang);
+        const btn=document.getElementById(`ltab-${l}`);
+        if(btn){btn.className=`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${l===lang?'bg-white text-slate-700 shadow-sm':'text-slate-400'}`;}
+    });
+}
+
 // ── MENU ──
 async function loadMenu(){
     const search=document.getElementById('menu-search').value.toLowerCase();
@@ -1679,19 +1721,23 @@ async function menuDrop(e){
 }
 async function openMenuModal(isEdit){
     document.getElementById('menu-modal').classList.remove('hidden');
+    switchLangTab('zh');
     if(!isEdit){
         document.getElementById('m-id').value='';
         document.getElementById('m-name').value='';
         document.getElementById('m-price').value='';
         document.getElementById('m-desc').value='';
         document.getElementById('m-is-set').checked=false;
-        document.getElementById('m-img').value=''; // 清除舊圖片選擇
+        document.getElementById('m-img').value='';
+        ['en','ja','ko'].forEach(l=>{
+            const n=document.getElementById(`m-name-${l}`);const d=document.getElementById(`m-desc-${l}`);
+            if(n)n.value='';if(d)d.value='';
+        });
     }
     if(!document.getElementById('m-cat').options.length){
         const{data:cats}=await _s.from('categories').select('*').order('sort_order');
         document.getElementById('m-cat').innerHTML=(cats||[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
     } else if(!isEdit) {
-        // 新增時重設 category select 回第一項
         document.getElementById('m-cat').selectedIndex=0;
     }
     const{data:flvs}=await _s.from('flavor_groups').select('*');
@@ -1699,14 +1745,39 @@ async function openMenuModal(isEdit){
 }
 async function editItem(id){
     const{data:i}=await _s.from('menu_items').select('*,item_flavor_relation(*)').eq('id',id).single();
-    document.getElementById('m-id').value=i.id;document.getElementById('m-name').value=i.name;document.getElementById('m-price').value=i.price;document.getElementById('m-desc').value=i.description||'';document.getElementById('m-is-set').checked=i.is_set_menu;
+    document.getElementById('m-id').value=i.id;
+    document.getElementById('m-name').value=i.name;
+    document.getElementById('m-price').value=i.price;
+    document.getElementById('m-desc').value=i.description||'';
+    document.getElementById('m-is-set').checked=i.is_set_menu;
     await openMenuModal(true);
-    setTimeout(()=>{const catSel=document.getElementById('m-cat');if(catSel&&i.category_id)catSel.value=i.category_id;i.item_flavor_relation.forEach(r=>{const c=document.querySelector(`.flv-chk[value="${r.flavor_group_id}"]`);if(c)c.checked=true;});},300);
+    setTimeout(()=>{
+        const catSel=document.getElementById('m-cat');
+        if(catSel&&i.category_id)catSel.value=i.category_id;
+        i.item_flavor_relation.forEach(r=>{const c=document.querySelector(`.flv-chk[value="${r.flavor_group_id}"]`);if(c)c.checked=true;});
+        // 填入多語言欄位
+        ['en','ja','ko'].forEach(l=>{
+            const n=document.getElementById(`m-name-${l}`);const d=document.getElementById(`m-desc-${l}`);
+            if(n)n.value=i[`name_${l}`]||'';if(d)d.value=i[`description_${l}`]||'';
+        });
+    },300);
 }
 async function saveItem(){
     const id=document.getElementById('m-id').value,file=document.getElementById('m-img').files[0];let url='';
     if(file){const path=`items/${Date.now()}.png`;await _s.storage.from('assets').upload(path,file);const{data}=_s.storage.from('assets').getPublicUrl(path);url=data.publicUrl;}
-    const payload={name:document.getElementById('m-name').value,price:document.getElementById('m-price').value,description:document.getElementById('m-desc').value,category_id:document.getElementById('m-cat').value,is_set_menu:document.getElementById('m-is-set').checked};
+    const payload={
+        name:document.getElementById('m-name').value,
+        price:document.getElementById('m-price').value,
+        description:document.getElementById('m-desc').value,
+        category_id:document.getElementById('m-cat').value,
+        is_set_menu:document.getElementById('m-is-set').checked,
+        name_en:document.getElementById('m-name-en').value||null,
+        name_ja:document.getElementById('m-name-ja').value||null,
+        name_ko:document.getElementById('m-name-ko').value||null,
+        description_en:document.getElementById('m-desc-en').value||null,
+        description_ja:document.getElementById('m-desc-ja').value||null,
+        description_ko:document.getElementById('m-desc-ko').value||null,
+    };
     if(url)payload.image_url=url;
     const{data:saved}=id?await _s.from('menu_items').update(payload).eq('id',id).select():await _s.from('menu_items').insert([payload]).select();
     if(saved){await _s.from('item_flavor_relation').delete().eq('item_id',saved[0].id);const rels=Array.from(document.querySelectorAll('.flv-chk:checked')).map(c=>({item_id:saved[0].id,flavor_group_id:c.value}));if(rels.length)await _s.from('item_flavor_relation').insert(rels);closeMenuModal();loadMenu();toast('餐點已儲存');}
