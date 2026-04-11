@@ -849,7 +849,7 @@
         <h3 class="text-xl font-bold font-serif border-b pb-3" style="color:var(--pine)">新增通知對象</h3>
         <div class="space-y-4">
             <div><label class="filter-label">名稱</label><input type="text" id="lt-name" class="filter-input mt-1" placeholder="王小明"></div>
-            <div><label class="filter-label">LINE User ID</label><input type="text" id="lt-uid" class="filter-input mt-1 font-mono text-sm" placeholder="Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></div>
+            <div><label class="filter-label">LINE User / Group ID</label><input type="text" id="lt-uid" class="filter-input mt-1 font-mono text-sm" placeholder="U 或 C 開頭的 ID"></div>
             <div class="space-y-2">
                 <label class="filter-label">接收通知類型</label>
                 <label class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" id="lt-notify-order" checked class="accent-green-700 w-4 h-4"><span class="font-bold text-sm">🔔 新訂單通知</span></label>
@@ -2262,7 +2262,7 @@ async function saveLineTarget(){
     const name=document.getElementById('lt-name').value.trim(),uid=document.getElementById('lt-uid').value.trim();
     const order=document.getElementById('lt-notify-order').checked,photo=document.getElementById('lt-notify-photo').checked;
     if(!name||!uid){toast('請填寫名稱和 User ID','warn');return;}
-    if(!uid.startsWith('U')||uid.length<10){toast('User ID 格式錯誤','error');return;}
+    if((!uid.startsWith('U')&&!uid.startsWith('C'))||uid.length<10){toast('ID 格式錯誤（需以 U 或 C 開頭）','error');return;}
     const{error}=await _s.from('line_notify_targets').insert({name,user_id:uid,notify_order:order,notify_photo:photo,is_active:true});
     if(error){toast('儲存失敗','error');return;}
     closeTargetModal();loadLineNotify();toast(`已新增「${name}」`);
