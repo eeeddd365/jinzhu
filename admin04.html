@@ -451,7 +451,7 @@
             <!-- 列表篩選（日曆模式時隱藏） -->
             <div id="list-filters" class="flex items-center gap-2 flex-1 flex-wrap">
                 <input type="text" id="filter-search" class="filter-input flex-1 min-w-[140px]" placeholder="搜尋顧客姓名或電話…" style="padding:5px 10px">
-                <select id="filter-date-type" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700">
+                <select id="filter-date-type" onchange="loadOrders();const s=document.getElementById('filter-sort');if(this.value==='booking'&&s.value.startsWith('created'))s.value='booking_asc';else if(this.value==='created'&&s.value.startsWith('booking'))s.value='created_desc';" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700">
                     <option value="created">下單日期</option>
                     <option value="booking" selected>訂位日期</option>
                 </select>
@@ -469,7 +469,7 @@
                 <select id="filter-sort" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700" title="排序方式">
                     <option value="created_desc">下單↓新到舊</option>
                     <option value="created_asc">下單↑舊到新</option>
-                    <option value="booking_asc">訂位↑早到晚</option>
+                    <option value="booking_asc" selected>訂位↑早到晚</option>
                     <option value="booking_desc">訂位↓晚到早</option>
                 </select>
                 <button onclick="loadOrders()" class="btn btn-primary btn-sm">篩選</button>
