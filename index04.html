@@ -753,11 +753,26 @@ function openDetail(id){
 
 function renderFlavorUI(rels,target,parentID){
     const container=document.getElementById(target);
-    container.innerHTML+=rels.map(r=>`
-        <div><p class="flavor-group-label">${r.flavor_groups.name}</p>
-        <div class="flavor-opts">${r.flavor_groups.flavor_options.map(o=>
-            `<div onclick="selectFlv(this,'${parentID}')" class="flv-opt" data-val="${o.option_name}">${o.option_name}</div>`
-        ).join('')}</div></div>`).join('');
+    container.innerHTML+=rels.map(r=>{
+        // 口味組顯示名稱（支援多語言）
+        const g=r.flavor_groups;
+        let groupLabel=g.name;
+        if(curLang!=='zh'){
+            const v=g[`display_name_${curLang}`]||g.display_name;
+            if(v&&v.trim()) groupLabel=v;
+        } else if(g.display_name) groupLabel=g.display_name;
+
+        return`<div><p class="flavor-group-label">${groupLabel}</p>
+        <div class="flavor-opts">${g.flavor_options.map(o=>{
+            // 選項顯示名稱（支援多語言）
+            let optLabel=o.option_name;
+            if(curLang!=='zh'){
+                const v=o[`option_name_${curLang}`];
+                if(v&&v.trim()) optLabel=v;
+            }
+            return`<div onclick="selectFlv(this,'${parentID}')" class="flv-opt" data-val="${o.option_name}">${optLabel}</div>`;
+        }).join('')}</div></div>`;
+    }).join('');
 }
 
 function selectFlv(el,parentID){
