@@ -811,7 +811,7 @@ function confirmAdd(){
         if(sels.length<tempItem.item_flavor_relation.length){showToast(t('toastFlv'));return;}
         mn=` [${sels.map(o=>o.dataset.val).join('/')}]`;
     }
-    let sn=[];
+    let snCN=[], sn=[];  // sn=翻譯版（前台顯示），snCN=中文版（後台儲存）
     if(tempItem.is_set_menu){
         for(let b of document.querySelectorAll('.group-block')){
             const isInclude=b.dataset.type==='include';
@@ -823,14 +823,16 @@ function confirmAdd(){
                 const qtyStr=chosenQty>1?` x${chosenQty}`:'';
                 const subItem=menuData.find(m=>m.id===c.dataset.id);
                 const subName=subItem?getLangName(subItem,'name'):c.dataset.name;
+                const subNameCN=c.dataset.name; // 原始中文名
                 sn.push(subName+qtyStr+(c.dataset.selectedFlv?` [${c.dataset.selectedFlv}]`:''));
+                snCN.push(subNameCN+qtyStr+(c.dataset.selectedFlv?` [${c.dataset.selectedFlv}]`:''));
             }
         }
     }
     const displayName=getLangName(tempItem,'name');
     const name=`${displayName}${currentQty>1?' x'+currentQty:''}${mn}${sn.length?' ('+sn.join('、')+')'  :''}`;
-    // 同時儲存中文名給後台識別
-    const nameCN=`${tempItem.name}${currentQty>1?' x'+currentQty:''}${mn}${sn.length?' ('+sn.map(s=>s).join('、')+')'  :''}`;
+    // 後台永遠用中文名
+    const nameCN=`${tempItem.name}${currentQty>1?' x'+currentQty:''}${mn}${snCN.length?' ('+snCN.join('、')+')'  :''}`;
     cart.push({name, nameCN, price:tempItem.price*currentQty});
     const badge=document.getElementById('cart-count');
     badge.textContent=cart.length;badge.classList.remove('badge-pop');void badge.offsetWidth;badge.classList.add('badge-pop');
@@ -870,7 +872,7 @@ async function finalSubmit(){
     const btn=document.querySelector('.submit-btn');if(btn){btn.disabled=true;btn.textContent='...';}
     const{error}=await _s.from('orders').insert([{
         customer_name:guest.name,phone:guest.phone,
-        order_content:cart,total_price:cart.reduce((s,i)=>s+i.price,0),
+        order_content:cart.map(i=>({name:i.nameCN||i.name, price:i.price})),total_price:cart.reduce((s,i)=>s+i.price,0),
         note:document.getElementById('order-note').value
     }]);
     if(!error){
