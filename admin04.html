@@ -2296,16 +2296,19 @@ function renderReports(orders){
                 const brand=cleanName.slice(0,pIdx).trim();
                 setMenuCount[brand]=(setMenuCount[brand]||0)+qty;
                 if(!setMenuDetail[brand]) setMenuDetail[brand]={};
-                // 子品項用重複出現次數計算數量，再乘以套數
                 const subNames=inner.split('、').map(s=>s.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim()).filter(Boolean);
-                const subCount={};
-                subNames.forEach(s=>{subCount[s]=(subCount[s]||0)+1;});
-                Object.entries(subCount).forEach(([s,cnt])=>{
-                    dishCount[s]=(dishCount[s]||0)+qty*cnt;
+                const subCnt={};
+                subNames.forEach(s=>{subCnt[s]=(subCnt[s]||0)+1;});
+                Object.entries(subCnt).forEach(([s,cnt])=>{
+                    // key 格式：「套餐名稱／子品項名」方便顯示
+                    const key=`${brand}／${s}`;
+                    dishCount[key]=(dishCount[key]||0)+qty*cnt;
                     setMenuDetail[brand][s]=(setMenuDetail[brand][s]||0)+qty*cnt;
                 });
             }
-            else{dishCount[cleanName]=(dishCount[cleanName]||0)+qty;}
+            else{
+                dishCount[cleanName]=(dishCount[cleanName]||0)+qty;
+            }
         });
     });
     const sorted=Object.entries(dishCount).sort((a,b)=>b[1]-a[1]);
@@ -2322,7 +2325,21 @@ function renderReports(orders){
     document.getElementById('ingredient-total').textContent=`${sorted.length} 項`;
     document.getElementById('set-menu-total').textContent=`${totalSets} 套`;
     document.getElementById('order-count-tag').textContent=`${orders.length} 筆`;
-    document.getElementById('dish-summary-body').innerHTML=sorted.length===0?`<tr><td colspan="4" class="text-center py-10 text-slate-300 font-bold text-sm">查無資料</td></tr>`:sorted.map(([name,count],i)=>`<tr class="hover:bg-slate-50 transition"><td class="px-5 py-3 text-xs font-bold text-slate-300">${i+1}</td><td class="px-5 py-3 font-bold text-slate-700">${name}</td><td class="px-5 py-3 text-right"><span class="font-serif font-black text-xl" style="color:var(--pine)">${count}</span><span class="text-xs text-slate-300 ml-1">份</span></td><td class="px-5 py-3"><div style="background:#f1f5f9;border-radius:999px;height:5px;overflow:hidden"><div style="background:var(--gold);height:100%;width:${Math.round(count/maxQty*100)}%;border-radius:999px;transition:width .4s"></div></div></td></tr>`).join('');
+    document.getElementById('dish-summary-body').innerHTML=sorted.length===0
+        ?`<tr><td colspan="4" class="text-center py-10 text-slate-300 font-bold text-sm">查無資料</td></tr>`
+        :sorted.map(([key,count],i)=>{
+            const isSet=key.includes('／');
+            const [setName,itemName]=isSet?key.split('／'):[null,key];
+            const displayName=isSet
+                ?`<span style="font-size:9px;font-weight:700;color:var(--gold);background:rgba(184,145,80,0.1);padding:1px 6px;border-radius:4px;margin-right:6px;white-space:nowrap">${setName}</span>${itemName}`
+                :key;
+            return`<tr class="hover:bg-slate-50 transition">
+                <td class="px-5 py-3 text-xs font-bold text-slate-300">${i+1}</td>
+                <td class="px-5 py-3 font-bold text-slate-700">${displayName}</td>
+                <td class="px-5 py-3 text-right"><span class="font-serif font-black text-xl" style="color:var(--pine)">${count}</span><span class="text-xs text-slate-300 ml-1">份</span></td>
+                <td class="px-5 py-3"><div style="background:#f1f5f9;border-radius:999px;height:5px;overflow:hidden"><div style="background:${isSet?'var(--gold)':'var(--pine)'};height:100%;width:${Math.round(count/maxQty*100)}%;border-radius:999px;transition:width .4s"></div></div></td>
+            </tr>`;
+        }).join('');
     document.getElementById('set-menu-body').innerHTML=Object.keys(setMenuCount).length===0
         ?`<p class="text-center py-8 text-slate-300 font-bold text-sm">查無套餐訂單</p>`
         :Object.entries(setMenuCount).sort((a,b)=>b[1]-a[1]).map(([name,count])=>{
@@ -2517,9 +2534,11 @@ function exportFullData(){
     Object.entries(setMenuCount).sort((a,b)=>b[1]-a[1]).forEach(([name,count])=>{
         prepRows.push({排名:'',類型:'套餐',品名:name,備料數量:count});
     });
-    // 再列所有子品項（已含套餐拆解）
-    sorted.forEach(([name,count],i)=>{
-        prepRows.push({排名:i+1,類型:'品項',品名:name,備料數量:count});
+    // 再列所有品項，套餐子品項顯示「套餐名稱／品項名」，單點直接顯示
+    sorted.forEach(([key,count],i)=>{
+        const isSet=key.includes('／');
+        const [setName,itemName]=isSet?key.split('／'):[null,key];
+        prepRows.push({排名:i+1,類型:isSet?'套餐品項':'單點',套餐:isSet?setName:'',品名:isSet?itemName:key,備料數量:count});
     });
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(prepRows),'🍳 備料總表');
 
