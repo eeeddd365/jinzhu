@@ -2296,13 +2296,13 @@ function renderReports(orders){
                 const brand=cleanName.slice(0,pIdx).trim();
                 setMenuCount[brand]=(setMenuCount[brand]||0)+qty;
                 if(!setMenuDetail[brand]) setMenuDetail[brand]={};
-                inner.split('、').forEach(sub=>{
-                    const subQtyM=sub.match(/ x(\d+)/);const subQty=subQtyM?parseInt(subQtyM[1]):1;
-                    const s=sub.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
-                    if(s){
-                        dishCount[s]=(dishCount[s]||0)+qty*subQty;
-                        setMenuDetail[brand][s]=(setMenuDetail[brand][s]||0)+qty*subQty;
-                    }
+                // 子品項用重複出現次數計算數量，再乘以套數
+                const subNames=inner.split('、').map(s=>s.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim()).filter(Boolean);
+                const subCount={};
+                subNames.forEach(s=>{subCount[s]=(subCount[s]||0)+1;});
+                Object.entries(subCount).forEach(([s,cnt])=>{
+                    dishCount[s]=(dishCount[s]||0)+qty*cnt;
+                    setMenuDetail[brand][s]=(setMenuDetail[brand][s]||0)+qty*cnt;
                 });
             }
             else{dishCount[cleanName]=(dishCount[cleanName]||0)+qty;}
@@ -2366,7 +2366,7 @@ function renderReports(orders){
             const pIdx=clean.indexOf(' ('),inner=pIdx>-1?clean.slice(pIdx+2,-1):null;
             if(inner&&inner.includes('、')){
                 const brand=clean.slice(0,pIdx).trim(),subs={};
-                inner.split('、').forEach(sub=>{const sM=sub.match(/ x(\d+)/),sq=sM?parseInt(sM[1]):1;const s=sub.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();if(s)subs[s]=(subs[s]||0)+qty*sq;});
+                const _subs=inner.split('、').map(s=>s.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim()).filter(Boolean);const _cnt={};_subs.forEach(s=>{_cnt[s]=(_cnt[s]||0)+1;});Object.entries(_cnt).forEach(([s,n])=>{subs[s]=(subs[s]||0)+qty*n;});
                 sets.push({brand,qty,subs});
             } else {singles[clean]=(singles[clean]||0)+qty;}
         });
@@ -2453,11 +2453,12 @@ function exportFullData(){
             const isSet=inner&&inner.includes('、');
             if(isSet){
                 const brand=clean.slice(0,pIdx).trim();
-                inner.split('、').forEach((sub,si)=>{
-                    const subQtyM=sub.match(/ x(\d+)/);
-                    const subQty=subQtyM?parseInt(subQtyM[1]):1;
-                    const s=sub.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
-                    if(s)displayRows.push({dish:brand+(si===0?'':` ‣${s}`),qty:si===0?qty*subQty:subQty,price:si===0?item.price:''});
+                // 子品項：用重複出現次數計算，再乘以套數
+                const subNames=inner.split('、').map(s=>s.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim()).filter(Boolean);
+                const subCnt={};
+                subNames.forEach(s=>{subCnt[s]=(subCnt[s]||0)+1;});
+                Object.entries(subCnt).forEach(([s,cnt],si)=>{
+                    displayRows.push({dish:si===0?brand+` ‣${s}`:`‣${s}`,qty:qty*cnt,price:si===0?item.price:''});
                 });
             } else {
                 displayRows.push({dish:clean,qty,price:item.price});
@@ -3058,7 +3059,7 @@ function renderCalDayBody(orders){
             const pIdx=clean.indexOf(' ('),inner=pIdx>-1?clean.slice(pIdx+2,-1):null;
             if(inner&&inner.includes('、')){
                 const brand=clean.slice(0,pIdx).trim(),subs={};
-                inner.split('、').forEach(sub=>{const sM=sub.match(/ x(\d+)/),sq=sM?parseInt(sM[1]):1;const s=sub.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();if(s)subs[s]=(subs[s]||0)+qty*sq;});
+                const _subs=inner.split('、').map(s=>s.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim()).filter(Boolean);const _cnt={};_subs.forEach(s=>{_cnt[s]=(_cnt[s]||0)+1;});Object.entries(_cnt).forEach(([s,n])=>{subs[s]=(subs[s]||0)+qty*n;});
                 sets.push({brand,qty,subs});
             } else { singles[clean]=(singles[clean]||0)+qty; }
         });
