@@ -2498,7 +2498,7 @@ function exportFullData(){
         const timeStr=new Date(o.created_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
         const parsed=parseOrderItems(o.order_content||[]);
         parsed.forEach((row,i)=>{
-            const dishName=row.isSet?(i===0||row.first?`【${row.brand}】${row.sub}`:row.sub):row.name;
+            const dishName=row.isSet?`【${row.brand}】${row.sub}`:row.name;
             tableRows.push({
                 '桌號':i===0?(o.table_no||'—'):'',
                 '姓名':i===0?(o.customer_name||'—'):'',
@@ -2600,59 +2600,6 @@ function exportFullData(){
     XLSX.writeFile(wb,`真珠備料統計_${new Date().toLocaleDateString('zh-TW').replace(/\//g,'-')}.xlsx`);
     toast('Excel 已匯出 📊');
 }
-    [...orders].sort((a,b)=>(a.table_no||'zzz').localeCompare(b.table_no||'zzz','zh-TW',{numeric:true})).forEach(o=>{
-        const items=o.order_content||[];
-        const timeStr=new Date(o.created_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
-        const displayRows=[];
-        items.forEach(item=>{
-            // 取出數量（x2 → 2，沒有則為 1）
-            const qtyM=item.name.match(/ x(\d+)/);
-            const qty=qtyM?parseInt(qtyM[1]):1;
-            const nameNoQty=item.name.replace(/ x\d+/g,'');
-            const clean=nameNoQty.replace(/\s*\[.*?\]/g,'').trim();
-            const pIdx=clean.indexOf(' (');
-            const inner=pIdx>-1?clean.slice(pIdx+2,-1):null;
-            const isSet=inner&&inner.includes('、');
-            if(isSet){
-                const brand=clean.slice(0,pIdx).trim();
-                // 子品項：用重複出現次數計算，再乘以套數
-                const subNames=inner.split('、').map(s=>s.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim()).filter(Boolean);
-                const subCnt={};
-                subNames.forEach(s=>{subCnt[s]=(subCnt[s]||0)+1;});
-                Object.entries(subCnt).forEach(([s,cnt],si)=>{
-                    displayRows.push({dish:si===0?brand+` ‣${s}`:`‣${s}`,qty:qty*cnt,price:si===0?item.price:''});
-                });
-            } else {
-                displayRows.push({dish:clean,qty,price:item.price});
-            }
-        });
-        // 訂位日期時間（台灣時間）
-        let bkDate='', bkTime='';
-        if(o.booking_date){
-            const utc=new Date(o.booking_date);
-            const tw=new Date(utc.getTime()+8*60*60*1000);
-            bkDate=`${tw.getUTCFullYear()}-${String(tw.getUTCMonth()+1).padStart(2,'0')}-${String(tw.getUTCDate()).padStart(2,'0')}`;
-            bkTime=`${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`;
-        }
-        displayRows.forEach((row,i)=>{
-            tableRows.push({
-                '桌號':i===0?(o.table_no||'—'):'',
-                '姓名':i===0?(o.customer_name||'—'):'',
-                '手機':i===0?(o.phone||'—'):'',
-                '訂位日期':i===0?bkDate:'',
-                '訂位時間':i===0?bkTime:'',
-                '大人':i===0?(o.adult_count||0):'',
-                '小孩':i===0?(o.kid_count||0):'',
-                '兒童':i===0?(o.child_count||0):'',
-                '活動':i===0?(o.campaign_code||'—'):'',
-                '餐點':row.dish,
-                '數量':row.qty,
-                '金額':row.price,
-                '訂單合計':i===0?(o.total_price||0):'',
-                '下單時間':i===0?timeStr:'',
-                '備註':i===0?(o.note||''):''
-            });
-        });
 
 // ── PHOTOS ──
 let allPhotos=[],selectedIds=new Set(),uploadFile=null;
@@ -3220,9 +3167,15 @@ function toggleReportFilter() {
 }
 
 // ── INIT ──
-switchTab('orders');
 loadSidebarLogo();
-checkLogin();
+(async()=>{
+    const{data:{session}}=await _s.auth.getSession();
+    if(session){
+        document.getElementById('login-screen').classList.add('hidden');
+        switchTab('orders');
+    }
+    // 若無 session，login-screen 維持顯示，等使用者登入
+})();
 
 // ── REALTIME：新訂單自動通知 ──
 _s.channel('orders-realtime')
