@@ -1102,11 +1102,36 @@
 
 <!-- 公告 -->
 <div id="announce-modal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-4 z-[500] backdrop-blur-sm">
-    <div class="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl space-y-5">
+    <div class="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl space-y-5" style="max-height:90vh;overflow-y:auto">
         <h3 class="text-xl font-bold font-serif border-b pb-3" style="color:var(--pine)">公告內容</h3>
         <input type="hidden" id="ann-id">
-        <div><label class="filter-label">公告標題</label><input type="text" id="ann-title" class="filter-input mt-1" placeholder="母親節活動公告"></div>
-        <div><label class="filter-label">公告內容</label><textarea id="ann-content" rows="5" class="filter-input mt-1 resize-none" placeholder="輸入公告內容…"></textarea></div>
+        <!-- 語言 tab -->
+        <div class="flex bg-slate-100 rounded-xl p-1 gap-0.5">
+            <button onclick="switchAnnTab('zh')" id="anntab-zh" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-slate-700 shadow-sm">🇹🇼 中文</button>
+            <button onclick="switchAnnTab('en')" id="anntab-en" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400">🇺🇸 EN</button>
+            <button onclick="switchAnnTab('ja')" id="anntab-ja" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400">🇯🇵 日本語</button>
+            <button onclick="switchAnnTab('ko')" id="anntab-ko" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400">🇰🇷 한국어</button>
+        </div>
+        <!-- 中文 -->
+        <div id="annlang-zh">
+            <div class="mb-3"><label class="filter-label">公告標題（中文）</label><input type="text" id="ann-title" class="filter-input mt-1" placeholder="母親節活動公告"></div>
+            <div><label class="filter-label">公告內容（中文）</label><textarea id="ann-content" rows="4" class="filter-input mt-1 resize-none" placeholder="輸入公告內容…"></textarea></div>
+        </div>
+        <!-- 英文 -->
+        <div id="annlang-en" class="hidden">
+            <div class="mb-3"><label class="filter-label">Title (English)</label><input type="text" id="ann-title-en" class="filter-input mt-1" placeholder="Mother's Day Announcement"></div>
+            <div><label class="filter-label">Content (English)</label><textarea id="ann-content-en" rows="4" class="filter-input mt-1 resize-none" placeholder="Enter announcement content…"></textarea></div>
+        </div>
+        <!-- 日文 -->
+        <div id="annlang-ja" class="hidden">
+            <div class="mb-3"><label class="filter-label">タイトル（日本語）</label><input type="text" id="ann-title-ja" class="filter-input mt-1" placeholder="母の日のお知らせ"></div>
+            <div><label class="filter-label">内容（日本語）</label><textarea id="ann-content-ja" rows="4" class="filter-input mt-1 resize-none" placeholder="お知らせ内容を入力…"></textarea></div>
+        </div>
+        <!-- 韓文 -->
+        <div id="annlang-ko" class="hidden">
+            <div class="mb-3"><label class="filter-label">제목（한국어）</label><input type="text" id="ann-title-ko" class="filter-input mt-1" placeholder="어버이날 공지"></div>
+            <div><label class="filter-label">내용（한국어）</label><textarea id="ann-content-ko" rows="4" class="filter-input mt-1 resize-none" placeholder="공지 내용을 입력하세요…"></textarea></div>
+        </div>
         <label class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer">
             <input type="checkbox" id="ann-active" checked class="accent-green-700 w-4 h-4">
             <span class="font-bold text-sm">立即啟用</span>
@@ -2614,19 +2639,81 @@ async function loadAnnouncements(){
     const container=document.getElementById('announce-list');
     if(error){container.innerHTML=`<p class="text-red-400 text-sm font-bold">${error.message}</p>`;return;}
     if(!data?.length){container.innerHTML='<div class="empty-state"><div class="empty-state-icon">📢</div><div class="empty-state-title">尚無公告</div><div class="empty-state-sub">點右上角「新增公告」讓顧客在點餐時看到訊息</div></div>';return;}
-    container.innerHTML=data.map(a=>`<div class="bg-white rounded-2xl border shadow-sm p-5 ${a.is_active?'border-emerald-200':''}"><div class="flex justify-between items-start gap-4"><div class="flex-1"><div class="flex items-center gap-2 mb-2">${a.is_active?`<span class="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">✅ 啟用</span>`:`<span class="text-[10px] font-bold bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full">⏸ 停用</span>`}<span class="font-black" style="color:var(--pine)">${a.title}</span></div><p class="text-sm text-slate-500 whitespace-pre-line leading-relaxed">${a.content||''}</p><p class="text-[10px] text-slate-300 mt-2">${new Date(a.created_at).toLocaleString('zh-TW')}</p></div><div class="flex gap-2 flex-shrink-0"><button onclick="editAnnouncement(${a.id})" class="btn btn-ghost btn-sm">編輯</button><button onclick="toggleAnnouncement(${a.id},${a.is_active})" class="btn btn-sm ${a.is_active?'btn-ghost':'btn-primary'}">${a.is_active?'停用':'啟用'}</button><button onclick="deleteAnnouncement(${a.id})" class="btn btn-danger btn-sm">刪除</button></div></div></div>`).join('');
+    container.innerHTML=data.map(a=>`<div class="bg-white rounded-2xl border shadow-sm p-5 ${a.is_active?'border-emerald-200':''}">
+        <div class="flex justify-between items-start gap-4">
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                    ${a.is_active?`<span class="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">✅ 啟用</span>`:`<span class="text-[10px] font-bold bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full">⏸ 停用</span>`}
+                    <span class="font-black" style="color:var(--pine)">${a.title}</span>
+                </div>
+                <p class="text-sm text-slate-500 whitespace-pre-line leading-relaxed">${a.content||''}</p>
+                ${a.title_en||a.title_ja||a.title_ko?`<div class="mt-2 flex flex-wrap gap-1">
+                    ${a.title_en?`<span class="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-500 font-bold rounded-full">🇺🇸 ${a.title_en}</span>`:''}
+                    ${a.title_ja?`<span class="text-[10px] px-2 py-0.5 bg-rose-50 text-rose-500 font-bold rounded-full">🇯🇵 ${a.title_ja}</span>`:''}
+                    ${a.title_ko?`<span class="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-500 font-bold rounded-full">🇰🇷 ${a.title_ko}</span>`:''}
+                </div>`:''}
+                <p class="text-[10px] text-slate-300 mt-2">${new Date(a.created_at).toLocaleString('zh-TW')}</p>
+            </div>
+            <div class="flex gap-2 flex-shrink-0">
+                <button onclick="editAnnouncement(${a.id})" class="btn btn-ghost btn-sm">編輯</button>
+                <button onclick="toggleAnnouncement(${a.id},${a.is_active})" class="btn btn-sm ${a.is_active?'btn-ghost':'btn-primary'}">${a.is_active?'停用':'啟用'}</button>
+                <button onclick="deleteAnnouncement(${a.id})" class="btn btn-danger btn-sm">刪除</button>
+            </div>
+        </div>
+    </div>`).join('');
 }
+
+function switchAnnTab(lang){
+    ['zh','en','ja','ko'].forEach(l=>{
+        document.getElementById(`annlang-${l}`)?.classList.toggle('hidden',l!==lang);
+        const btn=document.getElementById(`anntab-${l}`);
+        if(btn) btn.className=`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${l===lang?'bg-white text-slate-700 shadow-sm':'text-slate-400'}`;
+    });
+}
+
 function openAnnounceModal(isEdit){
-    if(!isEdit){['ann-id','ann-title','ann-content'].forEach(id=>document.getElementById(id).value='');document.getElementById('ann-active').checked=true;}
+    if(!isEdit){
+        ['ann-id','ann-title','ann-content','ann-title-en','ann-content-en','ann-title-ja','ann-content-ja','ann-title-ko','ann-content-ko']
+            .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+        document.getElementById('ann-active').checked=true;
+    }
+    switchAnnTab('zh');
     document.getElementById('announce-modal').classList.remove('hidden');
 }
 function closeAnnounceModal(){document.getElementById('announce-modal').classList.add('hidden');}
-async function editAnnouncement(id){const{data}=await _s.from('announcements').select('*').eq('id',id).single();if(!data)return;document.getElementById('ann-id').value=data.id;document.getElementById('ann-title').value=data.title;document.getElementById('ann-content').value=data.content||'';document.getElementById('ann-active').checked=data.is_active;openAnnounceModal(true);}
+
+async function editAnnouncement(id){
+    const{data}=await _s.from('announcements').select('*').eq('id',id).single();
+    if(!data)return;
+    document.getElementById('ann-id').value=data.id;
+    document.getElementById('ann-title').value=data.title;
+    document.getElementById('ann-content').value=data.content||'';
+    document.getElementById('ann-title-en').value=data.title_en||'';
+    document.getElementById('ann-content-en').value=data.content_en||'';
+    document.getElementById('ann-title-ja').value=data.title_ja||'';
+    document.getElementById('ann-content-ja').value=data.content_ja||'';
+    document.getElementById('ann-title-ko').value=data.title_ko||'';
+    document.getElementById('ann-content-ko').value=data.content_ko||'';
+    document.getElementById('ann-active').checked=data.is_active;
+    openAnnounceModal(true);
+}
+
 async function saveAnnouncement(){
     const id=document.getElementById('ann-id').value;
-    const payload={title:document.getElementById('ann-title').value.trim(),content:document.getElementById('ann-content').value.trim(),is_active:document.getElementById('ann-active').checked};
-    if(!payload.title){toast('請輸入公告標題','warn');return;}
-    if(id)await _s.from('announcements').update(payload).eq('id',id);else await _s.from('announcements').insert([payload]);
+    const payload={
+        title:document.getElementById('ann-title').value.trim(),
+        content:document.getElementById('ann-content').value.trim(),
+        title_en:document.getElementById('ann-title-en').value.trim()||null,
+        content_en:document.getElementById('ann-content-en').value.trim()||null,
+        title_ja:document.getElementById('ann-title-ja').value.trim()||null,
+        content_ja:document.getElementById('ann-content-ja').value.trim()||null,
+        title_ko:document.getElementById('ann-title-ko').value.trim()||null,
+        content_ko:document.getElementById('ann-content-ko').value.trim()||null,
+        is_active:document.getElementById('ann-active').checked
+    };
+    if(!payload.title){toast('請輸入中文公告標題','warn');switchAnnTab('zh');return;}
+    if(id) await _s.from('announcements').update(payload).eq('id',id);
+    else await _s.from('announcements').insert([payload]);
     closeAnnounceModal();loadAnnouncements();toast('公告已儲存');
 }
 async function toggleAnnouncement(id,current){await _s.from('announcements').update({is_active:!current}).eq('id',id);loadAnnouncements();}
