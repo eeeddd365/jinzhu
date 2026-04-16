@@ -402,6 +402,9 @@
             <div class="announce-icon">📢</div>
             <div class="announce-title" id="popup-title"></div>
         </div>
+        <div id="popup-img-wrap" style="display:none">
+            <img id="popup-img" src="" alt="" style="width:100%;max-height:220px;object-fit:cover;">
+        </div>
         <div class="announce-body">
             <p class="announce-content" id="popup-content"></p>
         </div>
@@ -470,6 +473,8 @@ const I18N={
         s3t2:'To make changes, please call us:',
         s3call:'📞 Call Us',s3query:'📋 Track My Order',s3fortune:'🎋 Draw Fortune',
         announcClose:'Got it',
+        defaultAnnTitle:'Welcome to Jinzhu Taiwanese Cuisine',
+        defaultAnnContent:'Heritage in Heart, Innovation in Taste.\nGathering the vibrant and diverse flavors of authentic Taiwanese cuisine, we adhere to the philosophy of "seasonal eating." We traverse mountains and seas to select the finest ingredients, combining decades of masterful craftsmanship with a playful culinary spirit. Each dish is meticulously prepared to recreate the collective taste memory of the Taiwanese people.\nWe present to you the abundance and beauty of fine Taiwanese flavors!',
         toastFill:'Please enter your name and phone',toastAdded:'Added to order ✓',
         toastFlv:'Please select flavor options',toastSetFull:'Max items in this section:',
         toastSetItem:'Please complete your selection',
@@ -495,6 +500,8 @@ const I18N={
         s3t2:'変更のご連絡はお電話にて：',
         s3call:'📞 電話する',s3query:'📋 注文を確認する',s3fortune:'🎋 おみくじを引く',
         announcClose:'了解しました',
+        defaultAnnTitle:'真珠（Jinzhu）台湾佳味へようこそ',
+        defaultAnnContent:'受け継がれる真心、遊び心溢れる新境地。\n台湾料理の豊かで活氣ある味わいを集結させ、「旬の食材を食す」という理念を大切にしています。山から海まで厳選された最高の食材を使い、数十年にわたる確かな技術と探求心によって、台湾の人々の記憶に刻まれた共通の味を丁寧に作り上げました。\n台湾料理の豊かで素晴らしいひとときを、心ゆくまでお楽しみください！',
         toastFill:'お名前と電話番号を入力してください',toastAdded:'カートに追加しました ✓',
         toastFlv:'フレーバーを選択してください',toastSetFull:'このセクションの上限：',
         toastSetItem:'まだ選択が完了していません',
@@ -520,6 +527,8 @@ const I18N={
         s3t2:'메뉴 변경은 전화로 문의해 주세요：',
         s3call:'📞 전화하기',s3query:'📋 주문 확인하기',s3fortune:'🎋 운세 뽑기',
         announcClose:'확인했습니다',
+        defaultAnnTitle:'진주(Jinzhu) 대만가미에 오신 것을 환영합니다',
+        defaultAnnContent:'전통을 잇는 마음, 새로움을 더하는 감각.\n대만 요리 특유의 다채롭고 생동감 넘치는 맛을 한데 모았습니다. '제철 식재료'의 가치를 바탕으로 산과 바다에서 엄선한 최고의 재료만을 사용합니다. 수십 년간 쌓아온 탄탄한 손맛과 실험 정신을 조화시켜, 대만인 모두가 공유하는 맛의 기억을 정성스럽게 요리해냈습니다.\n대만 요리의 풍성하고 아름다운 맛을 여러분께 선보입니다!',
         toastFill:'이름과 전화번호를 입력해 주세요',toastAdded:'주문에 추가되었습니다 ✓',
         toastFlv:'맛 옵션을 선택해 주세요',toastSetFull:'이 섹션의 최대 수량：',
         toastSetItem:'선택을 완료해 주세요',
@@ -536,7 +545,24 @@ function setLang(lang){
     applyLang();
     if(allCats.length) reRenderMenu();
     // 語言切換時同步更新公告內容
-    if(cachedAnnouncement) showAnnouncement();
+    if(cachedAnnouncement?._isDefault){
+        // 預設訊息要重新產生
+        if(lang!=='zh'){
+            cachedAnnouncement={
+                title:t('defaultAnnTitle'),
+                content:t('defaultAnnContent'),
+                image_url:null,
+                _isDefault:true,
+            };
+            showAnnouncement();
+        } else {
+            // 換回中文且是預設訊息，直接關掉
+            closeAnnouncePopup();
+            cachedAnnouncement=null;
+        }
+    } else if(cachedAnnouncement){
+        showAnnouncement();
+    }
     // 關閉下拉
     document.getElementById('lang-dropdown')?.classList.remove('open');
     document.getElementById('lang-trigger')?.classList.remove('open');
@@ -936,8 +962,19 @@ let cachedAnnouncement=null;
 
 async function loadAnnouncement(){
     const{data}=await _s.from('announcements').select('*').eq('is_active',true).order('created_at',{ascending:false}).limit(1);
-    if(!data||data.length===0)return;
-    cachedAnnouncement=data[0];
+    if(data&&data.length>0){
+        cachedAnnouncement=data[0];
+    } else if(curLang!=='zh'){
+        // 無公告時，非中文語系顯示預設歡迎訊息
+        cachedAnnouncement={
+            title:t('defaultAnnTitle'),
+            content:t('defaultAnnContent'),
+            image_url:null,
+            _isDefault:true,
+        };
+    } else {
+        return; // 中文無公告就不顯示
+    }
     showAnnouncement();
 }
 
@@ -948,6 +985,15 @@ function showAnnouncement(){
     const content=curLang!=='zh'?(a['content_'+curLang]||a.content):a.content;
     document.getElementById('popup-title').textContent=title||a.title;
     document.getElementById('popup-content').textContent=content||a.content||'';
+    // 圖片顯示
+    const imgWrap=document.getElementById('popup-img-wrap');
+    const imgEl=document.getElementById('popup-img');
+    if(a.image_url){
+        imgEl.src=a.image_url;
+        imgWrap.style.display='block';
+    } else {
+        imgWrap.style.display='none';
+    }
     document.getElementById('announce-popup').classList.add('visible');
 }
 function closeAnnouncePopup(){document.getElementById('announce-popup').classList.remove('visible');}
