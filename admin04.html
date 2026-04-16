@@ -870,12 +870,61 @@
 <!-- LINE 通知 -->
 <section id="sec-linenotify" class="hidden space-y-6">
     <div class="flex justify-between items-center">
-        
         <div class="flex gap-2">
             <a href="line-bind.html" target="_blank" class="btn btn-ghost">🔗 綁定頁面</a>
             <button onclick="openAddTargetModal()" class="btn btn-primary">＋ 手動新增</button>
         </div>
     </div>
+
+    <!-- 每日彙整排程設定 -->
+    <div class="bg-white rounded-2xl border shadow-sm p-5">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(0,77,64,0.08);display:flex;align-items:center;justify-content:center;font-size:1.1rem">📋</div>
+                <div>
+                    <div class="font-bold text-sm" style="color:var(--pine)">每日訂單彙整通知</div>
+                    <div class="text-xs text-slate-400 mt-0.5">每天自動發送當日訂單總覽給所有啟用的通知對象</div>
+                </div>
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+                <span class="text-xs font-bold text-slate-400" id="summary-enabled-label">啟用中</span>
+                <div class="relative">
+                    <input type="checkbox" id="summary-enabled" class="sr-only" onchange="saveSummarySettings()">
+                    <div id="summary-toggle-bg" style="width:40px;height:22px;border-radius:999px;background:var(--pine);cursor:pointer;transition:background 0.2s;display:flex;align-items:center;padding:2px" onclick="document.getElementById('summary-enabled').click()">
+                        <div id="summary-toggle-dot" style="width:18px;height:18px;border-radius:50%;background:white;transition:transform 0.2s;transform:translateX(18px)"></div>
+                    </div>
+                </div>
+            </label>
+        </div>
+        <div class="flex items-center gap-3 p-4 bg-slate-50 rounded-xl" id="summary-time-row">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider flex-shrink-0">發送時間</span>
+            <div class="flex items-center gap-2 flex-1">
+                <select id="summary-hour" onchange="saveSummarySettings()" class="filter-select" style="width:auto;padding:6px 10px;font-weight:700;color:var(--pine)">
+                    <!-- 6:00 ~ 22:00 -->
+                </select>
+                <span class="font-bold text-slate-400">:</span>
+                <select id="summary-minute" onchange="saveSummarySettings()" class="filter-select" style="width:auto;padding:6px 10px;font-weight:700;color:var(--pine)">
+                    <option value="0">00</option>
+                    <option value="15">15</option>
+                    <option value="30" selected>30</option>
+                    <option value="45">45</option>
+                </select>
+                <span class="text-xs text-slate-400 ml-2">（台灣時間）</span>
+            </div>
+            <button onclick="testSummaryNotify()" class="btn btn-ghost btn-sm flex-shrink-0">📤 立即測試</button>
+        </div>
+        <div class="text-[10px] text-slate-400 mt-3 flex items-center gap-1.5">
+            <span>⚠</span>
+            <span>實際執行需在 Supabase SQL Editor 更新 pg_cron 排程，詳見下方說明</span>
+        </div>
+        <!-- pg_cron 提示 -->
+        <div id="cron-hint" class="hidden mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs font-mono text-amber-800 leading-relaxed">
+            <div class="font-bold mb-1 font-sans">📋 請到 Supabase → SQL Editor 執行：</div>
+            <div id="cron-sql" class="whitespace-pre-wrap break-all"></div>
+            <button onclick="copyCronSql()" class="mt-2 btn btn-ghost btn-sm font-sans">複製 SQL</button>
+        </div>
+    </div>
+
     <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800 font-semibold">
         💡 讓對方加 Bot 好友並傳訊息，從 Edge Function Logs 取得 User ID
     </div>
@@ -2682,6 +2731,17 @@ async function deletePhoto(id,storagePath){
 
 // ── LINE NOTIFY ──
 async function loadLineNotify(){
+    // 初始化時間選單 6~22 點
+    const hourSel=document.getElementById('summary-hour');
+    if(hourSel&&!hourSel.options.length){
+        for(let h=6;h<=22;h++){
+            const opt=new Option(`${String(h).padStart(2,'0')}`,h);
+            hourSel.add(opt);
+        }
+    }
+    // 載入排程設定
+    await loadSummarySettingsUI();
+
     const{data,error}=await _s.from('line_notify_targets').select('*').order('created_at',{ascending:true});
     const container=document.getElementById('line-targets-list');
     if(error){container.innerHTML=`<p class="text-red-400 text-sm font-bold p-4">${error.message}</p>`;return;}
@@ -2703,6 +2763,92 @@ async function updateTarget(id,field,value){await _s.from('line_notify_targets')
 async function toggleTarget(id,current){await _s.from('line_notify_targets').update({is_active:!current}).eq('id',id);loadLineNotify();}
 async function deleteTarget(id,name){const ok=await confirm2({icon:'💬',title:'刪除通知對象',msg:`確定刪除「${name}」的通知設定？`,okText:'刪除',danger:true});if(ok){await _s.from('line_notify_targets').delete().eq('id',id);loadLineNotify();toast('已刪除');}}
 async function testSendLine(userId,name){toast(`📤 測試通知需透過 Supabase Edge Function 觸發，請從點餐頁下一筆測試訂單驗證「${name}」的接收狀態`,'info',4000);}
+
+// ── 每日彙整排程設定 ──
+async function loadSummarySettingsUI(){
+    const{data}=await _s.from('daily_summary_settings').select('*').eq('id',1).single();
+    if(!data)return;
+    const enabled=data.enabled;
+    const hour=data.notify_hour??10;
+    const minute=data.notify_minute??30;
+
+    const cb=document.getElementById('summary-enabled');
+    const dot=document.getElementById('summary-toggle-dot');
+    const bg=document.getElementById('summary-toggle-bg');
+    const lbl=document.getElementById('summary-enabled-label');
+    const timeRow=document.getElementById('summary-time-row');
+    if(cb){
+        cb.checked=enabled;
+        dot.style.transform=enabled?'translateX(18px)':'translateX(0)';
+        bg.style.background=enabled?'var(--pine)':'#94a3b8';
+        lbl.textContent=enabled?'啟用中':'已停用';
+        timeRow.style.opacity=enabled?'1':'0.4';
+        timeRow.style.pointerEvents=enabled?'':'none';
+    }
+    const hourSel=document.getElementById('summary-hour');
+    const minSel=document.getElementById('summary-minute');
+    if(hourSel) hourSel.value=hour;
+    if(minSel) minSel.value=minute;
+    updateCronHint(hour,minute,enabled);
+}
+
+async function saveSummarySettings(){
+    const enabled=document.getElementById('summary-enabled').checked;
+    const hour=parseInt(document.getElementById('summary-hour').value);
+    const minute=parseInt(document.getElementById('summary-minute').value);
+
+    // 更新 toggle UI
+    const dot=document.getElementById('summary-toggle-dot');
+    const bg=document.getElementById('summary-toggle-bg');
+    const lbl=document.getElementById('summary-enabled-label');
+    const timeRow=document.getElementById('summary-time-row');
+    dot.style.transform=enabled?'translateX(18px)':'translateX(0)';
+    bg.style.background=enabled?'var(--pine)':'#94a3b8';
+    lbl.textContent=enabled?'啟用中':'已停用';
+    timeRow.style.opacity=enabled?'1':'0.4';
+    timeRow.style.pointerEvents=enabled?'':'none';
+
+    // 存到 DB
+    await _s.from('daily_summary_settings').upsert({
+        id:1, enabled, notify_hour:hour, notify_minute:minute, updated_at:new Date().toISOString()
+    });
+    updateCronHint(hour,minute,enabled);
+    toast(enabled?`每日彙整已設定為 ${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')} 發送`:'每日彙整已停用');
+}
+
+function updateCronHint(hour,minute,enabled){
+    const hint=document.getElementById('cron-hint');
+    const sqlEl=document.getElementById('cron-sql');
+    if(!hint||!sqlEl)return;
+    // 台灣時間轉 UTC（-8小時）
+    const utcHour=((hour-8)+24)%24;
+    const cronExpr=enabled?`${minute} ${utcHour} * * *`:`# 已停用（不執行）`;
+    const sql=enabled
+        ?`SELECT cron.unschedule('daily-order-summary');\nSELECT cron.schedule(\n  'daily-order-summary',\n  '${cronExpr}',\n  $$SELECT net.http_post(\n    url := 'https://pydlnqriztpzgxbjuohm.supabase.co/functions/v1/daily-summary',\n    headers := jsonb_build_object('Content-Type','application/json','Authorization','Bearer ${SUPABASE_KEY}'),\n    body := '{}'::jsonb\n  );$$\n);`
+        :`SELECT cron.unschedule('daily-order-summary');`;
+    sqlEl.textContent=sql;
+    hint.classList.remove('hidden');
+}
+
+function copyCronSql(){
+    const sql=document.getElementById('cron-sql').textContent;
+    navigator.clipboard.writeText(sql).then(()=>toast('SQL 已複製 ✓'));
+}
+
+async function testSummaryNotify(){
+    toast('📤 正在發送測試彙整...','info',2000);
+    try{
+        const res=await fetch(`https://pydlnqriztpzgxbjuohm.supabase.co/functions/v1/daily-summary`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`},
+            body:'{}'
+        });
+        const text=await res.text();
+        toast(res.ok?`✓ 發送成功：${text}`:'發送失敗，請檢查 Edge Function',res.ok?'success':'error',4000);
+    }catch(e){
+        toast('發送失敗：'+e.message,'error',4000);
+    }
+}
 
 // ── ANNOUNCEMENTS ──
 async function loadAnnouncements(){
