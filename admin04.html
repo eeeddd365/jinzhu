@@ -3002,18 +3002,19 @@ function updateUpsellCount(){
 }
 
 async function saveUpsellItems(){
-    const{error}=await _s.from('upsell_settings').upsert({
-        id:1,
-        item_ids:upsellData.item_ids,
-        updated_at:new Date().toISOString()
-    });
-    if(error) toast('儲存失敗','error');
-    else toast(`已儲存 ${(upsellData.item_ids||[]).length} 項加購品項`);
+    const{error}=await _s.from('upsell_settings')
+        .update({item_ids:upsellData.item_ids, updated_at:new Date().toISOString()})
+        .eq('id',1);
+    if(error){
+        console.error('upsell save error:',error);
+        toast('儲存失敗：'+error.message,'error');
+    } else {
+        toast(`已儲存 ${(upsellData.item_ids||[]).length} 項加購品項`);
+    }
 }
 
 async function saveUpsellSettings(){
     const payload={
-        id:1,
         enabled:upsellData.enabled,
         title:document.getElementById('upsell-title-zh').value.trim()||'加購推薦',
         title_en:document.getElementById('upsell-title-en').value.trim()||null,
@@ -3022,7 +3023,8 @@ async function saveUpsellSettings(){
         item_ids:upsellData.item_ids,
         updated_at:new Date().toISOString()
     };
-    await _s.from('upsell_settings').upsert(payload);
+    const{error}=await _s.from('upsell_settings').update(payload).eq('id',1);
+    if(error){ toast('儲存失敗：'+error.message,'error'); return; }
     upsellData={...upsellData,...payload};
     toast('加購設定已儲存');
 }
@@ -3033,8 +3035,9 @@ async function toggleUpsellEnabled(){
     document.getElementById('upsell-toggle-dot').style.transform=enabled?'translateX(18px)':'translateX(0)';
     document.getElementById('upsell-toggle-bg').style.background=enabled?'var(--pine)':'#94a3b8';
     document.getElementById('upsell-enabled-label').textContent=enabled?'啟用中':'已停用';
-    await _s.from('upsell_settings').upsert({id:1,enabled,updated_at:new Date().toISOString()});
-    toast(enabled?'加購功能已啟用':'加購功能已停用');
+    const{error}=await _s.from('upsell_settings').update({enabled, updated_at:new Date().toISOString()}).eq('id',1);
+    if(error) toast('更新失敗：'+error.message,'error');
+    else toast(enabled?'加購功能已啟用':'加購功能已停用');
 }
 
 function upsellTitleTab(lang){
