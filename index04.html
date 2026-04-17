@@ -687,7 +687,7 @@ async function startOrder(){
     document.getElementById('step-1').style.display='none';
     document.getElementById('step-2').classList.add('visible');
     document.getElementById('cart-bar').classList.add('visible');
-    loadContent();loadAnnouncement();
+    loadContent();loadAnnouncement();loadUpsellSettings();
 }
 
 async function loadContent(){
@@ -1020,8 +1020,6 @@ async function confirmUpsell(){
 let isSubmitting=false;
 async function finalSubmit(){
     if(isSubmitting)return;
-    // 先載入加購設定（如果還沒載入）
-    if(!upsellSettings) await loadUpsellSettings();
     openUpsellModal();
 }
 
