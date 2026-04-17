@@ -435,6 +435,7 @@
         <button id="btn-photos"     onclick="switchTab('photos')"     class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">📸</span><span class="nav-label">照片管理</span></button>
         <button id="btn-linenotify" onclick="switchTab('linenotify')" class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">💬</span><span class="nav-label">通知管理</span></button>
         <button id="btn-announce"   onclick="switchTab('announce')"   class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">📢</span><span class="nav-label">公告管理</span></button>
+        <button id="btn-upsell"     onclick="switchTab('upsell')"     class="nav-btn nav-btn-tab w-full text-left"><span class="nav-emoji">🛒</span><span class="nav-label">加購設定</span></button>
         <div class="border-t border-white/10 my-2"></div>
         <a href="monitor.html" target="_blank" class="nav-btn"><span class="nav-emoji">🖥️</span><span class="nav-label">看板模式</span></a>
     </nav>
@@ -931,8 +932,61 @@
     <div id="line-targets-list" class="space-y-3"></div>
 </section>
 
-<!-- 公告管理 -->
-<section id="sec-announce" class="hidden space-y-6">
+<!-- 加購設定 -->
+<section id="sec-upsell" class="hidden space-y-6">
+    <!-- 開關 + 標題設定 -->
+    <div class="bg-white rounded-2xl border shadow-sm p-6 space-y-5">
+        <!-- 啟用開關 -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(0,77,64,0.08);display:flex;align-items:center;justify-content:center;font-size:1.1rem">🛒</div>
+                <div>
+                    <div class="font-bold text-sm" style="color:var(--pine)">加購推薦功能</div>
+                    <div class="text-xs text-slate-400 mt-0.5">客人送出訂單前顯示加購品項讓客人選擇</div>
+                </div>
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+                <span class="text-xs font-bold text-slate-400" id="upsell-enabled-label">啟用中</span>
+                <div id="upsell-toggle-bg" style="width:40px;height:22px;border-radius:999px;background:var(--pine);cursor:pointer;transition:background 0.2s;display:flex;align-items:center;padding:2px" onclick="toggleUpsellEnabled()">
+                    <div id="upsell-toggle-dot" style="width:18px;height:18px;border-radius:50%;background:white;transition:transform 0.2s;transform:translateX(18px)"></div>
+                </div>
+            </label>
+        </div>
+        <!-- 標題設定（四語言） -->
+        <div class="border-t pt-5">
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">顯示標題（客人看到的）</div>
+            <div class="flex bg-slate-100 rounded-xl p-1 gap-0.5 mb-4">
+                <button onclick="upsellTitleTab('zh')" id="uptab-zh" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-slate-700 shadow-sm">🇹🇼 中文</button>
+                <button onclick="upsellTitleTab('en')" id="uptab-en" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400">🇺🇸 EN</button>
+                <button onclick="upsellTitleTab('ja')" id="uptab-ja" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400">🇯🇵 日本語</button>
+                <button onclick="upsellTitleTab('ko')" id="uptab-ko" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400">🇰🇷 한국어</button>
+            </div>
+            <div id="uptitle-zh"><input id="upsell-title-zh" class="filter-input" placeholder="加購推薦" style="font-size:14px"></div>
+            <div id="uptitle-en" style="display:none"><input id="upsell-title-en" class="filter-input" placeholder="Add-on Recommendations" style="font-size:14px"></div>
+            <div id="uptitle-ja" style="display:none"><input id="upsell-title-ja" class="filter-input" placeholder="オプション追加" style="font-size:14px"></div>
+            <div id="uptitle-ko" style="display:none"><input id="upsell-title-ko" class="filter-input" placeholder="추가 주문" style="font-size:14px"></div>
+            <button onclick="saveUpsellSettings()" class="btn btn-primary btn-sm mt-3">儲存設定</button>
+        </div>
+    </div>
+
+    <!-- 品項選擇 -->
+    <div class="bg-white rounded-2xl border shadow-sm p-6">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <div class="font-bold text-sm" style="color:var(--pine)">加購品項選擇</div>
+                <div class="text-xs text-slate-400 mt-0.5">從現有菜單中勾選要推薦的品項</div>
+            </div>
+            <span id="upsell-selected-count" class="text-xs font-bold px-3 py-1 rounded-full" style="background:rgba(0,77,64,0.08);color:var(--pine)">已選 0 項</span>
+        </div>
+        <!-- 搜尋 + 分類篩選 -->
+        <div class="flex gap-3 mb-4">
+            <input type="text" id="upsell-search" oninput="renderUpsellPicker()" class="filter-input flex-1" placeholder="搜尋菜名…">
+            <select id="upsell-cat-filter" onchange="renderUpsellPicker()" class="filter-select w-36"></select>
+        </div>
+        <!-- 品項格 -->
+        <div id="upsell-picker-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+    </div>
+</section>
     <div class="flex justify-between items-center">
         
         <button onclick="openAnnounceModal(false)" class="btn btn-primary">+ 新增公告</button>
@@ -1269,6 +1323,7 @@ async function switchTab(t) {
     if (t==='photos')     loadPhotos();
     if (t==='linenotify') loadLineNotify();
     if (t==='announce')   loadAnnouncements();
+    if (t==='upsell')     loadUpsell();
 }
 
 function setQuickDate(val) {
@@ -2857,6 +2912,131 @@ async function testSummaryNotify(){
     }catch(e){
         toast('發送失敗：'+( e?.message||e),'error',4000);
     }
+}
+
+// ── UPSELL ──
+let upsellData={enabled:true,title:'加購推薦',title_en:'Add-on Recommendations',title_ja:'オプション追加',title_ko:'추가 주문',item_ids:[]};
+let upsellAllItems=[];
+
+async function loadUpsell(){
+    // 載入設定
+    const{data:s}=await _s.from('upsell_settings').select('*').eq('id',1).single();
+    if(s) upsellData={...upsellData,...s};
+
+    // 更新 UI
+    const enabled=upsellData.enabled;
+    document.getElementById('upsell-toggle-dot').style.transform=enabled?'translateX(18px)':'translateX(0)';
+    document.getElementById('upsell-toggle-bg').style.background=enabled?'var(--pine)':'#94a3b8';
+    document.getElementById('upsell-enabled-label').textContent=enabled?'啟用中':'已停用';
+    document.getElementById('upsell-title-zh').value=upsellData.title||'加購推薦';
+    document.getElementById('upsell-title-en').value=upsellData.title_en||'';
+    document.getElementById('upsell-title-ja').value=upsellData.title_ja||'';
+    document.getElementById('upsell-title-ko').value=upsellData.title_ko||'';
+    upsellTitleTab('zh');
+
+    // 載入菜單
+    const{data:cats}=await _s.from('categories').select('*').order('sort_order');
+    const{data:items}=await _s.from('menu_items').select('*,categories(name)').eq('is_hidden',false).order('sort_order');
+    upsellAllItems=items||[];
+
+    document.getElementById('upsell-cat-filter').innerHTML=
+        '<option value="all">所有分類</option>'+
+        (cats||[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+
+    renderUpsellPicker();
+    updateUpsellCount();
+}
+
+function renderUpsellPicker(){
+    const kw=document.getElementById('upsell-search').value.toLowerCase();
+    const catF=document.getElementById('upsell-cat-filter').value;
+    const selectedIds=upsellData.item_ids||[];
+
+    const filtered=upsellAllItems.filter(i=>
+        i.name.toLowerCase().includes(kw) &&
+        (catF==='all'||i.category_id===catF)
+    );
+
+    document.getElementById('upsell-picker-grid').innerHTML=filtered.map(i=>{
+        const sel=selectedIds.includes(i.id);
+        return`<div onclick="toggleUpsellItem('${i.id}')"
+            class="border-2 rounded-2xl overflow-hidden cursor-pointer transition-all select-none"
+            style="${sel?'border-color:var(--pine);background:rgba(0,77,64,0.03)':'border-color:var(--border)'}"
+            id="upsell-card-${i.id}">
+            <div class="h-20 bg-slate-50 flex items-center justify-center overflow-hidden p-2">
+                ${i.image_url
+                    ?`<img src="${i.image_url}" class="max-h-full max-w-full object-contain mix-blend-multiply" loading="lazy">`
+                    :`<span style="font-size:1.5rem;opacity:.2">🍽</span>`}
+            </div>
+            <div class="p-2">
+                <div class="text-xs font-bold leading-tight" style="color:${sel?'var(--pine)':'var(--ink)'}">${i.name}</div>
+                <div class="text-xs mt-1" style="color:var(--gold);font-weight:900">$${i.price}</div>
+            </div>
+            <div class="flex items-center justify-between px-2 pb-2">
+                <div style="width:16px;height:16px;border-radius:50%;border:2px solid ${sel?'var(--pine)':'var(--border)'};background:${sel?'var(--pine)':'white'};display:flex;align-items:center;justify-content:center;transition:all 0.2s">
+                    ${sel?'<svg style="width:9px;height:9px" fill="white" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>':''}
+                </div>
+                <span class="text-[9px] font-bold" style="color:${sel?'var(--pine)':'#94a3b8'}">${sel?'已選':'點擊選取'}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function toggleUpsellItem(id){
+    const ids=upsellData.item_ids||[];
+    const idx=ids.indexOf(id);
+    if(idx>-1) ids.splice(idx,1);
+    else ids.push(id);
+    upsellData.item_ids=[...ids];
+    saveUpsellItems();
+    renderUpsellPicker();
+    updateUpsellCount();
+}
+
+function updateUpsellCount(){
+    document.getElementById('upsell-selected-count').textContent=`已選 ${(upsellData.item_ids||[]).length} 項`;
+}
+
+async function saveUpsellItems(){
+    await _s.from('upsell_settings').upsert({
+        id:1,
+        item_ids:upsellData.item_ids,
+        updated_at:new Date().toISOString()
+    });
+}
+
+async function saveUpsellSettings(){
+    const payload={
+        id:1,
+        enabled:upsellData.enabled,
+        title:document.getElementById('upsell-title-zh').value.trim()||'加購推薦',
+        title_en:document.getElementById('upsell-title-en').value.trim()||null,
+        title_ja:document.getElementById('upsell-title-ja').value.trim()||null,
+        title_ko:document.getElementById('upsell-title-ko').value.trim()||null,
+        item_ids:upsellData.item_ids,
+        updated_at:new Date().toISOString()
+    };
+    await _s.from('upsell_settings').upsert(payload);
+    upsellData={...upsellData,...payload};
+    toast('加購設定已儲存');
+}
+
+async function toggleUpsellEnabled(){
+    upsellData.enabled=!upsellData.enabled;
+    const enabled=upsellData.enabled;
+    document.getElementById('upsell-toggle-dot').style.transform=enabled?'translateX(18px)':'translateX(0)';
+    document.getElementById('upsell-toggle-bg').style.background=enabled?'var(--pine)':'#94a3b8';
+    document.getElementById('upsell-enabled-label').textContent=enabled?'啟用中':'已停用';
+    await _s.from('upsell_settings').upsert({id:1,enabled,updated_at:new Date().toISOString()});
+    toast(enabled?'加購功能已啟用':'加購功能已停用');
+}
+
+function upsellTitleTab(lang){
+    ['zh','en','ja','ko'].forEach(l=>{
+        document.getElementById(`uptitle-${l}`)?.style && (document.getElementById(`uptitle-${l}`).style.display=l===lang?'block':'none');
+        const btn=document.getElementById(`uptab-${l}`);
+        if(btn) btn.className=`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${l===lang?'bg-white text-slate-700 shadow-sm':'text-slate-400'}`;
+    });
 }
 
 // ── ANNOUNCEMENTS ──
