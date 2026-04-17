@@ -940,31 +940,34 @@ function removeItem(idx){
 let upsellSettings=null, upsellSelectedIds=new Set();
 
 async function loadUpsellSettings(){
-    const{data}=await _s.from('upsell_settings').select('*').eq('id',1).single();
-    upsellSettings=data||null;
+    try{
+        const{data,error}=await _s.from('upsell_settings').select('*').eq('id',1).single();
+        if(error) console.warn('upsell load err:',error);
+        upsellSettings=data||null;
+    }catch(e){
+        console.warn('upsell exception:',e);
+        upsellSettings=null;
+    }
 }
 
 async function openUpsellModal(){
     if(!upsellSettings?.enabled||!upsellSettings?.item_ids?.length){
         await doFinalSubmit();return;
     }
-    // 載入加購品項
-    const ids=upsellSettings.item_ids;
+    // 確保 ids 都是字串
+    const ids=(upsellSettings.item_ids||[]).map(String);
     const{data:items}=await _s.from('menu_items').select('*').in('id',ids).eq('is_hidden',false);
     if(!items||!items.length){await doFinalSubmit();return;}
 
     upsellSelectedIds=new Set();
 
-    // 標題多語言
     const titleKey='title'+(curLang!=='zh'?'_'+curLang:'');
     const title=upsellSettings[titleKey]||upsellSettings.title||'加購推薦';
     document.getElementById('upsell-modal-title').textContent=title;
 
-    // 更新按鈕文字
     document.querySelectorAll('[data-i18n="upsellSkip"]').forEach(el=>el.textContent=t('upsellSkip'));
     document.querySelectorAll('[data-i18n="upsellConfirm"]').forEach(el=>el.textContent=t('upsellConfirm'));
 
-    // 渲染品項
     document.getElementById('upsell-list').innerHTML=items.map(i=>`
         <div class="upsell-item-card" id="upsell-item-${i.id}" onclick="toggleUpsellSelect('${i.id}','${i.price}')">
             <div class="upsell-item-img">
