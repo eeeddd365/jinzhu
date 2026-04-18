@@ -850,6 +850,137 @@
     </div><!-- end 內容區 -->
 </section>
 
+<!-- 備料統計報表 -->
+<section id="sec-report" class="hidden space-y-4">
+    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden mb-2">
+        <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-100 flex-wrap">
+            <select id="report-date-type-quick" onchange="document.getElementById('report-date-type').value=this.value;document.getElementById('report-sort').value=this.value==='booking'?'booking_asc':'created_desc'" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700">
+                <option value="created">下單日期</option>
+                <option value="booking" selected>訂位日期</option>
+            </select>
+            <select id="report-sort" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700">
+                <option value="created_desc">下單↓新到舊</option>
+                <option value="created_asc">下單↑舊到新</option>
+                <option value="booking_asc" selected>訂位↑早到晚</option>
+                <option value="booking_desc">訂位↓晚到早</option>
+            </select>
+            <div class="flex gap-1">
+                <button class="btn btn-ghost btn-sm rpt-quick-btn" onclick="syncReportDateType();rptPreset('today');fetchData()">今日</button>
+                <button class="btn btn-ghost btn-sm rpt-quick-btn" onclick="syncReportDateType();rptPreset('week');fetchData()">本週</button>
+                <button class="btn btn-ghost btn-sm rpt-quick-btn" onclick="syncReportDateType();rptPreset('month');fetchData()">本月</button>
+            </div>
+            <span id="report-period-display" class="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0" style="background:rgba(0,77,64,.08);color:var(--pine)">尚未查詢</span>
+            <div class="flex gap-1 ml-auto">
+                <button onclick="fetchData()" class="btn btn-primary btn-sm"><span id="r-run-lbl">▶ 查詢</span></button>
+                <button onclick="reportPrint()" class="btn btn-ghost btn-sm">🖨</button>
+                <button onclick="exportFullData()" class="btn btn-ghost btn-sm">📊</button>
+                <button onclick="toggleReportFilter()" id="report-filter-toggle" class="btn btn-ghost btn-sm px-2">
+                    <svg id="report-chevron" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+            </div>
+        </div>
+        <div id="report-filter-expand" class="hidden px-3 pb-3 pt-2 space-y-2 bg-slate-50">
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end">
+                <div><label class="filter-label">日期類型</label><select id="report-date-type" class="filter-select" style="width:100%"><option value="created">下單日期</option><option value="booking" selected>訂位日期</option></select></div>
+                <div><label class="filter-label">開始日期</label><input type="date" id="r-s-date" class="filter-input"></div>
+                <div><label class="filter-label">結束日期</label><input type="date" id="r-e-date" class="filter-input"></div>
+                <div><label class="filter-label">開始時間</label><input type="time" id="r-s-time" value="00:00" class="filter-input"></div>
+                <div><label class="filter-label">結束時間</label><input type="time" id="r-e-time" value="23:59" class="filter-input"></div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end">
+                <div><label class="filter-label">活動代號</label><select id="report-campaign" class="filter-select" style="width:100%"><option value="all">全部來源</option><option value="none">一般訂單</option></select></div>
+            </div>
+            <div class="flex gap-1.5 pt-2 border-t border-slate-200">
+                <button class="btn btn-ghost btn-sm rpt-quick-btn" onclick="rptPreset('today')">今日</button>
+                <button class="btn btn-ghost btn-sm rpt-quick-btn" onclick="rptPreset('yesterday')">昨日</button>
+                <button class="btn btn-ghost btn-sm rpt-quick-btn" onclick="rptPreset('week')">本週</button>
+                <button class="btn btn-ghost btn-sm rpt-quick-btn" onclick="rptPreset('month')">本月</button>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" id="r-run-btn">
+    <div class="bg-white rounded-2xl border shadow-sm px-4 py-2.5 flex items-center flex-wrap gap-x-5 gap-y-2">
+        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">訂單</span><span class="font-serif font-black text-base" style="color:var(--pine)" id="kpi-orders">—</span><span class="text-[10px] text-slate-400">筆</span></div>
+        <div style="width:1px;height:14px;background:var(--border)"></div>
+        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400">大人</span><span class="font-serif font-black text-base" style="color:var(--gold)" id="kpi-adult">—</span></div>
+        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400">小孩</span><span class="font-serif font-black text-base" style="color:var(--gold)" id="kpi-kid">—</span></div>
+        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400">兒童</span><span class="font-serif font-black text-base" style="color:var(--gold)" id="kpi-child">—</span></div>
+        <div style="width:1px;height:14px;background:var(--border)"></div>
+        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400">總人數</span><span class="font-serif font-black text-base" style="color:#3b82f6" id="kpi-people">—</span><span class="text-[10px] text-slate-400">位</span></div>
+        <div style="width:1px;height:14px;background:var(--border)"></div>
+        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400">套餐</span><span class="font-serif font-black text-base" style="color:var(--pine)" id="kpi-sets">—</span><span class="text-[10px] text-slate-400">組</span></div>
+        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400">品項</span><span class="font-serif font-black text-base" style="color:var(--stone)" id="kpi-items">—</span><span class="text-[10px] text-slate-400">種</span></div>
+        <div style="width:1px;height:14px;background:var(--border)"></div>
+        <div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-400">預估營收</span><span class="font-serif font-black text-base" style="color:#f43f5e" id="kpi-rev">—</span></div>
+    </div>
+    <div class="flex gap-1 bg-slate-100 rounded-xl p-1">
+        <button class="rpt-tab on" onclick="rptTab('prepare')">🍳 備料總表</button>
+        <button class="rpt-tab"    onclick="rptTab('setmenu')">🍱 套餐明細</button>
+        <button class="rpt-tab"    onclick="rptTab('orders')">📋 訂單流水帳</button>
+    </div>
+    <div id="rtab-prepare">
+        <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+            <div class="flex justify-between items-center px-5 py-4 bg-slate-800">
+                <span class="font-bold font-serif text-white text-sm">🍳 全品項備料總量（含套餐拆解）</span>
+                <span id="ingredient-total" class="bg-slate-600 text-white px-3 py-0.5 rounded-full text-xs font-bold">0 項</span>
+            </div>
+            <div class="overflow-y-auto" style="max-height:60vh">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                        <tr><th class="px-5 py-3 w-10">#</th><th class="px-5 py-3">品名</th><th class="px-5 py-3 text-right w-28">備料數</th><th class="px-5 py-3 w-40">佔比</th></tr>
+                    </thead>
+                    <tbody id="dish-summary-body" class="divide-y divide-slate-50"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div id="rtab-setmenu" class="hidden">
+        <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+            <div class="flex justify-between items-center px-5 py-4" style="background:var(--pine)">
+                <span class="font-bold font-serif text-white text-sm">🍱 套餐銷售明細</span>
+                <span id="set-menu-total" class="bg-amber-500 text-white px-3 py-0.5 rounded-full text-xs font-bold">0 套</span>
+            </div>
+            <div id="set-menu-body" class="p-5 space-y-3"></div>
+        </div>
+    </div>
+    <div id="rtab-orders" class="hidden space-y-4">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center gap-2"><div class="w-1 h-5 bg-amber-500 rounded-full"></div><span class="font-bold font-serif" style="color:var(--pine)">訂單詳細流水帳</span></div>
+            <span id="order-count-tag" class="text-white px-3 py-0.5 rounded-full text-xs font-bold" style="background:var(--pine)">0 筆</span>
+        </div>
+        <div id="order-detail-container" class="space-y-4"></div>
+    </div>
+</section>
+
+<!-- 紀念照管理 -->
+<section id="sec-photos" class="hidden space-y-5">
+    <div class="flex flex-wrap justify-between items-center gap-3">
+        <div class="flex gap-2">
+            <button onclick="autoDeleteOld()" class="btn btn-danger">🗑 刪除 7 天前</button>
+            <button onclick="openUploadModal()" class="btn btn-primary">📤 上傳照片</button>
+        </div>
+    </div>
+    <div class="filter-bar space-y-3">
+        <div class="flex flex-wrap gap-3 items-center">
+            <input type="text" id="photo-admin-search" oninput="filterPhotos()" placeholder="搜尋姓名、電話、訂單號…" class="filter-input flex-1 min-w-[180px]">
+            <input type="date" id="photo-filter-from" onchange="filterPhotos()" class="filter-input w-40">
+            <span class="text-slate-300 font-bold text-xs">至</span>
+            <input type="date" id="photo-filter-to" onchange="filterPhotos()" class="filter-input w-40">
+            <button onclick="clearPhotoFilters()" class="btn btn-ghost btn-sm">清除</button>
+        </div>
+        <div class="flex items-center gap-3 pt-3 border-t border-slate-100">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" id="photo-select-all" onchange="toggleSelectAll(this.checked)" class="accent-amber-500 w-4 h-4">
+                <span class="text-xs font-bold text-slate-500">全選</span>
+            </label>
+            <span id="photo-selected-count" class="text-xs font-bold text-amber-600 hidden">已選 0 張</span>
+            <button id="batch-delete-btn" onclick="batchDelete()" class="hidden btn btn-danger btn-sm">🗑 批次刪除</button>
+            <span class="ml-auto text-xs text-slate-400 font-bold" id="photo-count-tag">共 0 張</span>
+        </div>
+    </div>
+    <div id="photo-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+</section>
+
 </main>
 
 <!-- ── MODALS ── -->
@@ -1341,7 +1472,11 @@ async function loadOrders() {
                         const sets=[], singles={};
                         (o.order_content||[]).forEach(item=>{
                             const qM=item.name.match(/ x(\d+)/), qty=qM?parseInt(qM[1]):1;
+                            // clean 用於分組 key（移除口味和數量），display 保留口味
                             let clean=item.name.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
+                            // 提取口味標籤
+                            const flvM=item.name.match(/\[([^\]]+)\]/);
+                            const flvTag=flvM?flvM[1]:'';
                             const pIdx=clean.indexOf(' ('), inner=pIdx>-1?clean.slice(pIdx+2,-1):null;
                             const isSet=inner&&inner.includes('、');
                             if(isSet){
@@ -1352,9 +1487,12 @@ async function loadOrders() {
                                     const s=sub.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
                                     if(s) subs[s]=(subs[s]||0)+qty*sq;
                                 });
-                                sets.push({brand,qty,subs});
+                                sets.push({brand,qty,subs,flvTag});
                             } else {
-                                singles[clean]=(singles[clean]||0)+qty;
+                                // key 含口味以便區分同品項不同口味
+                                const key=flvTag?`${clean}｜${flvTag}`:clean;
+                                if(!singles[key]) singles[key]={name:clean,flv:flvTag,qty:0};
+                                singles[key].qty+=qty;
                             }
                         });
                         let html='';
@@ -1378,18 +1516,18 @@ async function loadOrders() {
                             </div>`).join('');
                         }
                         // 單點區塊
-                        const singleEntries=Object.entries(singles).sort((a,b)=>b[1]-a[1]);
+                        const singleEntries=Object.values(singles).sort((a,b)=>b.qty-a.qty);
                         if(singleEntries.length){
                             html+=`<div style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden">
                                 <div style="background:#f8fafc;padding:6px 12px;border-bottom:1px solid var(--border)">
                                     <span style="font-weight:900;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.1em">單點</span>
                                 </div>
                                 <div style="padding:4px 12px">
-                                    ${singleEntries.map(([name,count])=>`
+                                    ${singleEntries.map(({name,flv,qty})=>`
                                     <div class="order-item-row">
                                         <div class="order-item-dot"></div>
-                                        <div class="order-item-name">${name}</div>
-                                        <div style="font-weight:900;color:var(--pine);font-size:13px">${count}</div>
+                                        <div class="order-item-name">${name}${flv?`<span style="font-size:10px;color:var(--gold);margin-left:4px;font-weight:500">[${flv}]</span>`:''}</div>
+                                        <div style="font-weight:900;color:var(--pine);font-size:13px">${qty}</div>
                                         <div style="font-size:10px;color:var(--stone);margin-left:2px">份</div>
                                     </div>`).join('')}
                                 </div>
