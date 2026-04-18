@@ -2745,14 +2745,18 @@ async function loadLineNotify(){
     }).join('')+`</div>`;
     // 嘗試非同步載入 LINE 頭像（個人帳號才支援，群組無法）
     data.forEach(async t=>{
-        if(t.user_id?.startsWith('C')) return; // 群組不支援
+        if(!t.user_id?.startsWith('U')) return; // 只處理個人帳號
         try{
-            const res=await _s.functions.invoke('get-line-profile',{body:{userId:t.user_id}});
-            if(res.data?.pictureUrl){
+            const{data:resData, error}=await _s.functions.invoke('get-line-profile',{body:{userId:t.user_id}});
+            console.log(`LINE profile [${t.name}]:`, resData, error);
+            const pictureUrl=resData?.pictureUrl;
+            if(pictureUrl){
                 const el=document.getElementById(`line-avatar-${t.id}`);
-                if(el) el.innerHTML=`<img src="${res.data.pictureUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+                if(el) el.innerHTML=`<img src="${pictureUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:14px;">`;
             }
-        }catch(e){ /* 無頭像 Edge Function 就跳過 */ }
+        }catch(e){
+            console.warn(`avatar load fail [${t.name}]:`, e);
+        }
     });
 }
 function openAddTargetModal(){['lt-name','lt-uid'].forEach(id=>document.getElementById(id).value='');document.getElementById('lt-notify-order').checked=true;document.getElementById('lt-notify-photo').checked=true;document.getElementById('line-target-modal').classList.remove('hidden');}
