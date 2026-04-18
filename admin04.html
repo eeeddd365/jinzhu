@@ -1248,18 +1248,19 @@
 
 // ── 品項名稱解析 helper（保留口味標籤） ──
 function parseItemDisplay(rawName){
-    // qty 只匹配品名層級的 x數量（括號前），不誤抓子品項的 x數量
+    // qty：只取頂層品名數量（括號前），不誤抓子品項的 x數量
     const qM=rawName.match(/^[^(]* x(\d+)/);
     const qty=qM?parseInt(qM[1]):1;
-    // 先從原始名稱取括號內容（保留口味），再取品名本身的 flv
-    const noQty=rawName.replace(/ x\d+/g,'').trim();
-    const pI=noQty.indexOf(' (');
-    const inner=pI>-1?noQty.slice(pI+2,-1):null;
+    // inner：保留子品項的 x數量和口味，只移除頂層的 x數量
+    const topQtyRemoved=rawName.replace(/^([^(]+?) x\d+(\s*\()/, '$1$2').replace(/^([^(]+?) x\d+$/, '$1');
+    const pI=topQtyRemoved.indexOf(' (');
+    const inner=pI>-1?topQtyRemoved.slice(pI+2,-1):null;
     const isSet=!!(inner&&inner.includes('、'));
-    // flv 只從品名部分取（括號前），套餐的 flv 為空
-    const namePart=pI>-1?noQty.slice(0,pI):noQty;
+    // flv 只從括號前的品名取（套餐本身口味，通常為空）
+    const namePart=pI>-1?topQtyRemoved.slice(0,pI):topQtyRemoved;
     const flvM=namePart.match(/\[([^\]]+)\]/);
     const flv=flvM?flvM[1]:'';
+    // clean：移除所有口味標籤和數量
     const clean=rawName.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
     const brand=isSet?clean.replace(/ \(.*$/,'').trim():null;
     return{qty,flv,clean,inner,isSet,brand};
@@ -1601,7 +1602,6 @@ async function saveBookingDateAndClose(id, newDate){
 }
 async function saveBookingDate(id, newDate){
     if(!newDate) return;
-    // 同時支援訂單卡片（btime-）和 modal（som-btime-）兩種 id 格式
     const timeEl = document.getElementById(`btime-${id}`) || document.getElementById(`som-btime-${id}`);
     const time = timeEl?.value || '00:00';
     const isoStr = `${newDate}T${time}:00+08:00`;
@@ -1610,13 +1610,23 @@ async function saveBookingDate(id, newDate){
     if(!error){
         if(el){ el.style.borderColor='#10b981'; setTimeout(()=>el.style.borderColor='',1200); }
         toast('訂位日期已更新');
-        if(curOrderView==='calendar') renderCalendar();
+        // 不立即 renderCalendar，避免 DOM 重建後時間欄位消失
+        if(curOrderView==='calendar') setTimeout(()=>renderCalendar(), 1500);
     } else toast('更新失敗','error');
 }
 async function saveBookingTime(id, newTime){
     if(!newTime) return;
+    // 先嘗試從 DOM 取日期，DOM 可能因日曆重建已不存在，改從 ordersRef 取
     const dateEl = document.getElementById(`bdate-${id}`) || document.getElementById(`som-bdate-${id}`);
-    const date = dateEl?.value;
+    let date = dateEl?.value;
+    if(!date){
+        // 從快取取
+        const cached = (window.ordersRef||[]).find(o=>o.id===id);
+        if(cached?.booking_date){
+            const tw = new Date(new Date(cached.booking_date).getTime()+8*3600000);
+            date = `${tw.getUTCFullYear()}-${String(tw.getUTCMonth()+1).padStart(2,'0')}-${String(tw.getUTCDate()).padStart(2,'0')}`;
+        }
+    }
     if(!date){ toast('請先填寫訂位日期','warn'); return; }
     const isoStr = `${date}T${newTime}:00+08:00`;
     const{error}=await _s.from('orders').update({booking_date: isoStr}).eq('id',id);
@@ -1624,7 +1634,7 @@ async function saveBookingTime(id, newTime){
     if(!error){
         if(el){ el.style.borderColor='#10b981'; setTimeout(()=>el.style.borderColor='',1200); }
         toast('訂位時間已更新');
-        if(curOrderView==='calendar') renderCalendar();
+        if(curOrderView==='calendar') setTimeout(()=>renderCalendar(), 1500);
     } else toast('更新失敗','error');
 }
 async function toggleSync(id,cur){
@@ -2622,19 +2632,18 @@ function exportFullData(){
     function parseOrderItems(items){
         const out=[];
         items.forEach(item=>{
-            const{qty:_qty,flv:_flv,clean,inner,isSet}=parseItemDisplay(item.name);
+            const{qty,flv,clean,inner,isSet,brand:setName}=parseItemDisplay(item.name);
             if(isSet){
-                const brand=clean+(_flv?` [${_flv}]`:'');
-                // 數重複出現次數
+                const brandDisp=setName+(flv?` [${flv}]`:'');
                 const subList=parseSetSubs(inner);
                 let first=true;
-                subList.forEach(({name,flv,qty:sq})=>{
-                    const dispName=flv?`${name} [${flv}]`:name;
-                    out.push({isSet:true,brand,sub:dispName,qty:qty*sq,price:first?item.price:'',first});
+                subList.forEach(({name,flv:sFlv,qty:sq})=>{
+                    const dispName=sFlv?`${name} [${sFlv}]`:name;
+                    out.push({isSet:true,brand:brandDisp,sub:dispName,qty:qty*sq,price:first?item.price:'',first});
                     first=false;
                 });
             } else {
-                out.push({isSet:false,brand:'',sub:'',name:clean,qty,price:item.price,first:true});
+                out.push({isSet:false,brand:'',sub:'',name:clean+(flv?` [${flv}]`:''),qty,price:item.price,first:true});
             }
         });
         return out;
