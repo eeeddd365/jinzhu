@@ -1564,9 +1564,9 @@ async function loadOrders() {
 
                 <!-- 後台備註 -->
                 <div class="order-section" style="margin-bottom:10px">
-                    <div class="order-section-label">📌 後台備註（內部使用）</div>
+                    <div class="order-section-label">📌 餐點備註</div>
                     <div style="display:flex;gap:6px;align-items:flex-start">
-                        <textarea id="admin-note-${o.id}" rows="2" placeholder="輸入內部備註…（不顯示給顧客）" onblur="saveAdminNote('${o.id}',this.value)" style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:11px;font-family:'Noto Sans TC',sans-serif;resize:none;outline:none;background:#f8fafc;color:var(--ink);transition:border 0.2s" onfocus="this.style.borderColor='var(--gold)'" onblurCapture="this.style.borderColor='var(--border)'">${o.admin_note||''}</textarea>
+                        <textarea id="admin-note-${o.id}" rows="2" placeholder="輸入餐點備註" onblur="saveAdminNote('${o.id}',this.value)" style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:11px;font-family:'Noto Sans TC',sans-serif;resize:none;outline:none;background:#f8fafc;color:var(--ink);transition:border 0.2s" onfocus="this.style.borderColor='var(--gold)'" onblurCapture="this.style.borderColor='var(--border)'">${o.admin_note||''}</textarea>
                     </div>
                 </div>
                 <div class="order-actions">
