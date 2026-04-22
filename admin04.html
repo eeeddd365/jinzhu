@@ -1647,18 +1647,19 @@ async function saveBookingDate(id, newDate){
     const el = document.getElementById(`bdate-${id}`) || document.getElementById(`som-bdate-${id}`);
     if(!error){
         if(el){ el.style.borderColor='#10b981'; setTimeout(()=>el.style.borderColor='',1200); }
-        toast('訂位日期已更新');
-        // 不立即 renderCalendar，避免 DOM 重建後時間欄位消失
-        if(curOrderView==='calendar') setTimeout(()=>renderCalendar(), 1500);
+        // 更新快取
+        const cached=(window.ordersRef||[]).find(o=>o.id===id);
+        if(cached) cached.booking_date=isoStr;
+        if(!window._pendingRefresh) window._pendingRefresh=new Set();
+        window._pendingRefresh.add(id);
+        showSaveIndicator(id);
     } else toast('更新失敗','error');
 }
 async function saveBookingTime(id, newTime){
     if(!newTime) return;
-    // 先嘗試從 DOM 取日期，DOM 可能因日曆重建已不存在，改從 ordersRef 取
     const dateEl = document.getElementById(`bdate-${id}`) || document.getElementById(`som-bdate-${id}`);
     let date = dateEl?.value;
     if(!date){
-        // 從快取取
         const cached = (window.ordersRef||[]).find(o=>o.id===id);
         if(cached?.booking_date){
             const tw = new Date(new Date(cached.booking_date).getTime()+8*3600000);
@@ -1671,14 +1672,19 @@ async function saveBookingTime(id, newTime){
     const el = document.getElementById(`btime-${id}`) || document.getElementById(`som-btime-${id}`);
     if(!error){
         if(el){ el.style.borderColor='#10b981'; setTimeout(()=>el.style.borderColor='',1200); }
-        toast('訂位時間已更新');
-        if(curOrderView==='calendar') setTimeout(()=>renderCalendar(), 1500);
+        const cached=(window.ordersRef||[]).find(o=>o.id===id);
+        if(cached) cached.booking_date=isoStr;
+        if(!window._pendingRefresh) window._pendingRefresh=new Set();
+        window._pendingRefresh.add(id);
+        showSaveIndicator(id);
     } else toast('更新失敗','error');
 }
 async function toggleSync(id,cur){
     await _s.from('orders').update({status:cur==='synced'?'pending':'synced'}).eq('id',id);
     toast(cur==='synced'?'已標記為準備中':'訂單已完成 ✓');
-    loadOrders();
+    // toggleSync 是明確操作，直接刷新
+    if(curOrderView==='calendar') renderCalendar();
+    else loadOrders();
 }
 
 let selectedOrderIds=new Set();
@@ -3717,13 +3723,16 @@ _s.channel('orders-realtime')
         const o = payload.new;
         toast(`🔔 新訂單：${o.customer_name} $${o.total_price}`, 'info', 5000);
         updateOrdersKpi();
-        if(curOrderView==='calendar') renderCalendar();
-        else loadOrders();
+        // 只有沒有卡片展開中才自動刷新
+        const anyOpen=document.querySelector('.order-card:not(.collapsed)');
+        if(!anyOpen){
+            if(curOrderView==='calendar') renderCalendar();
+            else loadOrders();
+        }
     })
     .on('postgres_changes', {event:'UPDATE', schema:'public', table:'orders'}, ()=>{
         updateOrdersKpi();
-        if(curOrderView==='calendar') renderCalendar();
-        else loadOrders();
+        // UPDATE 事件可能是自己儲存觸發的，不自動重新渲染以免打斷編輯
     })
     .subscribe();
 
