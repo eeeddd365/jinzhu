@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>真珠 · 手機後台</title>
+<link rel="icon" href="https://www.jinzhu.com.tw/favicon.ico">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pine:#004d40;--pine-dark:#002e27;--pine-light:#00695c;
+  --gold:#b89150;--gold-light:#d4a85a;
+  --ink:#1e293b;--stone:#64748b;--border:#e2e8f0;--paper:#f8fafc;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --nav-h:62px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--paper);color:var(--ink);overscroll-behavior:none}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+
+/* TOP BAR */
+#top-bar{
+  flex-shrink:0;background:var(--pine-dark);
+  padding:10px 16px;padding-top:calc(10px + var(--safe-top));
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 2px 12px rgba(0,0,0,.3);z-index:10;
+}
+.tb-left{display:flex;align-items:center;gap:10px}
+.tb-logo{height:26px;filter:brightness(0) invert(1);opacity:.9}
+.tb-sep{width:1px;height:18px;background:rgba(255,255,255,.15)}
+.tb-title{font-family:'Noto Serif TC',serif;font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.08em}
+.kpi-pill{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:5px 12px}
+.kpi-num{font-family:'Noto Serif TC',serif;font-weight:900;color:var(--gold);font-size:15px;line-height:1}
+.kpi-lbl{font-size:10px;color:rgba(255,255,255,.4);font-weight:700}
+
+/* CONTENT */
+#content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav-h) + var(--safe-bottom) + 8px)}
+
+/* BOTTOM NAV */
+#bottom-nav{
+  flex-shrink:0;position:fixed;bottom:0;left:0;right:0;
+  height:calc(var(--nav-h) + var(--safe-bottom));
+  background:var(--pine-dark);display:flex;align-items:flex-start;padding-top:8px;
+  border-top:1px solid rgba(255,255,255,.08);z-index:100;
+}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;color:rgba(255,255,255,.35);font-size:9px;font-weight:700;cursor:pointer;transition:color .2s;border:none;background:none;letter-spacing:.05em}
+.nav-icon{font-size:20px;line-height:1}
+.nav-item.active{color:var(--gold)}
+.nav-item.active .nav-icon{filter:drop-shadow(0 0 6px rgba(184,145,80,.5))}
+
+/* SECTIONS */
+.section{display:none;padding:12px 14px}
+.section.active{display:block}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-head h2{font-family:'Noto Serif TC',serif;font-size:1.05rem;font-weight:900;color:var(--pine);display:flex;align-items:center;gap:8px}
+.sec-head h2::before{content:'';display:block;width:3px;height:18px;background:var(--gold);border-radius:2px}
+
+/* SEGMENT CONTROL */
+.seg-wrap{margin-bottom:12px}
+.seg-label{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--stone);margin-bottom:5px;padding-left:1px}
+.seg-row{display:flex;background:#e2e8f0;border-radius:10px;padding:3px;gap:2px}
+.seg-btn{flex:1;padding:7px 4px;border-radius:8px;font-size:12px;font-weight:700;border:none;background:transparent;color:#94a3b8;cursor:pointer;transition:all .18s;white-space:nowrap;text-align:center;font-family:'Noto Sans TC',sans-serif}
+.seg-btn.on{background:white;color:var(--pine);box-shadow:0 1px 6px rgba(0,0,0,.12)}
+
+/* SEARCH */
+.search-wrap{position:relative;margin-bottom:10px}
+.search-wrap input{width:100%;padding:10px 40px 10px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;background:white;outline:none;font-family:'Noto Sans TC',sans-serif;color:var(--ink);transition:border .2s}
+.search-wrap input:focus{border-color:var(--pine)}
+.search-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--stone);font-size:16px;pointer-events:none}
+
+/* ORDER CARD */
+.order-card{background:white;border-radius:16px;border:1px solid var(--border);border-left:3px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,.05);overflow:hidden;margin-bottom:10px}
+.order-card.status-pending{border-left-color:var(--gold)}
+.order-card.status-synced{border-left-color:#10b981;opacity:.72}
+.order-header{padding:13px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;-webkit-user-select:none;user-select:none;transition:background .15s}
+.order-header:active{background:#f8fafc}
+.order-card.open .order-header{border-bottom:1px solid var(--border)}
+.order-name{font-weight:900;font-size:15px}
+.order-meta{font-size:11px;color:var(--stone);margin-top:2px}
+.order-amt{font-family:'Noto Serif TC',serif;font-size:15px;font-weight:900;color:var(--gold);white-space:nowrap}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.status-dot.pending{background:var(--gold);box-shadow:0 0 5px rgba(184,145,80,.5)}
+.status-dot.synced{background:#10b981}
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-top:3px}
+.badge.pending{background:#fef3c7;color:#d97706}
+.badge.synced{background:#d1fae5;color:#059669}
+
+/* ORDER BODY */
+.order-body{display:none;padding:14px}
+.order-card.open .order-body{display:block}
+.order-sec{margin-bottom:16px}
+.order-sec-lbl{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--stone);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.order-sec-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* FIELDS */
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.f-row.three{grid-template-columns:1fr 1fr 1fr}
+.f-group{margin-bottom:10px}
+.f-label{display:block;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--stone);margin-bottom:5px}
+.f-input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;background:#f8fafc;outline:none;transition:border .2s;color:var(--ink);font-family:'Noto Sans TC',sans-serif;-webkit-appearance:none}
+.f-input:focus{border-color:var(--pine);background:white}
+textarea.f-input{resize:none;line-height:1.6}
+
+/* ITEMS */
+.items-box{background:#f8fafc;border-radius:10px;padding:4px 8px;margin-bottom:8px}
+.set-blk{border:1.5px solid rgba(184,145,80,.3);border-radius:10px;overflow:hidden;margin-bottom:6px}
+.set-blk-head{background:rgba(184,145,80,.08);padding:6px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(184,145,80,.15)}
+.set-blk-head .sn{font-weight:900;font-size:12px;color:var(--gold)}
+.set-blk-head .sq{font-weight:900;font-size:12px;color:var(--pine)}
+.set-blk-body{padding:4px 12px}
+.single-blk{border:1.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:6px}
+.single-blk-head{background:#f8fafc;padding:5px 12px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--stone);letter-spacing:.1em;text-transform:uppercase}
+.single-blk-body{padding:4px 12px}
+.item-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.04);font-size:13px}
+.item-row:last-child{border-bottom:none}
+.item-dot{width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.item-name{flex:1;font-weight:700}
+.item-flv{font-size:10px;color:var(--gold);margin-left:3px}
+.item-qty{font-weight:900;color:var(--pine);font-size:14px}
+.item-unit{font-size:10px;color:var(--stone)}
+.note-blk{background:#f0fdf4;border-left:3px solid var(--pine);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;color:var(--pine);margin-top:4px}
+
+/* ACTIONS */
+.order-actions{display:grid;grid-template-columns:44px 1fr;gap:8px;margin-top:14px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;transition:all .15s;font-family:'Noto Sans TC',sans-serif;-webkit-appearance:none}
+.btn:active{transform:scale(.96);opacity:.85}
+.btn-primary{background:var(--pine);color:white}
+.btn-gold{background:var(--gold);color:white}
+.btn-ghost{background:white;color:var(--stone);border:1.5px solid var(--border)}
+.btn-danger{background:#fee2e2;color:#dc2626}
+.btn-sm{padding:7px 13px;font-size:12px;border-radius:8px}
+.btn-icon{padding:9px;border-radius:9px;font-size:16px}
+.btn-full{width:100%}
+
+/* CALENDAR */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-nav button{background:none;border:none;font-size:22px;color:var(--pine);cursor:pointer;padding:4px 10px;border-radius:8px}
+.cal-nav button:active{background:#e2e8f0}
+.cal-month{font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:900;color:var(--pine)}
+.cal-wrap{border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.cal-heads{display:grid;grid-template-columns:repeat(7,1fr);background:#f1f5f9}
+.cal-head{text-align:center;font-size:10px;font-weight:700;padding:6px 0;color:var(--stone)}
+.cal-head.sun{color:#ef4444}.cal-head.sat{color:#3b82f6}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--border)}
+.cal-cell{min-height:56px;padding:4px;cursor:pointer;border-right:1px solid var(--border);border-bottom:1px solid var(--border);transition:background .15s;background:white}
+.cal-cell:nth-child(7n){border-right:none}
+.cal-cell:active{background:#f0fdf4}
+.cal-cell.today{background:#f0fdf4}
+.cal-cell.empty{background:#fafafa;cursor:default}
+.cal-cell .dn{font-size:12px;font-weight:900;color:#334155;line-height:1;margin-bottom:2px}
+.cal-cell.today .dn{background:var(--pine);color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px}
+.cal-cell .dn.sun{color:#ef4444}.cal-cell .dn.sat{color:#3b82f6}
+.cal-cnt{font-size:9px;font-weight:900;background:var(--pine);color:white;border-radius:4px;padding:0 4px;margin-bottom:2px;display:inline-block}
+.cal-dots{display:flex;flex-direction:column;gap:1px}
+.cal-dot-item{font-size:8px;font-weight:700;color:var(--pine);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(0,77,64,.06);border-radius:3px;padding:1px 3px}
+.no-date-bar{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:10px 12px;margin-top:10px}
+.no-date-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.no-date-chip{background:white;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;color:#92400e}
+
+/* TOAST */
+#toast-wrap{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:calc(100vw - 32px);max-width:360px}
+.toast{padding:12px 16px;border-radius:12px;font-size:13px;font-weight:700;color:white;box-shadow:0 8px 24px rgba(0,0,0,.2);animation:toastIn .3s ease both;display:flex;align-items:center;gap:8px}
+.toast.success{background:var(--pine)}.toast.error{background:#dc2626}.toast.warn{background:#d97706}.toast.info{background:#1e40af}
+.toast.out{animation:toastOut .25s ease forwards}
+@keyframes toastIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateY(-8px)}}
+
+/* CONFIRM */
+#confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;display:none;align-items:flex-end;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+#confirm-overlay.visible{display:flex}
+#confirm-box{background:white;border-radius:20px;padding:24px 20px;width:100%;max-width:420px;padding-bottom:calc(24px + var(--safe-bottom));animation:shUp .25s ease both}
+@keyframes shUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+#confirm-icon{font-size:1.8rem;margin-bottom:10px}
+#confirm-title{font-size:15px;font-weight:900;margin-bottom:6px}
+#confirm-msg{font-size:13px;color:var(--stone);line-height:1.7;margin-bottom:20px}
+.confirm-acts{display:flex;gap:10px}
+.confirm-cancel{flex:1;padding:13px;border-radius:12px;border:1.5px solid var(--border);background:white;color:var(--stone);font-weight:700;font-size:14px;cursor:pointer;font-family:'Noto Sans TC',sans-serif}
+.confirm-ok{flex:1.5;padding:13px;border-radius:12px;border:none;font-weight:700;font-size:14px;cursor:pointer;font-family:'Noto Sans TC',sans-serif}
+.confirm-ok.danger{background:#dc2626;color:white}.confirm-ok.primary{background:var(--pine);color:white}
+
+/* SHEET */
+.sheet-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;display:none;align-items:flex-end;backdrop-filter:blur(4px)}
+.sheet-ov.visible{display:flex}
+.sheet{background:white;border-radius:20px 20px 0 0;width:100%;max-height:90vh;overflow-y:auto;padding:20px 16px;padding-bottom:calc(20px + var(--safe-bottom));animation:shUp .3s ease both}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.sheet-title{font-family:'Noto Serif TC',serif;font-size:1.1rem;font-weight:900;color:var(--pine);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,var(--pine-dark) 0%,var(--pine) 60%,var(--pine-light) 100%);display:flex;align-items:center;justify-content:center;padding:24px}
+#login-screen.hidden{display:none}
+.login-box{width:100%;max-width:360px}
+.login-logo{text-align:center;margin-bottom:36px}
+.login-logo img{height:52px;filter:brightness(0) invert(1)}
+.login-logo p{font-family:'Noto Serif TC',serif;font-size:11px;color:rgba(255,255,255,.4);letter-spacing:.3em;margin-top:10px;text-transform:uppercase}
+.login-field{margin-bottom:16px}
+.login-label{display:block;font-size:9px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px}
+.login-input{width:100%;padding:14px 16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:white;font-size:16px;outline:none;transition:border .2s;font-family:'Noto Sans TC',sans-serif}
+.login-input::placeholder{color:rgba(255,255,255,.3)}
+.login-input:focus{border-color:var(--gold)}
+#login-error{display:none;color:#fca5a5;font-size:12px;font-weight:700;text-align:center;margin-bottom:12px;background:rgba(220,38,38,.2);padding:10px;border-radius:10px}
+.login-btn{width:100%;padding:16px;background:var(--gold);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-top:8px}
+
+/* EMPTY / LOADING */
+.empty-state{text-align:center;padding:48px 24px;color:var(--stone)}
+.empty-icon{font-size:2.5rem;opacity:.2;margin-bottom:12px}
+.loading{display:flex;align-items:center;justify-content:center;padding:48px}
+.spin{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--pine);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* MISC */
+.prog-bar{height:5px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-top:4px}
+.prog-fill{height:100%;border-radius:999px;transition:width .4s}
+</style>
+</head>
+<body>
+
+<div id="toast-wrap"></div>
+
+<!-- CONFIRM -->
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <div id="confirm-icon">⚠️</div>
+    <div id="confirm-title">確認操作</div>
+    <div id="confirm-msg"></div>
+    <div class="confirm-acts">
+      <button class="confirm-cancel" id="confirm-cancel-btn">取消</button>
+      <button class="confirm-ok danger" id="confirm-ok-btn">確認</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <img src="https://www.jinzhu.com.tw/images/Jinzhu_logo.svg" alt="真珠台灣佳味">
+      <p>後台管理系統</p>
+    </div>
+    <div class="login-field">
+      <label class="login-label">Email</label>
+      <input type="email" id="le" class="login-input" placeholder="admin@example.com" autocomplete="email">
+    </div>
+    <div class="login-field">
+      <label class="login-label">密碼</label>
+      <input type="password" id="lp" class="login-input" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div id="login-error">帳號或密碼錯誤</div>
+    <button class="login-btn" onclick="doLogin()">登入</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- TOP BAR -->
+  <header id="top-bar">
+    <div class="tb-left">
+      <img src="https://www.jinzhu.com.tw/images/Jinzhu_logo.svg" alt="真珠" class="tb-logo">
+      <div class="tb-sep"></div>
+      <span class="tb-title" id="top-title">訂單管理</span>
+    </div>
+    <div class="kpi-pill">
+      <span style="font-size:11px">⏳</span>
+      <span class="kpi-num" id="kpi-pending">—</span>
+      <span class="kpi-lbl">待處理</span>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- ══ 訂單 ══ -->
+    <div id="sec-orders" class="section active">
+
+      <!-- 列表 / 日曆 -->
+      <div class="seg-row" style="margin-bottom:12px">
+        <button class="seg-btn on" id="v-list" onclick="setView('list',this)">📋 列表</button>
+        <button class="seg-btn"    id="v-cal"  onclick="setView('cal',this)">📅 日曆</button>
+      </div>
+
+      <!-- 列表模式 -->
+      <div id="order-list-view">
+        <div class="search-wrap">
+          <input type="text" id="q-search" placeholder="搜尋姓名或電話…" oninput="loadOrders()">
+          <span class="search-icon">🔍</span>
+        </div>
+
+        <div class="seg-wrap">
+          <div class="seg-label">狀態</div>
+          <div class="seg-row" id="seg-status">
+            <button class="seg-btn on" onclick="setSeg('status','all',this)">全部</button>
+            <button class="seg-btn"    onclick="setSeg('status','pending',this)">⏳ 待處理</button>
+            <button class="seg-btn"    onclick="setSeg('status','synced',this)">✅ 已完成</button>
+          </div>
+        </div>
+
+        <div class="seg-wrap">
+          <div class="seg-label">訂位日期</div>
+          <div class="seg-row" id="seg-date">
+            <button class="seg-btn on" onclick="setSeg('date','all',this)">全部</button>
+            <button class="seg-btn"    onclick="setSeg('date','today',this)">今日</button>
+            <button class="seg-btn"    onclick="setSeg('date','week',this)">本週</button>
+          </div>
+        </div>
+
+        <div id="order-list"><div class="loading"><div class="spin"></div></div></div>
+      </div>
+
+      <!-- 日曆模式 -->
+      <div id="order-cal-view" style="display:none">
+        <div class="cal-nav">
+          <button onclick="calPrev()">‹</button>
+          <span class="cal-month" id="cal-label"></span>
+          <button onclick="calNext()">›</button>
+        </div>
+        <div class="cal-wrap">
+          <div class="cal-heads">
+            <div class="cal-head sun">日</div><div class="cal-head">一</div><div class="cal-head">二</div>
+            <div class="cal-head">三</div><div class="cal-head">四</div><div class="cal-head">五</div>
+            <div class="cal-head sat">六</div>
+          </div>
+          <div id="cal-cells" class="cal-grid"></div>
+        </div>
+        <div id="no-date-bar" class="no-date-bar" style="display:none">
+          <div style="font-size:10px;font-weight:700;color:#b45309">⚠ 未安排訂位日期（待處理）</div>
+          <div class="no-date-chips" id="no-date-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 通知 ══ -->
+    <div id="sec-notify" class="section">
+      <div class="sec-head"><h2>通知管理</h2></div>
+
+      <div style="background:white;border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:14px">
+        <div style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">
+          <div style="font-weight:700;font-size:13px;color:var(--pine)">🤖 LINE Bot</div>
+          <button class="btn btn-primary btn-sm" onclick="openBotSheet(false)">+ 新增</button>
+        </div>
+        <div id="bot-list" style="padding:10px 14px"></div>
+      </div>
+
+      <div style="background:white;border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:14px">
+        <div style="font-weight:700;font-size:13px;color:var(--pine);margin-bottom:12px">📋 每日彙整通知</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <span style="font-size:13px;font-weight:700;color:var(--stone)">啟用</span>
+          <div id="sum-toggle" data-on="0" onclick="toggleSummary()" style="width:44px;height:24px;border-radius:999px;background:#94a3b8;cursor:pointer;display:flex;align-items:center;padding:2px;flex-shrink:0;transition:background .2s">
+            <div id="sum-dot" style="width:20px;height:20px;border-radius:50%;background:white;transition:transform .2s"></div>
+          </div>
+          <span style="font-size:12px;color:var(--stone)" id="sum-lbl">載入中</span>
+        </div>
+        <div class="f-row" style="margin-bottom:10px">
+          <div><label class="f-label">時</label><select id="sum-hour" class="f-input" style="font-size:13px" onchange="saveSummary()"></select></div>
+          <div><label class="f-label">分</label>
+            <select id="sum-min" class="f-input" style="font-size:13px" onchange="saveSummary()">
+              <option value="0">00</option><option value="15">15</option><option value="30" selected>30</option><option value="45">45</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-full btn-sm" onclick="testSummary()">📤 測試發送</button>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-weight:700;font-size:13px;color:var(--pine)">💬 通知對象</div>
+        <button class="btn btn-primary btn-sm" onclick="openTargetSheet()">+ 新增</button>
+      </div>
+      <div id="target-list"></div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- BOTTOM NAV -->
+  <nav id="bottom-nav">
+    <button class="nav-item active" onclick="switchTab('orders',this)">
+      <span class="nav-icon">📋</span><span>訂單</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('notify',this)">
+      <span class="nav-icon">💬</span><span>通知</span>
+    </button>
+  </nav>
+</div>
+
+<!-- SHEETS -->
+<div id="cal-day-sheet" class="sheet-ov">
+  <div class="sheet" style="max-height:88vh">
+    <div class="sheet-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div class="sheet-title" style="margin:0;border:none;padding:0" id="cal-day-title">日期訂單</div>
+      <button onclick="closeSheet('cal-day-sheet')" style="background:none;border:none;font-size:1.3rem;color:#94a3b8;cursor:pointer;padding:4px">✕</button>
+    </div>
+    <div id="cal-day-body" style="overflow-y:auto;max-height:calc(88vh - 110px)"></div>
+  </div>
+</div>
+
+<div id="bot-sheet" class="sheet-ov">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="bot-sheet-title">LINE Bot</div>
+    <input type="hidden" id="bs-id">
+    <div class="f-group"><label class="f-label">Bot 名稱</label><input type="text" id="bs-name" class="f-input" placeholder="主要Bot"></div>
+    <div class="f-group"><label class="f-label">Channel Access Token</label><textarea id="bs-token" class="f-input" rows="3" placeholder="貼上 Token" style="font-size:11px;font-family:monospace;resize:none"></textarea></div>
+    <div class="f-group"><label class="f-label">每月上限（則）</label><input type="number" id="bs-limit" class="f-input" value="200"></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-ghost" onclick="closeSheet('bot-sheet')" style="flex:1">取消</button>
+      <button class="btn btn-primary" onclick="saveBot()" style="flex:2">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div id="target-sheet" class="sheet-ov">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">新增通知對象</div>
+    <div class="f-group"><label class="f-label">名稱</label><input type="text" id="ts-name" class="f-input" placeholder="王小明"></div>
+    <div class="f-group"><label class="f-label">LINE User / Group ID</label><input type="text" id="ts-uid" class="f-input" placeholder="U 或 C 開頭" style="font-family:monospace"></div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f8fafc;border-radius:10px;cursor:pointer">
+        <input type="checkbox" id="ts-order" checked style="width:16px;height:16px;accent-color:var(--pine)"><span style="font-size:13px;font-weight:700">🔔 訂單</span>
+      </label>
+      <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f8fafc;border-radius:10px;cursor:pointer">
+        <input type="checkbox" id="ts-photo" checked style="width:16px;height:16px;accent-color:var(--pine)"><span style="font-size:13px;font-weight:700">📸 照片</span>
+      </label>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" onclick="closeSheet('target-sheet')" style="flex:1">取消</button>
+      <button class="btn btn-primary" onclick="saveTarget()" style="flex:2">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const _s=supabase.createClient('https://pydlnqriztpzgxbjuohm.supabase.co','sb_publishable_ISKUWOXUR9A-1y81xCOUXg_8-zNle3v');
+let allCats=[],allCampaigns=[],ordersRef=[];
+
+// ── PARSE ──
+function parseItem(raw){
+  const qM=raw.match(/^[^(]* x(\d+)/);const qty=qM?parseInt(qM[1]):1;
+  const top=raw.replace(/^([^(]+?) x\d+(\s*\()/,'$1$2').replace(/^([^(]+?) x\d+$/,'$1');
+  const pI=top.indexOf(' (');const inner=pI>-1?top.slice(pI+2,-1):null;
+  const isSet=!!(inner&&inner.includes('、'));
+  const nm=pI>-1?top.slice(0,pI):top;
+  const fM=nm.match(/\[([^\]]+)\]/);const flv=fM?fM[1]:'';
+  const clean=raw.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
+  return{qty,flv,clean,inner,isSet,brand:isSet?clean.replace(/ \(.*$/,'').trim():null};
+}
+function parseSubs(innerRaw){
+  if(!innerRaw)return[];const map={};
+  innerRaw.split('、').forEach(r=>{const{clean,flv,qty}=parseItem(r.trim());if(!clean)return;const k=flv?clean+'｜'+flv:clean;if(!map[k])map[k]={name:clean,flv,qty:0};map[k].qty+=qty||1;});
+  return Object.values(map);
+}
+
+// ── TOAST ──
+function toast(msg,type='success',dur=2500){
+  const icons={success:'✅',error:'❌',warn:'⚠️',info:'ℹ️'};
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;el.innerHTML=`<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toast-wrap').appendChild(el);
+  setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),300);},dur);
+}
+
+// ── CONFIRM ──
+function confirm2(o){return new Promise(r=>{
+  document.getElementById('confirm-icon').textContent=o.icon||'⚠️';
+  document.getElementById('confirm-title').textContent=o.title||'確認';
+  document.getElementById('confirm-msg').textContent=o.msg||'';
+  const ok=document.getElementById('confirm-ok-btn');
+  ok.textContent=o.okText||'確認';ok.className=`confirm-ok ${o.danger?'danger':'primary'}`;
+  document.getElementById('confirm-overlay').classList.add('visible');
+  ok.onclick=()=>{document.getElementById('confirm-overlay').classList.remove('visible');r(true);};
+  document.getElementById('confirm-cancel-btn').onclick=()=>{document.getElementById('confirm-overlay').classList.remove('visible');r(false);};
+});}
+
+// ── SHEETS ──
+function openSheet(id){document.getElementById(id).classList.add('visible');}
+function closeSheet(id){document.getElementById(id).classList.remove('visible');}
+document.querySelectorAll('.sheet-ov').forEach(el=>{el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('visible');});});
+
+// ── LOGIN ──
+async function doLogin(){
+  const e=document.getElementById('le').value.trim(),p=document.getElementById('lp').value;
+  document.getElementById('login-error').style.display='none';
+  const{error}=await _s.auth.signInWithPassword({email:e,password:p});
+  if(error){document.getElementById('login-error').style.display='block';return;}
+  document.getElementById('login-screen').classList.add('hidden');initApp();
+}
+['le','lp'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();}));
+
+// ── INIT ──
+async function initApp(){
+  const[{data:cats},{data:camps}]=await Promise.all([
+    _s.from('categories').select('*').order('sort_order'),
+    _s.from('campaign_settings').select('*')
+  ]);
+  allCats=cats||[];allCampaigns=camps||[];
+  loadOrders();updateKpi();
+  _s.channel('orders-rt').on('postgres_changes',{event:'INSERT',schema:'public',table:'orders'},p=>{
+    toast(`🔔 新訂單：${p.new.customer_name} $${p.new.total_price}`,'info',5000);
+    updateKpi();loadOrders();
+  }).subscribe();
+}
+
+async function updateKpi(){
+  const{count}=await _s.from('orders').select('*',{count:'exact',head:true}).eq('status','pending');
+  document.getElementById('kpi-pending').textContent=count??0;
+}
+
+// ── TABS ──
+function switchTab(tab,el){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`sec-${tab}`).classList.add('active');
+  if(el)el.classList.add('active');
+  document.getElementById('top-title').textContent=tab==='orders'?'訂單管理':'通知管理';
+  if(tab==='notify')loadNotify();
+}
+
+// ── FILTERS ──
+let fStatus='all',fDate='all',curView='list';
+
+function setSeg(type,val,el){
+  el.closest('.seg-row').querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  if(type==='status')fStatus=val;
+  if(type==='date')fDate=val;
+  loadOrders();
+}
+
+function setView(mode,el){
+  curView=mode;
+  document.getElementById('order-list-view').style.display=mode==='list'?'block':'none';
+  document.getElementById('order-cal-view').style.display=mode==='cal'?'block':'none';
+  document.getElementById('v-list').classList.toggle('on',mode==='list');
+  document.getElementById('v-cal').classList.toggle('on',mode==='cal');
+  if(mode==='cal')renderCal();
+}
+
+// ── LOAD ORDERS ──
+async function loadOrders(){
+  document.getElementById('order-list').innerHTML='<div class="loading"><div class="spin"></div></div>';
+  const q=document.getElementById('q-search').value.trim();
+  const twNow=new Date(Date.now()+8*3600000);
+  const today=twNow.toISOString().split('T')[0];
+  const weekEnd=new Date(Date.now()+7*86400000+8*3600000).toISOString().split('T')[0];
+  let qb=_s.from('orders').select('*');
+  if(q)qb=qb.or(`customer_name.ilike.%${q}%,phone.ilike.%${q}%`);
+  if(fStatus!=='all')qb=qb.eq('status',fStatus);
+  if(fDate==='today')qb=qb.gte('booking_date',`${today}T00:00:00+08:00`).lte('booking_date',`${today}T23:59:59+08:00`);
+  else if(fDate==='week')qb=qb.gte('booking_date',`${today}T00:00:00+08:00`).lte('booking_date',`${weekEnd}T23:59:59+08:00`);
+  const{data,error}=await qb;
+  if(error){document.getElementById('order-list').innerHTML='<div class="empty-state"><p>載入失敗</p></div>';return;}
+  // Sort: pending first → booking_date asc (nulls last) → created_at desc
+  const orders=(data||[]).sort((a,b)=>{
+    if(a.status!==b.status)return a.status==='pending'?-1:1;
+    const ad=a.booking_date?new Date(a.booking_date).getTime():Infinity;
+    const bd=b.booking_date?new Date(b.booking_date).getTime():Infinity;
+    if(ad!==bd)return ad-bd;
+    return new Date(b.created_at)-new Date(a.created_at);
+  });
+  ordersRef=orders;renderOrders(orders);
+}
+
+function renderOrders(orders){
+  const el=document.getElementById('order-list');
+  if(!orders.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><p style="font-size:13px;font-weight:700">找不到訂單</p></div>';return;}
+  el.innerHTML=orders.map(o=>orderHtml(o)).join('');
+}
+
+// ── ORDER CARD ──
+function twDate(iso){const tw=new Date(new Date(iso).getTime()+8*3600000);return tw;}
+function orderHtml(o){
+  const synced=o.status==='synced';
+  let bStr='';
+  if(o.booking_date){const tw=twDate(o.booking_date);bStr=`${String(tw.getUTCMonth()+1).padStart(2,'0')}/${String(tw.getUTCDate()).padStart(2,'0')} ${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`;}
+  const bDate=o.booking_date?(()=>{const tw=twDate(o.booking_date);return`${tw.getUTCFullYear()}-${String(tw.getUTCMonth()+1).padStart(2,'0')}-${String(tw.getUTCDate()).padStart(2,'0')}`;})():'';
+  const bTime=o.booking_date?(()=>{const tw=twDate(o.booking_date);return`${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`;})():'';
+  const timeOpts=[11,12,13,14,15,17,18,19,20,21].flatMap(h=>[0,15,30,45].map(m=>{const v=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;return`<option value="${v}"${bTime===v?' selected':''}>${v}</option>`;})).join('');
+  // Parse items
+  const sets=[],singles={};
+  (o.order_content||[]).forEach(item=>{
+    const{qty,flv,clean,inner,isSet,brand}=parseItem(item.name);
+    if(isSet){sets.push({brand,qty,subList:parseSubs(inner)});}
+    else{const k=flv?clean+'｜'+flv:clean;if(!singles[k])singles[k]={name:clean,flv,qty:0};singles[k].qty+=qty;}
+  });
+  let itemsHtml='';
+  sets.forEach(s=>{itemsHtml+=`<div class="set-blk"><div class="set-blk-head"><span class="sn">🍱 ${s.brand}</span><span class="sq">${s.qty} 套</span></div><div class="set-blk-body">${s.subList.map(({name,flv:f,qty:sq})=>`<div class="item-row"><div class="item-dot"></div><div class="item-name">${name}${f?`<span class="item-flv">[${f}]</span>`:''}</div><div class="item-qty">${s.qty*sq}</div><span class="item-unit">份</span></div>`).join('')}</div></div>`;});
+  const se=Object.values(singles);
+  if(se.length)itemsHtml+=`<div class="single-blk"><div class="single-blk-head">單點</div><div class="single-blk-body">${se.map(({name,flv:f,qty})=>`<div class="item-row"><div class="item-dot"></div><div class="item-name">${name}${f?`<span class="item-flv">[${f}]</span>`:''}</div><div class="item-qty">${qty}</div><span class="item-unit">份</span></div>`).join('')}</div></div>`;
+
+  return`<div class="order-card status-${synced?'synced':'pending'}" id="oc-${o.id}">
+  <div class="order-header" onclick="toggleOrder('${o.id}')">
+    <div class="status-dot ${synced?'synced':'pending'}"></div>
+    <div style="flex:1;min-width:0">
+      <div class="order-name">${o.customer_name}</div>
+      <div class="order-meta">${o.phone||'—'}${bStr?' · 📅 '+bStr:''}${o.table_no?' · 桌 '+o.table_no:''}</div>
+    </div>
+    <div style="text-align:right;flex-shrink:0">
+      <div class="order-amt">$${o.total_price}</div>
+      <div class="badge ${synced?'synced':'pending'}">${synced?'✅ 已完成':'⏳ 待處理'}</div>
+    </div>
+  </div>
+  <div class="order-body">
+    <!-- 聯絡 -->
+    <div class="order-sec">
+      <div class="order-sec-lbl">👤 聯絡資訊</div>
+      <div class="f-row">
+        <div><label class="f-label">姓名</label><input class="f-input" type="text" value="${o.customer_name||''}" onchange="saveField('${o.id}','customer_name',this.value,this)"></div>
+        <div><label class="f-label">電話</label><input class="f-input" type="tel" value="${o.phone||''}" onchange="saveField('${o.id}','phone',this.value,this)"></div>
+      </div>
+    </div>
+    <!-- 訂位 -->
+    <div class="order-sec">
+      <div class="order-sec-lbl">📅 訂位資訊</div>
+      <div class="f-row">
+        <div><label class="f-label">日期</label><input class="f-input" type="date" id="bd-${o.id}" value="${bDate}" onchange="saveBkDate('${o.id}',this.value)"></div>
+        <div><label class="f-label">時間</label><select class="f-input" id="bt-${o.id}" onchange="saveBkTime('${o.id}',this.value)"><option value="">--</option>${timeOpts}</select></div>
+      </div>
+      <div class="f-row">
+        <div><label class="f-label">桌號</label><input class="f-input" type="text" value="${o.table_no||''}" placeholder="無" onchange="saveField('${o.id}','table_no',this.value,this)"></div>
+        <div><label class="f-label">活動代號</label>
+          <select class="f-input" onchange="saveField('${o.id}','campaign_code',this.value,this)">
+            <option value="">無</option>${allCampaigns.map(c=>`<option value="${c.code_name}"${o.campaign_code===c.code_name?' selected':''}>${c.code_name}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    </div>
+    <!-- 人數 -->
+    <div class="order-sec">
+      <div class="order-sec-lbl">👥 用餐人數</div>
+      <div class="f-row three">
+        <div><label class="f-label">大人</label><input class="f-input" type="number" min="0" value="${o.adult_count||0}" onchange="saveField('${o.id}','adult_count',parseInt(this.value)||0,this)"></div>
+        <div><label class="f-label">小孩</label><input class="f-input" type="number" min="0" value="${o.kid_count||0}" onchange="saveField('${o.id}','kid_count',parseInt(this.value)||0,this)"></div>
+        <div><label class="f-label">兒童</label><input class="f-input" type="number" min="0" value="${o.child_count||0}" onchange="saveField('${o.id}','child_count',parseInt(this.value)||0,this)"></div>
+      </div>
+    </div>
+    <!-- 餐點 -->
+    <div class="order-sec">
+      <div class="order-sec-lbl">🍱 餐點明細</div>
+      <div class="items-box">${itemsHtml||'<p style="padding:8px;font-size:12px;color:var(--stone)">無餐點資料</p>'}</div>
+      ${o.note?`<div class="note-blk">📝 ${o.note}</div>`:''}
+    </div>
+    <!-- 備註 -->
+    <div class="order-sec">
+      <div class="order-sec-lbl">📌 後台備註</div>
+      <textarea rows="2" class="f-input" placeholder="內部備註…" onblur="saveAdminNote('${o.id}',this.value)">${o.admin_note||''}</textarea>
+    </div>
+    <!-- 操作 -->
+    <div class="order-actions">
+      <button class="btn btn-danger btn-icon" onclick="deleteOrder('${o.id}')">🗑</button>
+      <button class="btn btn-full ${synced?'btn-ghost':'btn-primary'}" onclick="toggleStatus('${o.id}','${o.status}')">
+        ${synced?'↩ 標記待處理':'✓ 標記完成'}
+      </button>
+    </div>
+  </div>
+</div>`;
+}
+
+function toggleOrder(id){document.getElementById(`oc-${id}`)?.classList.toggle('open');}
+
+let _st=null;
+async function saveField(id,field,val,el){
+  if(el)el.style.borderColor='var(--gold)';
+  const{error}=await _s.from('orders').update({[field]:val===''?null:val}).eq('id',id);
+  if(el){el.style.borderColor=error?'#dc2626':'#10b981';setTimeout(()=>{if(el)el.style.borderColor='';},1400);}
+  if(!error){clearTimeout(_st);_st=setTimeout(()=>toast('✓ 已自動儲存','success',1500),400);const c=ordersRef.find(o=>o.id===id);if(c)c[field]=val===''?null:val;}
+  else toast('儲存失敗','error');
+}
+async function saveAdminNote(id,val){
+  const{error}=await _s.from('orders').update({admin_note:val||null}).eq('id',id);
+  if(!error)toast('備註已儲存','success',1500);else toast('儲存失敗','error');
+}
+async function saveBkDate(id,d){
+  if(!d)return;
+  const t=document.getElementById(`bt-${id}`)?.value||'00:00';
+  const iso=`${d}T${t}:00+08:00`;
+  const{error}=await _s.from('orders').update({booking_date:iso}).eq('id',id);
+  if(!error)toast('日期已更新','success',1500);else toast('更新失敗','error');
+}
+async function saveBkTime(id,t){
+  if(!t)return;
+  let d=document.getElementById(`bd-${id}`)?.value;
+  if(!d){const c=ordersRef.find(o=>o.id===id);if(c?.booking_date){const tw=twDate(c.booking_date);d=`${tw.getUTCFullYear()}-${String(tw.getUTCMonth()+1).padStart(2,'0')}-${String(tw.getUTCDate()).padStart(2,'0')}`;}}
+  if(!d){toast('請先填訂位日期','warn');return;}
+  const{error}=await _s.from('orders').update({booking_date:`${d}T${t}:00+08:00`}).eq('id',id);
+  if(!error)toast('時間已更新','success',1500);else toast('更新失敗','error');
+}
+async function toggleStatus(id,cur){
+  const ns=cur==='synced'?'pending':'synced';
+  await _s.from('orders').update({status:ns}).eq('id',id);
+  toast(ns==='synced'?'✅ 已完成':'⏳ 標記待處理');
+  loadOrders();updateKpi();
+}
+async function deleteOrder(id){
+  const ok=await confirm2({icon:'🗑',title:'刪除訂單',msg:'確定永久刪除？此操作無法復原。',okText:'確認刪除',danger:true});
+  if(!ok)return;
+  await _s.from('orders').delete().eq('id',id);
+  loadOrders();updateKpi();toast('訂單已刪除');
+}
+
+// ── CALENDAR ──
+let calY=new Date().getFullYear(),calM=new Date().getMonth();
+function calPrev(){calM--;if(calM<0){calM=11;calY--;}renderCal();}
+function calNext(){calM++;if(calM>11){calM=0;calY++;}renderCal();}
+async function renderCal(){
+  const mn=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('cal-label').textContent=`${calY} 年 ${mn[calM]}`;
+  const{data}=await _s.from('orders').select('*');
+  const all=data||[];const map={};
+  all.filter(o=>o.booking_date).forEach(o=>{const tw=twDate(o.booking_date);const k=`${tw.getUTCFullYear()}-${String(tw.getUTCMonth()+1).padStart(2,'0')}-${String(tw.getUTCDate()).padStart(2,'0')}`;if(!map[k])map[k]=[];map[k].push(o);});
+  const noDate=all.filter(o=>!o.booking_date&&o.status==='pending');
+  const bar=document.getElementById('no-date-bar');
+  if(noDate.length){bar.style.display='block';document.getElementById('no-date-list').innerHTML=noDate.map(o=>`<span class="no-date-chip" onclick="jumpToOrder('${o.id}')">${o.customer_name}</span>`).join('');}
+  else bar.style.display='none';
+  const firstDay=new Date(calY,calM,1).getDay(),days=new Date(calY,calM+1,0).getDate();
+  const todStr=`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
+  let html='';
+  for(let i=0;i<firstDay;i++)html+=`<div class="cal-cell empty"></div>`;
+  for(let d=1;d<=days;d++){
+    const ds=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=ds===todStr;const dow=(firstDay+d-1)%7;const ords=map[ds]||[];
+    const nc=!isToday&&dow===0?'sun':!isToday&&dow===6?'sat':'';
+    html+=`<div class="cal-cell ${isToday?'today':''}" onclick="openCalDay('${ds}')">
+      <div class="dn ${isToday?'':nc}">${d}</div>
+      ${ords.length?`<div class="cal-cnt">${ords.length}</div>`:''}
+      <div class="cal-dots">
+        ${ords.slice(0,2).map(o=>{const tw=twDate(o.booking_date);return`<div class="cal-dot-item">${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')} ${o.customer_name}</div>`;}).join('')}
+        ${ords.length>2?`<div style="font-size:8px;color:var(--stone);font-weight:700">+${ords.length-2}</div>`:''}
+      </div>
+    </div>`;
+  }
+  document.getElementById('cal-cells').innerHTML=html;
+}
+async function openCalDay(ds){
+  const{data}=await _s.from('orders').select('*');
+  const orders=(data||[]).filter(o=>{
+    if(!o.booking_date)return false;
+    const tw=twDate(o.booking_date);
+    return`${tw.getUTCFullYear()}-${String(tw.getUTCMonth()+1).padStart(2,'0')}-${String(tw.getUTCDate()).padStart(2,'0')}`===ds;
+  }).sort((a,b)=>{if(a.status!==b.status)return a.status==='pending'?-1:1;return new Date(a.booking_date)-new Date(b.booking_date);});
+  const[y,m,d]=ds.split('-');
+  const wd=['日','一','二','三','四','五','六'][new Date(parseInt(y),parseInt(m)-1,parseInt(d)).getDay()];
+  document.getElementById('cal-day-title').textContent=`${parseInt(m)}月${parseInt(d)}日（週${wd}）共 ${orders.length} 筆`;
+  document.getElementById('cal-day-body').innerHTML=orders.length===0
+    ?'<div class="empty-state"><p style="font-size:13px;font-weight:700">當日無訂單</p></div>'
+    :orders.map(o=>{
+      const tw=twDate(o.booking_date);const hhmm=`${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`;
+      const synced=o.status==='synced';
+      const pax=[o.adult_count>0?`大${o.adult_count}`:'',o.kid_count>0?`小${o.kid_count}`:'',o.child_count>0?`幼${o.child_count}`:''].filter(Boolean).join(' ');
+      return`<div style="background:white;border:1px solid var(--border);border-left:3px solid ${synced?'#10b981':'var(--gold)'};border-radius:12px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div class="status-dot ${synced?'synced':'pending'}"></div>
+          <div style="font-weight:900;font-size:14px;flex:1">${o.customer_name}</div>
+          <div style="font-family:'Noto Serif TC',serif;font-weight:900;color:var(--gold)">${hhmm}</div>
+        </div>
+        <div style="font-size:12px;color:var(--stone)">${o.phone||'—'}${pax?' · '+pax:''}${o.table_no?' · 桌'+o.table_no:''}</div>
+        <div style="font-size:13px;font-weight:900;color:var(--pine);margin-top:4px">$${o.total_price}</div>
+        <div style="display:flex;gap:6px;margin-top:10px">
+          <button class="btn btn-sm ${synced?'btn-ghost':'btn-primary'}" style="flex:1"
+            onclick="toggleStatus('${o.id}','${o.status}');closeSheet('cal-day-sheet');renderCal()">
+            ${synced?'↩ 待處理':'✓ 完成'}
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+  openSheet('cal-day-sheet');
+}
+function jumpToOrder(id){
+  setView('list',document.getElementById('v-list'));
+  setTimeout(()=>{const el=document.getElementById(`oc-${id}`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('open');}},300);
+}
+
+// ── NOTIFY ──
+async function loadNotify(){await Promise.all([loadBots(),loadTargets(),loadSummarySettings()]);}
+
+async function loadBots(){
+  const{data}=await _s.from('line_bots').select('*').order('id',{ascending:true});
+  const el=document.getElementById('bot-list');
+  if(!data?.length){el.innerHTML='<p style="font-size:12px;color:var(--stone);padding:8px 0">尚無 Bot</p>';return;}
+  el.innerHTML=data.map(b=>{
+    const pct=b.monthly_limit>0?Math.round(b.sent_count/b.monthly_limit*100):0;
+    const bc=pct>=90?'#ef4444':pct>=70?'#f59e0b':'var(--pine)';
+    return`<div style="background:${b.is_default?'#fffbeb':'white'};border:1px solid ${b.is_default?'var(--gold)':'var(--border)'};border-radius:14px;padding:14px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="width:36px;height:36px;border-radius:10px;background:${b.is_default?'var(--gold)':'#e2e8f0'};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">🤖</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+            <span style="font-weight:700;font-size:13px;color:var(--pine)">${b.name}</span>
+            ${b.is_default?'<span style="font-size:9px;font-weight:700;background:var(--gold);color:white;padding:1px 6px;border-radius:4px">預設</span>':''}
+            ${pct>=90?'<span style="font-size:10px;font-weight:700;color:#ef4444">⚠️</span>':''}
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="prog-bar" style="flex:1"><div class="prog-fill" style="width:${Math.min(pct,100)}%;background:${bc}"></div></div>
+            <span style="font-size:10px;font-weight:700;color:${bc}">${b.sent_count}/${b.monthly_limit}</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${!b.is_default?`<button class="btn btn-gold btn-sm" style="font-size:11px" onclick="setDefaultBot(${b.id})">切換預設</button>`:''}
+        <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="openBotSheet(${b.id})">編輯</button>
+        <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="resetBotCount(${b.id},'${b.name}')">重置</button>
+        ${!b.is_default?`<button class="btn btn-danger btn-sm" style="font-size:11px" onclick="deleteBot(${b.id},'${b.name}')">刪除</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function openBotSheet(id){
+  if(!id||id===false){document.getElementById('bs-id').value='';document.getElementById('bs-name').value='';document.getElementById('bs-token').value='';document.getElementById('bs-limit').value='200';document.getElementById('bot-sheet-title').textContent='新增 LINE Bot';}
+  else{document.getElementById('bs-id').value=id;document.getElementById('bot-sheet-title').textContent='編輯 LINE Bot';_s.from('line_bots').select('*').eq('id',id).single().then(({data})=>{if(!data)return;document.getElementById('bs-name').value=data.name||'';document.getElementById('bs-token').value=data.token||'';document.getElementById('bs-limit').value=data.monthly_limit||200;});}
+  openSheet('bot-sheet');
+}
+async function saveBot(){
+  const id=document.getElementById('bs-id').value;const name=document.getElementById('bs-name').value.trim();const token=document.getElementById('bs-token').value.trim();const limit=parseInt(document.getElementById('bs-limit').value)||200;
+  if(!name){toast('請填寫名稱','warn');return;}
+  const p={name,monthly_limit:limit};if(token)p.token=token;
+  if(id)await _s.from('line_bots').update(p).eq('id',id);
+  else{const{count}=await _s.from('line_bots').select('*',{count:'exact',head:true});if(!count)p.is_default=true;await _s.from('line_bots').insert([p]);}
+  closeSheet('bot-sheet');loadBots();toast('Bot 已儲存');
+}
+async function setDefaultBot(id){await _s.from('line_bots').update({is_default:false}).neq('id',0);await _s.from('line_bots').update({is_default:true}).eq('id',id);loadBots();toast('已切換預設 ✓');}
+async function resetBotCount(id,name){const ok=await confirm2({icon:'🔄',title:'重置計數',msg:`確定重置「${name}」？`,okText:'重置'});if(!ok)return;await _s.from('line_bots').update({sent_count:0,reset_date:new Date().toISOString().slice(0,7)+'-01'}).eq('id',id);loadBots();toast('已重置');}
+async function deleteBot(id,name){const ok=await confirm2({icon:'🤖',title:'刪除 Bot',msg:`確定刪除「${name}」？`,okText:'刪除',danger:true});if(!ok)return;await _s.from('line_bots').delete().eq('id',id);loadBots();toast('已刪除');}
+
+async function loadTargets(){
+  const{data}=await _s.from('line_notify_targets').select('*').order('created_at',{ascending:true});
+  const el=document.getElementById('target-list');
+  if(!data?.length){el.innerHTML='<div class="empty-state"><p style="font-size:13px;font-weight:700">尚無通知對象</p></div>';return;}
+  el.innerHTML=data.map(t=>`<div style="background:white;border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div id="ta-${t.id}" style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--pine),var(--pine-light));display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:white;overflow:hidden;flex-shrink:0">${t.user_id?.startsWith('C')?'👥':(t.name?.slice(0,1)||'?')}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:14px;color:var(--pine)">${t.name}</div>
+        <div style="font-size:10px;color:#94a3b8;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.user_id||'—'}</div>
+        ${t.is_group?'<span style="font-size:9px;font-weight:700;color:var(--gold);background:rgba(184,145,80,.1);padding:1px 6px;border-radius:4px">群組</span>':''}
+      </div>
+      <div style="width:10px;height:10px;border-radius:50%;background:${t.is_active?'#10b981':'#94a3b8'};flex-shrink:0"></div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <label style="flex:1;display:flex;align-items:center;gap:5px;padding:6px 10px;background:#f8fafc;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700"><input type="checkbox" ${t.notify_order?'checked':''} onchange="updTarget('${t.id}','notify_order',this.checked)" style="accent-color:var(--pine)"> 🔔 訂單</label>
+      <label style="flex:1;display:flex;align-items:center;gap:5px;padding:6px 10px;background:#f8fafc;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700"><input type="checkbox" ${t.notify_photo?'checked':''} onchange="updTarget('${t.id}','notify_photo',this.checked)" style="accent-color:var(--pine)"> 📸 照片</label>
+      <label style="flex:1;display:flex;align-items:center;gap:5px;padding:6px 10px;background:${t.is_group?'rgba(184,145,80,.1)':'#f8fafc'};border-radius:8px;cursor:pointer;font-size:11px;font-weight:700"><input type="checkbox" ${t.is_group?'checked':''} onchange="updTarget('${t.id}','is_group',this.checked)" style="accent-color:var(--gold)"> 👥 群組</label>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <button class="btn btn-sm ${t.is_active?'btn-ghost':'btn-primary'}" style="flex:1;font-size:11px" onclick="togTarget('${t.id}',${t.is_active})">${t.is_active?'停用':'啟用'}</button>
+      <button class="btn btn-danger btn-sm" style="font-size:11px;padding:7px 12px" onclick="delTarget('${t.id}','${t.name}')">🗑</button>
+    </div>
+  </div>`).join('');
+  data.forEach(async t=>{
+    if(!t.user_id?.startsWith('U'))return;
+    try{const{data:rd}=await _s.functions.invoke('jin-zhu-notify',{body:{action:'get-profile',userId:t.user_id}});if(rd?.pictureUrl){const el=document.getElementById(`ta-${t.id}`);if(el)el.innerHTML=`<img src="${rd.pictureUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px">`;}}catch(e){}
+  });
+}
+function openTargetSheet(){document.getElementById('ts-name').value='';document.getElementById('ts-uid').value='';document.getElementById('ts-order').checked=true;document.getElementById('ts-photo').checked=true;openSheet('target-sheet');}
+async function saveTarget(){
+  const name=document.getElementById('ts-name').value.trim(),uid=document.getElementById('ts-uid').value.trim();
+  if(!name||!uid){toast('請填寫名稱和 ID','warn');return;}
+  if((!uid.startsWith('U')&&!uid.startsWith('C'))||uid.length<10){toast('ID 格式錯誤','error');return;}
+  await _s.from('line_notify_targets').insert({name,user_id:uid,notify_order:document.getElementById('ts-order').checked,notify_photo:document.getElementById('ts-photo').checked,is_active:true});
+  closeSheet('target-sheet');loadTargets();toast(`已新增「${name}」`);
+}
+async function updTarget(id,f,v){await _s.from('line_notify_targets').update({[f]:v}).eq('id',id);toast('已更新','success',1200);}
+async function togTarget(id,cur){await _s.from('line_notify_targets').update({is_active:!cur}).eq('id',id);loadTargets();}
+async function delTarget(id,name){const ok=await confirm2({icon:'💬',title:'刪除',msg:`確定刪除「${name}」？`,okText:'刪除',danger:true});if(!ok)return;await _s.from('line_notify_targets').delete().eq('id',id);loadTargets();toast('已刪除');}
+
+async function loadSummarySettings(){
+  const{data}=await _s.from('daily_summary_settings').select('*').eq('id',1).single().catch(()=>({data:null}));
+  if(!data)return;
+  const hs=document.getElementById('sum-hour');
+  if(!hs.options.length)for(let h=6;h<=22;h++)hs.add(new Option(String(h).padStart(2,'0'),h));
+  hs.value=data.notify_hour??10;
+  document.getElementById('sum-min').value=data.notify_minute??30;
+  const tog=document.getElementById('sum-toggle'),dot=document.getElementById('sum-dot'),lbl=document.getElementById('sum-lbl');
+  tog.dataset.on=data.enabled?'1':'0';
+  if(data.enabled){tog.style.background='var(--pine)';dot.style.transform='translateX(20px)';lbl.textContent='啟用中';}
+  else{tog.style.background='#94a3b8';dot.style.transform='';lbl.textContent='已停用';}
+}
+async function toggleSummary(){
+  const tog=document.getElementById('sum-toggle'),dot=document.getElementById('sum-dot'),lbl=document.getElementById('sum-lbl');
+  const newOn=tog.dataset.on!=='1';tog.dataset.on=newOn?'1':'0';
+  tog.style.background=newOn?'var(--pine)':'#94a3b8';dot.style.transform=newOn?'translateX(20px)':'';lbl.textContent=newOn?'啟用中':'已停用';
+  await _s.from('daily_summary_settings').upsert({id:1,enabled:newOn,updated_at:new Date().toISOString()});
+  saveSummary();
+}
+async function saveSummary(){
+  const h=parseInt(document.getElementById('sum-hour').value),m=parseInt(document.getElementById('sum-min').value);
+  const on=document.getElementById('sum-toggle').dataset.on==='1';
+  await _s.from('daily_summary_settings').upsert({id:1,enabled:on,notify_hour:h,notify_minute:m,updated_at:new Date().toISOString()});
+  if(on)toast(`每日彙整：${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`,'success',2000);
+}
+async function testSummary(){
+  toast('📤 發送中…','info',2000);
+  try{const{error}=await _s.functions.invoke('jin-zhu-notify',{body:{action:'daily-summary'}});if(error)throw error;toast('✓ 已發送，請查看 LINE','success',3000);}
+  catch(e){toast('發送失敗：'+(e?.message||e),'error');}
+}
+
+// ── BOOT ──
+(async()=>{
+  const{data:{session}}=await _s.auth.getSession();
+  if(session){document.getElementById('login-screen').classList.add('hidden');initApp();}
+})();
+</script>
+</body>
+</html>
