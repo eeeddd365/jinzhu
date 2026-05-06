@@ -243,11 +243,12 @@
         .input-mini { font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); width: 100%; outline: none; background: white; }
         .order-card-completed { opacity: 0.5; filter: grayscale(0.8); }
         /* 訂單狀態顏色：未安排紅/外帶黃/內用綠 */
-        .order-card.no-booking { border-left-color: #ef4444 !important; }
-        .order-card.no-booking .order-header { background: #fff5f5; }
-        .order-card.is-takeout { border-left-color: #f59e0b !important; }
-        .order-card.is-takeout .order-header { background: #fffbeb; }
-        .order-card.is-dine-in { border-left-color: #10b981 !important; }
+        .order-card.no-booking { border-left: 4px solid #ef4444 !important; background: #fff8f8; }
+        .order-card.no-booking .order-header { background: #fff0f0; }
+        .order-card.no-booking .order-name { color: #ef4444; }
+        .order-card.is-takeout { border-left: 4px solid #f59e0b !important; background: #fffdf5; }
+        .order-card.is-takeout .order-header { background: #fff8e6; }
+        .order-card.is-dine-in { border-left: 4px solid #10b981 !important; }
         .order-card.is-dine-in .order-header { background: #f0fdf4; }
         .custom-scrollbar::-webkit-scrollbar { width: 5px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
@@ -1556,25 +1557,14 @@ async function loadOrders() {
     document.getElementById('order-list').innerHTML=(data||[]).length===0
         ?`<div class="col-span-2 empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">找不到符合條件的訂單</div><div class="empty-state-sub">請調整篩選條件或重置後再試</div></div>`
         :(()=>{
-        // 未安排訂單排最上面，其次依原排序
+        // 未安排訂單排最上面，其次維持原排序
         const sorted=[...(data||[])].sort((a,b)=>{
             const aNo=!a.booking_date, bNo=!b.booking_date;
             if(aNo&&!bNo) return -1;
             if(!aNo&&bNo) return 1;
             return 0;
         });
-        // 依訂位日期分組，每組用框框包住
-        const groups=[];
-        let curGroup=null, curDk='';
-        sorted.forEach(o=>{
-            const dk=o.booking_date
-                ?(()=>{const tw=new Date(new Date(o.booking_date).getTime()+8*3600000);return tw.getUTCFullYear()+'-'+String(tw.getUTCMonth()+1).padStart(2,'0')+'-'+String(tw.getUTCDate()).padStart(2,'0');})()
-                :'no-date';
-            if(dk!==curDk){curDk=dk;curGroup={dk,orders:[]};groups.push(curGroup);}
-            curGroup.orders.push(o);
-        });
-        return groups.map(grp=>{
-            const groupHtml=grp.orders.map(o=>{
+        return sorted.map(o=>{
         let bTime='';
         if(o.booking_date){
             // booking_date 是 timestamptz，Supabase 回傳 UTC
@@ -1746,16 +1736,6 @@ async function loadOrders() {
             </div>
         </div>`;
         }).join('');
-            // 簡潔分隔線風格
-            const isDanger=grp.dk==='no-date';
-            const label=isDanger?'⚠ 未安排訂位日期':(()=>{const p=grp.dk.split('-');return parseInt(p[1])+'/'+parseInt(p[2]);})();
-            const sepHtml='<div style="display:flex;align-items:center;gap:10px;margin:18px 0 8px;padding:0 2px">'
-                +'<div style="flex:1;height:1px;background:'+(isDanger?'#fca5a5':'var(--border)')+'"></div>'
-                +'<span style="font-size:11px;font-weight:900;color:'+(isDanger?'#ef4444':'var(--stone)')+';flex-shrink:0;letter-spacing:0.08em;padding:0 2px">'+label+'</span>'
-                +'<div style="flex:1;height:1px;background:'+(isDanger?'#fca5a5':'var(--border)')+'"></div>'
-                +'</div>';
-            return sepHtml+groupHtml;
-        }).join('');
     })();
 }
 
@@ -1773,6 +1753,19 @@ function toggleOrderCard(id) {
     }
 }
 
+function calToggleTakeout(btn){
+    const oid = btn.dataset.oid;
+    const isNow = btn.dataset.itakeout !== '1';
+    btn.dataset.itakeout = isNow ? '1' : '';
+    btn.style.borderColor = isNow ? '#f59e0b' : 'var(--border)';
+    btn.style.background = isNow ? '#fff8e6' : '#f8fafc';
+    btn.style.color = isNow ? '#d97706' : 'var(--stone)';
+    btn.textContent = isNow ? '🥡 外帶' : '🍽 內用';
+    updateOrderData(oid, 'is_takeout', isNow, null);
+    // 同步更新 ordersRef
+    const cached=(window.ordersRef||[]).find(o=>o.id===oid);
+    if(cached) cached.is_takeout=isNow;
+}
 function handleTakeoutChange(orderId, btn){
     const isNow = btn.dataset.checked !== '1';
     btn.dataset.checked = isNow ? '1' : '';
@@ -4178,7 +4171,12 @@ async function openOrderCardModal(orderId){
                             <option value="">-- 選擇時間 --</option>${timeOpts}
                         </select>
                     </div>
-                    <div class="order-field"><label>桌號</label><input type="text" value="${o.table_no||''}" onchange="updateOrderData('${o.id}','table_no',this.value,this)" placeholder="無"></div>
+                    <div class="order-field"><label>桌號 / 外帶</label>
+                <div style="display:flex;gap:6px;align-items:center">
+                    <input type="text" value="${o.table_no||''}" onchange="updateOrderData('${o.id}','table_no',this.value,this)" placeholder="無" style="flex:1">
+                    <button data-oid="${o.id}" data-itakeout="${o.is_takeout?'1':''}" onclick="calToggleTakeout(this)" style="padding:5px 9px;border-radius:8px;border:1.5px solid ${o.is_takeout?'#f59e0b':'var(--border)'};background:${o.is_takeout?'#fff8e6':'#f8fafc'};font-size:11px;font-weight:700;color:${o.is_takeout?'#d97706':'var(--stone)'};cursor:pointer;flex-shrink:0">${o.is_takeout?'🥡':'🍽'}</button>
+                </div>
+            </div>
                     <div class="order-field"><label>活動代號</label>
                         <select onchange="updateOrderData('${o.id}','campaign_code',this.value,this)">
                             <option value="">無</option>
@@ -4309,7 +4307,7 @@ function renderCalDayBody(orders){
                     <div style="width:28px;height:28px;border-radius:50%;background:${synced?'rgba(16,185,129,.15)':'rgba(0,77,64,.08)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:${synced?'#059669':'var(--pine)'}">${idx+1}</div>
                     <div>
                         <div style="font-weight:900;font-size:13px;color:${synced?'#059669':'var(--ink)'}">
-                            ${o.customer_name}${o.table_no?`<span style="font-size:11px;font-weight:500;color:var(--stone)"> · 桌${o.table_no}</span>`:''}
+                            ${o.customer_name}${o.table_no?`<span style="font-size:11px;font-weight:500;color:var(--stone)"> · 桌${o.table_no}</span>`:''}${o.is_takeout?'<span style="font-size:11px;margin-left:6px;color:#d97706;font-weight:700">🥡外帶</span>':''}
                             ${synced?'<span style="font-size:10px;color:#059669;margin-left:4px">✓</span>':''}
                         </div>
                         <div style="font-size:11px;color:var(--stone);margin-top:1px">${o.phone||'—'}${pax?'　'+pax:''}</div>
@@ -4326,8 +4324,9 @@ function renderCalDayBody(orders){
             <div class="hidden" style="border-top:1px solid #f1f5f9;padding:12px 14px">
                 ${detailHtml}
                 <div style="display:flex;gap:8px;margin-top:12px">
-                    <button onclick="document.getElementById('cal-day-modal').classList.add('hidden');openEditOrder('${o.id}')" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center">修改細項</button>
-                    <button onclick="toggleSync('${o.id}','${o.status}');document.getElementById('cal-day-modal').classList.add('hidden');renderCalendar()" class="btn btn-sm ${synced?'btn-ghost':'btn-primary'}" style="flex:1.5;justify-content:center">${synced?'↩ 標記未完成':'✓ 標記完成'}</button>
+                    <button data-oid="${o.id}" data-itakeout="${o.is_takeout?'1':''}" onclick="calToggleTakeout(this)" style="padding:5px 9px;border-radius:8px;border:1.5px solid ${o.is_takeout?'#f59e0b':'var(--border)'};background:${o.is_takeout?'#fff8e6':'#f8fafc'};font-size:11px;font-weight:700;color:${o.is_takeout?'#d97706':'var(--stone)'};cursor:pointer;display:flex;align-items:center;gap:3px;flex-shrink:0">${o.is_takeout?'🥡 外帶':'🍽 內用'}</button>
+                    <button onclick="document.getElementById('cal-day-modal').classList.add('hidden');openEditOrder('${o.id}')" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center">修改</button>
+                    <button onclick="toggleSync('${o.id}','${o.status}');document.getElementById('cal-day-modal').classList.add('hidden');renderCalendar()" class="btn btn-sm ${synced?'btn-ghost':'btn-primary'}" style="flex:1.5;justify-content:center">${synced?'↩ 未完成':'✓ 完成'}</button>
                     <button onclick="confirm2({icon:'🗑',title:'刪除訂單',msg:'確定永久刪除此筆訂單？此操作無法復原。',okText:'刪除',danger:true}).then(ok=>{if(ok){_s.from('orders').delete().eq('id','${o.id}').then(()=>{document.getElementById('cal-day-modal').classList.add('hidden');renderCalendar();toast('訂單已刪除');});}})" class="btn btn-danger btn-sm px-3">🗑</button>
                 </div>
             </div>
