@@ -679,6 +679,7 @@
             <button onclick="switchSettings('upsell')"     id="ss-btn-upsell"     class="ss-btn flex-shrink-0 flex items-center gap-1.5 px-5 py-3 text-xs font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-600 transition">🛒 加購設定</button>
             <button onclick="switchSettings('linenotify')" id="ss-btn-linenotify" class="ss-btn flex-shrink-0 flex items-center gap-1.5 px-5 py-3 text-xs font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-600 transition">🔔 通知管理</button>
             <button onclick="switchSettings('eventurl')"   id="ss-btn-eventurl"   class="ss-btn flex-shrink-0 flex items-center gap-1.5 px-5 py-3 text-xs font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-600 transition">🔗 網址配置</button>
+            <button onclick="switchSettings('takeout')"    id="ss-btn-takeout"    class="ss-btn flex-shrink-0 flex items-center gap-1.5 px-5 py-3 text-xs font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-600 transition">🥡 外帶時段</button>
         </div>
     </div>
 
@@ -922,6 +923,24 @@
                 </div>
             </div>
         </div>
+        <!-- 外帶時段設定 -->
+        <div id="ss-takeout" class="ss-panel hidden space-y-4">
+            <div class="bg-white rounded-2xl border shadow-sm p-6 space-y-5">
+                <div class="flex items-center gap-3">
+                    <div style="width:36px;height:36px;border-radius:10px;background:#fffbeb;display:flex;align-items:center;justify-content:center;font-size:1.1rem">🥡</div>
+                    <div>
+                        <div class="font-bold text-sm" style="color:var(--pine)">外帶可選取餐時段</div>
+                        <div class="text-xs text-slate-400 mt-0.5">客人選外帶時可選擇的取餐時間，每行一個時間（格式：HH:MM）</div>
+                    </div>
+                </div>
+                <div>
+                    <label class="filter-label mb-2">時段列表（每行一個，如：11:00）</label>
+                    <textarea id="takeout-slots-input" rows="12" class="filter-input font-mono text-sm resize-none mt-1" placeholder="11:00&#10;11:30&#10;12:00&#10;12:30&#10;13:00&#10;17:00&#10;17:30&#10;18:00&#10;18:30&#10;19:00&#10;19:30&#10;20:00"></textarea>
+                </div>
+                <button onclick="saveTakeoutSlots()" class="btn btn-primary">💾 儲存時段設定</button>
+            </div>
+        </div>
+
         <!-- 網址配置 -->
         <div id="ss-eventurl" class="ss-panel hidden space-y-6">
             <div class="bg-white p-8 rounded-2xl border shadow-sm max-w-3xl space-y-8">
@@ -1583,12 +1602,16 @@ async function loadOrders() {
                     class="accent-red-400 w-4 h-4 flex-shrink-0 cursor-pointer">
                 <div class="order-status-dot ${synced?'synced':'pending'}"></div>
                 <div class="order-name">${o.customer_name}</div>
+                ${o.is_takeout?'<span style="font-size:10px;font-weight:700;background:#fffbeb;color:#d97706;border:1px solid #f59e0b;padding:2px 7px;border-radius:999px;flex-shrink:0">🥡外帶</span>':''}
                 <span class="text-xs font-bold" style="color:var(--stone);flex-shrink:0">${o.phone}</span>
                 <span class="order-badge ${synced?'synced':'pending'}">${synced?'已完成':'準備中'}</span>
                 <div class="order-amount">$${o.total_price}</div>
                 <div class="ml-1 text-right flex-shrink-0">
-                    <div class="order-time-badge">${new Date(o.created_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
-                    ${bTime?`<div style="font-size:10px;font-weight:900;color:#dc2626;letter-spacing:0.03em;margin-top:2px">📅 ${bTime.slice(5).replace('T',' ')}</div>`:''}
+                    ${bTime
+                        ?`<div style="font-size:13px;font-weight:900;color:var(--pine);letter-spacing:0.02em">📅 ${bTime.slice(5,10).replace('-','/')} ${bTime.slice(11,16)}</div>
+                          <div class="order-time-badge" style="margin-top:2px;opacity:0.6">下單 ${new Date(o.created_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>`
+                        :`<div class="order-time-badge">${new Date(o.created_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>`
+                    }
                 </div>
                 <svg class="w-4 h-4 text-slate-300 flex-shrink-0 ml-1 transition-transform" id="chevron-${o.id}" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
             </div>
@@ -2509,6 +2532,7 @@ function switchSettings(tab){
         btn.style.borderBottomColor='var(--gold)';
     }
     if(tab==='logo')       loadSettingsLogo();
+    if(tab==='takeout')    loadTakeoutSlots();
     if(tab==='announce')   loadAnnouncements();
     if(tab==='upsell')     loadUpsell();
     if(tab==='linenotify') { loadLineNotify(); loadTgNotifySetting(); }
@@ -3657,6 +3681,20 @@ async function testSummaryNotify(){
 let upsellData={enabled:true,title:'加購推薦',title_en:'Add-on Recommendations',title_ja:'オプション追加',title_ko:'추가 주문',item_ids:[]};
 let upsellAllItems=[];
 
+async function loadTakeoutSlots(){
+    const{data}=await _s.from('store_settings').select('takeout_slots').eq('id',1).single();
+    const slots=(data?.takeout_slots||[]);
+    const el=document.getElementById('takeout-slots-input');
+    if(el) el.value=slots.join('\n');
+}
+async function saveTakeoutSlots(){
+    const raw=document.getElementById('takeout-slots-input').value;
+    const slots=raw.split('\n').map(s=>s.trim()).filter(s=>/^\d{1,2}:\d{2}$/.test(s));
+    const{error}=await _s.from('store_settings').update({takeout_slots:slots}).eq('id',1);
+    if(!error) toast(`外帶時段已儲存（${slots.length} 個時段）`);
+    else toast('儲存失敗：'+error.message,'error');
+}
+
 async function loadUpsell(){
     // 載入設定
     const{data:s}=await _s.from('upsell_settings').select('*').eq('id',1).single();
@@ -4074,8 +4112,10 @@ async function renderCalendar(){
                     const tw=new Date(new Date(o.booking_date).getTime()+8*3600000);
                     const hhmm=String(tw.getUTCHours()).padStart(2,'0')+':'+String(tw.getUTCMinutes()).padStart(2,'0');
                     const synced=o.status==='synced';
-                    return`<div style="font-size:9px;padding:3px 5px;border-radius:5px;background:${synced?'rgba(16,185,129,.1)':'rgba(0,77,64,.07)'};color:${synced?'#059669':'var(--pine)'}">
-                        <div style="font-weight:900">${o.customer_name}</div>
+                    const dotBg=o.is_takeout?'rgba(245,158,11,0.15)':synced?'rgba(16,185,129,.1)':'rgba(0,77,64,.07)';
+                    const dotColor=o.is_takeout?'#d97706':synced?'#059669':'var(--pine)';
+                    return`<div style="font-size:9px;padding:3px 5px;border-radius:5px;background:${dotBg};color:${dotColor}">
+                        <div style="font-weight:900">${o.customer_name}${o.is_takeout?'🥡':''}</div>
                         <div style="font-weight:500;opacity:.8">${o.phone||'—'} · ${hhmm}</div>
                     </div>`;
                 }).join('')}
@@ -4301,12 +4341,12 @@ function renderCalDayBody(orders){
 
         return`<div style="background:white;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05)">
             <div onclick="const d=this.nextElementSibling;d.classList.toggle('hidden');this.querySelector('.cal-chevron').style.transform=d.classList.contains('hidden')?'':'rotate(180deg)'"
-                style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;background:${synced?'#f0fdf4':'white'}"
-                onmouseover="this.style.background='${synced?'#dcfce7':'#f8fafc'}'" onmouseout="this.style.background='${synced?'#f0fdf4':'white'}'">
+                style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;background:${o.is_takeout?'#fffdf5':synced?'#f0fdf4':'white'}"
+                onmouseover="this.style.background='${o.is_takeout?'#fff8e6':synced?'#dcfce7':'#f8fafc'}'" onmouseout="this.style.background='${synced?'#f0fdf4':'white'}'">
                 <div style="display:flex;align-items:center;gap:10px">
                     <div style="width:28px;height:28px;border-radius:50%;background:${synced?'rgba(16,185,129,.15)':'rgba(0,77,64,.08)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:${synced?'#059669':'var(--pine)'}">${idx+1}</div>
                     <div>
-                        <div style="font-weight:900;font-size:13px;color:${synced?'#059669':'var(--ink)'}">
+                        <div style="font-weight:900;font-size:13px;color:${o.is_takeout?'#d97706':synced?'#059669':'var(--ink)'}">
                             ${o.customer_name}${o.table_no?`<span style="font-size:11px;font-weight:500;color:var(--stone)"> · 桌${o.table_no}</span>`:''}${o.is_takeout?'<span style="font-size:11px;margin-left:6px;color:#d97706;font-weight:700">🥡外帶</span>':''}
                             ${synced?'<span style="font-size:10px;color:#059669;margin-left:4px">✓</span>':''}
                         </div>
