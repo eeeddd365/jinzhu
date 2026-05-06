@@ -690,9 +690,9 @@ function initTelegram(){
     tg.SecondaryButton.onClick(()=>{ closeEditOrder(); });
   } catch(e) {}
 
-  // ── 隱藏底部 save bar（用 TG MainButton 取代）──
-  const saveBar = document.getElementById('eos-save-bar');
-  if(saveBar) saveBar.style.display='none';
+  // ── save bar 保留，TG MainButton 同時存在（避免用戶不知道要按哪裡儲存）──
+  // const saveBar = document.getElementById('eos-save-bar');
+  // if(saveBar) saveBar.style.display='none';
 
   // ── 從 URL 參數自動跳到指定訂單 ──
   // 儲存 orderId 供 loadOrders 完成後使用
@@ -1168,6 +1168,8 @@ function confirmPop(){
   closePop();refreshEosCart();
   // 切到購物車 tab
   eosTab('items',document.querySelectorAll('.eos-tab')[1]);
+  // 自動儲存：修改明細後直接存到 DB，不需要再按儲存按鈕
+  saveEditOrder();
 }
 
 // ── SAVE EDIT ORDER ──
@@ -1199,7 +1201,7 @@ async function saveEditOrder(){
   const{error}=await _s.from('orders').update(payload).eq('id',eosOrder.id);
   if(!error){
     window.tgHaptic?.success();
-    toast('✅ 訂單已更新');
+    toast('✅ 已儲存', 'success', 1500);
     closeEditOrder();
     loadOrders();
     updateKpi();
