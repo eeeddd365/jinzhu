@@ -1760,7 +1760,7 @@ async function loadOrders() {
                     })()}
                     ${`<div style="margin-bottom:10px">
                     <div class="order-section-label">📝 顧客備註</div>
-                    <textarea id="cust-note-\${o.id}" rows="2" placeholder="無備註" onblur="updateOrderData('\${o.id}','note',this.value,this)" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;font-family:'Noto Sans TC',sans-serif;resize:none;outline:none;background:#f8fafc;color:var(--pine);font-weight:600">\${o.note||''}</textarea>
+                    <textarea id="cust-note-${o.id}" rows="2" placeholder="無備註" onblur="updateOrderData('${o.id}','note',this.value,this)" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;font-family:'Noto Sans TC',sans-serif;resize:none;outline:none;background:#f8fafc;color:var(--pine);font-weight:600">${o.note||''}</textarea>
                 </div>`}
                 </div>
 
@@ -3136,7 +3136,7 @@ function renderReports(orders, setMenuNames=new Set()){
                     ${itemsHtml}
                     ${`<div style="margin-bottom:10px">
                     <div class="order-section-label">📝 顧客備註</div>
-                    <textarea id="cust-note-\${o.id}" rows="2" placeholder="無備註" onblur="updateOrderData('\${o.id}','note',this.value,this)" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;font-family:'Noto Sans TC',sans-serif;resize:none;outline:none;background:#f8fafc;color:var(--pine);font-weight:600">\${o.note||''}</textarea>
+                    <textarea id="cust-note-${o.id}" rows="2" placeholder="無備註" onblur="updateOrderData('${o.id}','note',this.value,this)" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;font-family:'Noto Sans TC',sans-serif;resize:none;outline:none;background:#f8fafc;color:var(--pine);font-weight:600">${o.note||''}</textarea>
                 </div>`}
                 </div>
                 <div class="order-section" style="background:#f8fafc;border-radius:12px;padding:12px 14px">
@@ -4333,7 +4333,7 @@ async function openOrderCardModal(orderId){
                 </div>
                 ${`<div style="margin-bottom:10px">
                     <div class="order-section-label">📝 顧客備註</div>
-                    <textarea id="cust-note-\${o.id}" rows="2" placeholder="無備註" onblur="updateOrderData('\${o.id}','note',this.value,this)" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;font-family:'Noto Sans TC',sans-serif;resize:none;outline:none;background:#f8fafc;color:var(--pine);font-weight:600">\${o.note||''}</textarea>
+                    <textarea id="cust-note-${o.id}" rows="2" placeholder="無備註" onblur="updateOrderData('${o.id}','note',this.value,this)" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;font-family:'Noto Sans TC',sans-serif;resize:none;outline:none;background:#f8fafc;color:var(--pine);font-weight:600">${o.note||''}</textarea>
                 </div>`}
             </div>
         </div>
