@@ -777,8 +777,8 @@ function showToast(msg){
     setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity 0.4s';setTimeout(()=>el.remove(),400);},1800);
 }
 
-async // ── 內用/外帶流程 ──
-function selectOrderMode(mode){
+// ── 內用/外帶流程 ──
+async function selectOrderMode(mode){
     orderMode=mode;
     const dineBtn=document.getElementById('mode-dine-btn');
     const tkBtn=document.getElementById('mode-takeout-btn');
