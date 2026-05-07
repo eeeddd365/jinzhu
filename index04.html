@@ -1080,6 +1080,7 @@ function openDetail(id){
     document.querySelectorAll('[data-i18n="cancelBtn"]').forEach(el=>el.textContent=t('cancelBtn'));
     document.getElementById('flavor-container').innerHTML='';
     document.getElementById('set-group-container').innerHTML='';
+    console.log('[openDetail] flavor_relations:', tempItem.item_flavor_relation?.length, tempItem.item_flavor_relation);
     if(tempItem.item_flavor_relation?.length>0)renderFlavorUI(tempItem.item_flavor_relation,'flavor-container','main-item');
     if(tempItem.is_set_menu&&tempItem.set_menu_groups){
         const sortedGroups=[...tempItem.set_menu_groups].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
@@ -1421,7 +1422,7 @@ async function doFinalSubmit(){
     // 組合訂位/取餐時間
     let finalBookingDate=null;
     if(orderMode==='dine-in'&&bookingDate){
-        finalBookingDate=bookingDate; // 內用：只帶日期，不帶時間
+        finalBookingDate=bookingDate+'T00:00:00+08:00'; // 內用：台灣時區午夜，後台顯示時濾掉00:00
     } else if(orderMode==='takeout'&&pickupDate&&pickupTime){
         finalBookingDate=pickupDate+'T'+pickupTime+':00+08:00';
     }
