@@ -973,12 +973,18 @@ function renderSetGroupItem(g, sc, idx){
         ? '<div style="width:100%;height:72px;overflow:hidden;background:var(--cream);border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;padding:6px"><img src="'+sc.menu_items.image_url+'" style="max-height:100%;max-width:100%;object-fit:contain;mix-blend-mode:multiply" loading="lazy"></div>'
         : '<div style="width:100%;height:72px;background:var(--cream);border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">🍽</div>';
     var hasFlv = sc.menu_items.item_flavor_relation&&sc.menu_items.item_flavor_relation.length>0;
+    // include 類型：有口味時立即填入（用 setTimeout 等 DOM 就緒）
+    const flvAreaId_='flv-'+itemId;
+    const flvScript_=hasFlv
+        ? '<script>setTimeout(()=>{const mi_=menuData.find(m=>String(m.id)==="'+sc.menu_items.id+'");if(mi_&&mi_.item_flavor_relation&&mi_.item_flavor_relation.length>0){renderFlavorUI(mi_.item_flavor_relation,"'+flvAreaId_+'","'+itemId+'");const fa=document.getElementById("'+flvAreaId_+'");if(fa)fa.style.display="block";}},50);<\/script>'
+        : '';
     return '<div class="set-item-card selected" id="'+itemId+'" data-id="'+sc.menu_items.id+'" data-name="'+sc.menu_items.name+'" data-has-flv="'+hasFlv+'" data-selected-flv="" data-auto-include="true" data-price-adj="'+pa+'">'
         + '<div class="set-item-header" style="background:rgba(184,145,80,0.06);pointer-events:none;flex-direction:column;align-items:stretch;padding:0;gap:0">'
         + imgHtml
         + '<div style="padding:8px 10px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px">'+nm+priceTag+'</span><span style="color:var(--gold);font-size:11px">✓</span></div>'
         + '</div>'
-        + '<div id="flv-sub-'+g.id+'-'+sc.menu_items.id+'-'+idx+'" class="set-item-flv-area"></div>'
+        + '<div id="'+flvAreaId_+'" class="set-item-flv-area"'+( hasFlv?'':' style="display:none"')+'></div>'
+        + flvScript_
         + '</div>';
 }
 
@@ -1183,11 +1189,21 @@ function handleSubClick(uid){
         }
         card.classList.add('selected');
     }
-    // 口味選擇
+    // 口味選擇：顯示並填入口味選項
     const hasFlv = card.dataset.hasFlv==='true';
     if(hasFlv){
-        const flvArea=document.getElementById('flv-area-'+uid);
-        if(flvArea) flvArea.style.display='block';
+        const flvArea=document.getElementById('flv-'+uid);
+        if(flvArea){
+            flvArea.style.display='block';
+            // 若尚未填入口味選項，從 menuData 找出子品項的口味
+            if(!flvArea.innerHTML.trim()){
+                const itemId=card.dataset.id;
+                const mi=menuData.find(m=>String(m.id)===String(itemId));
+                if(mi&&mi.item_flavor_relation&&mi.item_flavor_relation.length>0){
+                    renderFlavorUI(mi.item_flavor_relation,'flv-'+uid, uid);
+                }
+            }
+        }
     }
 }
 
