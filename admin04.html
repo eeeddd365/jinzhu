@@ -1625,7 +1625,7 @@ async function loadOrders() {
                 <div class="order-amount">$${o.total_price}</div>
                 <div class="ml-1 text-right flex-shrink-0">
                     ${bTime
-                        ?`<div style="font-size:13px;font-weight:900;color:var(--pine);letter-spacing:0.02em">📅 ${bTime.slice(5,10).replace('-','/')} ${bTime.slice(11,16)}</div>
+                        ?`<div style="font-size:13px;font-weight:900;color:var(--pine);letter-spacing:0.02em">📅 ${bTime.slice(5,10).replace('-','/')}${bTime.slice(11,16)!=='00:00'?' '+bTime.slice(11,16):''}</div>
                           <div class="order-time-badge" style="margin-top:2px;opacity:0.6">下單 ${new Date(o.created_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>`
                         :`<div class="order-time-badge">${new Date(o.created_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>`
                     }
@@ -1758,7 +1758,10 @@ async function loadOrders() {
                         }
                         return html;
                     })()}
-                    ${o.note?`<div class="px-4 py-3 rounded-xl text-xs font-bold mt-2" style="background:#f0fdf4;border-left:3px solid var(--pine);color:var(--pine)">📝 ${o.note}</div>`:''}
+                    ${`<div style="margin-bottom:10px">
+                    <div class="order-section-label">📝 顧客備註</div>
+                    <textarea id="cust-note-\${o.id}" rows="2" placeholder="無備註" onblur="updateOrderData('\${o.id}','note',this.value,this)" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;font-family:'Noto Sans TC',sans-serif;resize:none;outline:none;background:#f8fafc;color:var(--pine);font-weight:600">\${o.note||''}</textarea>
+                </div>`}
                 </div>
 
                 <!-- 後台備註 -->
@@ -3131,7 +3134,10 @@ function renderReports(orders, setMenuNames=new Set()){
                 <div class="order-section">
                     <div class="order-section-label">🍱 餐點明細</div>
                     ${itemsHtml}
-                    ${o.note?`<div class="px-4 py-3 rounded-xl text-xs font-bold mt-2" style="background:#f0fdf4;border-left:3px solid var(--pine);color:var(--pine)">📝 ${o.note}</div>`:''}
+                    ${`<div style="margin-bottom:10px">
+                    <div class="order-section-label">📝 顧客備註</div>
+                    <textarea id="cust-note-\${o.id}" rows="2" placeholder="無備註" onblur="updateOrderData('\${o.id}','note',this.value,this)" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;font-family:'Noto Sans TC',sans-serif;resize:none;outline:none;background:#f8fafc;color:var(--pine);font-weight:600">\${o.note||''}</textarea>
+                </div>`}
                 </div>
                 <div class="order-section" style="background:#f8fafc;border-radius:12px;padding:12px 14px">
                     <div class="flex flex-wrap gap-2 text-xs">
@@ -4325,7 +4331,10 @@ async function openOrderCardModal(orderId){
                     return html;
                 })()}
                 </div>
-                ${o.note?`<div class="px-4 py-3 rounded-xl text-xs font-bold mt-2" style="background:#f0fdf4;border-left:3px solid var(--pine);color:var(--pine)">📝 ${o.note}</div>`:''}
+                ${`<div style="margin-bottom:10px">
+                    <div class="order-section-label">📝 顧客備註</div>
+                    <textarea id="cust-note-\${o.id}" rows="2" placeholder="無備註" onblur="updateOrderData('\${o.id}','note',this.value,this)" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;font-family:'Noto Sans TC',sans-serif;resize:none;outline:none;background:#f8fafc;color:var(--pine);font-weight:600">\${o.note||''}</textarea>
+                </div>`}
             </div>
         </div>
         <div class="px-5 py-4 border-t flex gap-3 flex-shrink-0">
