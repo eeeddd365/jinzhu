@@ -541,24 +541,30 @@ let allMenuItems=[],allCats=[],allCampaigns=[],ordersRef=[];
 
 // ── PARSE ──
 function parseItem(raw){
-  // 套餐份數：支援套餐名含括號（如「母親節套餐(4-6人份) x2 (子品項...)」）
   let qty=1;
-  const qM1_=raw.match(/ x(\d+) \(/);   // 「品名 x數字 (子品項」
-  const qM2_=raw.match(/\) x(\d+)$/);   // 「品名(備註) x數字」結尾
-  const qM3_=raw.match(/ x(\d+)$/);      // 「品名 x數字」結尾
+  const qM1_=raw.match(/ x(\d+) \(/);
+  const qM2_=raw.match(/\) x(\d+)$/);
+  const qM3_=raw.match(/ x(\d+)$/);
   if(qM1_) qty=parseInt(qM1_[1]);
   else if(qM2_) qty=parseInt(qM2_[1]);
   else if(qM3_) qty=parseInt(qM3_[1]);
-  // 取 inner：去掉頂層份數，找最後 ' (' 的括號內容
   let wo=raw;
   if(qM1_) wo=raw.replace(/ x\d+ \(/, ' (');
   else if(qM3_) wo=raw.replace(/ x\d+$/, '');
-  const pI=wo.lastIndexOf(' (');
-  const inner=pI>-1?wo.slice(pI+2,-1):null;
-  const isSet=!!(inner&&(inner.includes('、')||/ x\d+/.test(inner)));
+  // 用括號深度追蹤找套餐分隔符
+  let inner=null,sp=0;
+  while(sp<wo.length){
+    const pi=wo.indexOf(' (',sp);
+    if(pi===-1) break;
+    let depth=1,j=pi+2;
+    while(j<wo.length&&depth>0){if(wo[j]==='(')depth++;else if(wo[j]===')')depth--;j++;}
+    if(depth===0){const cand=wo.slice(pi+2,j-1);if(cand.includes('、')){inner=cand;break;}}
+    sp=pi+1;
+  }
+  const isSet=!!(inner&&inner.includes('、'));
   const fM=raw.match(/\[([^\]]+)\]/);const flv=fM?fM[1]:'';
   const clean=raw.replace(/\s*\[.*?\]/g,'').replace(/ x\d+/g,'').trim();
-  return{qty,flv,clean,inner,isSet,brand:isSet?clean.replace(/ \(.*$/,'').trim():null};
+  return{qty,flv,clean,inner,isSet,brand:isSet?clean.split(' (')[0].trim():null};
 }
 function parseSubs(innerRaw){
   if(!innerRaw)return[];
