@@ -183,9 +183,27 @@
         .order-badge {
             font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
         }
-        .order-badge.pending { background: #fef3c7; color: #d97706; }
-        .order-badge.synced  { background: #d1fae5; color: #059669; }
+        /* 真珠風格狀態顏色 */
+        .order-badge.pending, .order-badge.confirming {
+            background: #fde8e8; color: #dc2626; font-weight: 900; }
+        .order-badge.confirmed {
+            background: #dcfce7; color: #16a34a; }
+        .order-badge.synced {
+            background: #dcfce7; color: #16a34a; }
+        .order-badge.ended {
+            background: #f1f5f9; color: #64748b; }
+        /* 訂單卡片邊框：外帶藍/內用綠/未安排紅 */
+        .order-card.no-booking { border-left: 5px solid #dc2626 !important; background: #fff8f8; }
+        .order-card.no-booking .order-header { background: #fff0f0; }
+        .order-card.no-booking .order-name { color: #dc2626; }
+        .order-card.is-takeout { border-left: 5px solid #2563eb !important; background: #eff8ff; }
+        .order-card.is-takeout .order-header { background: #dbeafe; }
+        .order-card.is-dine-in { border-left: 5px solid #16a34a !important; }
+        .order-card.is-dine-in .order-header { background: #f0fdf4; }
 
+        /* 確認中：整張卡片醒目紅色 */
+        .order-card.status-confirming { border: 2px solid #dc2626 !important; box-shadow: 0 0 0 1px #fca5a5; }
+        .order-card.status-confirming .order-header { background: #fff5f5 !important; }
         .order-body { padding: 20px; display: none; }
         .order-card:not(.collapsed) .order-body { display: block; }
 
@@ -242,14 +260,7 @@
         .img-contain { object-fit: contain; background: white; }
         .input-mini { font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); width: 100%; outline: none; background: white; }
         .order-card-completed { opacity: 0.5; filter: grayscale(0.8); }
-        /* 訂單狀態顏色：未安排紅/外帶黃/內用綠 */
-        .order-card.no-booking { border-left: 4px solid #ef4444 !important; background: #fff8f8; }
-        .order-card.no-booking .order-header { background: #fff0f0; }
-        .order-card.no-booking .order-name { color: #ef4444; }
-        .order-card.is-takeout { border-left: 4px solid #f59e0b !important; background: #fffdf5; }
-        .order-card.is-takeout .order-header { background: #fff8e6; }
-        .order-card.is-dine-in { border-left: 4px solid #10b981 !important; }
-        .order-card.is-dine-in .order-header { background: #f0fdf4; }
+
         .custom-scrollbar::-webkit-scrollbar { width: 5px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -477,15 +488,22 @@
         <!-- 常駐工具列 -->
         <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-100 flex-wrap">
             <!-- 檢視切換 -->
-            <div class="flex bg-slate-100 rounded-lg p-0.5 gap-0.5 flex-shrink-0">
-                <button id="view-btn-list" onclick="switchOrderView('list')"
-                    class="px-3 py-1 rounded-md text-xs font-bold transition-all"
-                    style="background:var(--pine);color:white">
-                    📋
-                </button>
-                <button id="view-btn-calendar" onclick="switchOrderView('calendar')"
-                    class="px-3 py-1 rounded-md text-xs font-bold transition-all text-slate-400 hover:text-slate-600">
-                    📅
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+                <div class="flex bg-slate-100 rounded-lg p-0.5 gap-0.5">
+                    <button id="view-btn-list" onclick="switchOrderView('list')"
+                        class="px-3 py-1 rounded-md text-xs font-bold transition-all"
+                        style="background:var(--pine);color:white">
+                        📋
+                    </button>
+                    <button id="view-btn-calendar" onclick="switchOrderView('calendar')"
+                        class="px-3 py-1 rounded-md text-xs font-bold transition-all text-slate-400 hover:text-slate-600">
+                        📅
+                    </button>
+                </div>
+                <button id="view-btn-ended" onclick="switchOrderView('ended')"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex-shrink-0"
+                    style="border-color:#16a34a;color:#16a34a;background:white">
+                    ✅ 已完成
                 </button>
             </div>
             <!-- 月份導覽（日曆模式才顯示） -->
@@ -509,8 +527,9 @@
                 </select>
                 <select id="filter-status" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px">
                     <option value="all">全部</option>
-                    <option value="pending">準備中</option>
-                    <option value="synced">已完成</option>
+                    <option value="confirming">確認中</option>
+                    <option value="confirmed">確認完成</option>
+                    <option value="ended">已結束</option>
                 </select>
                 <select id="filter-sort" onchange="loadOrders()" class="filter-select" style="width:auto;padding:5px 8px;color:var(--pine);font-weight:700" title="排序方式">
                     <option value="created_desc" selected>下單↓新到舊</option>
@@ -1599,6 +1618,11 @@ async function loadOrders() {
     let q=_s.from('orders').select('*').order(sortField,{ascending:sortAsc});
     // booking_asc/desc 時 null 的訂單（沒有訂位日期）排到最後
     if(sortField==='booking_date') q=q.order('created_at',{ascending:false});
+    // 主列表預設排除訂位日期已過去的訂單（已過去的在「已完成」視圖）
+    // 只在沒有手動指定日期篩選時才自動排除
+    if(preset==='all'||preset===''){
+        q=q.or(`booking_date.gte.${twToday}T00:00:00+08:00,booking_date.is.null`);
+    }
     if (search)           q=q.or(`customer_name.ilike.%${search}%,phone.ilike.%${search}%`);
     if (status!=='all')   q=q.eq('status',status);
     if (campaign!=='all') q=q.eq('campaign_code',campaign);
@@ -1638,8 +1662,12 @@ async function loadOrders() {
     document.getElementById('order-list').innerHTML=(data||[]).length===0
         ?`<div class="col-span-2 empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">找不到符合條件的訂單</div><div class="empty-state-sub">請調整篩選條件或重置後再試</div></div>`
         :(()=>{
-        // 未安排訂單排最上面，其次維持原排序
+        // 確認中 → 最上方（紅色），其次無訂位日期，其次原排序
         const sorted=[...(data||[])].sort((a,b)=>{
+            const aConf=(!a.status||a.status==='confirming'||a.status==='pending');
+            const bConf=(!b.status||b.status==='confirming'||b.status==='pending');
+            if(aConf&&!bConf) return -1;
+            if(!aConf&&bConf) return 1;
             const aNo=!a.booking_date, bNo=!b.booking_date;
             if(aNo&&!bNo) return -1;
             if(!aNo&&bNo) return 1;
@@ -1657,7 +1685,7 @@ async function loadOrders() {
         const synced=o.status==='synced';
         // 分隔線：只用訂位日期區分
         return `
-        <div id="order-card-${o.id}" class="order-card ${synced?'completed':''} ${!o.booking_date?'no-booking':o.is_takeout?'is-takeout':'is-dine-in'} collapsed ${selectedOrderIds.has(o.id)?'ring-2 ring-red-300':''}">
+        <div id="order-card-${o.id}" class="order-card ${(o.status==='confirmed'||o.status==='synced')?'completed':''} ${(o.status==='confirming'||!o.status||o.status==='pending')?'status-confirming':''} ${!o.booking_date?'no-booking':o.is_takeout?'is-takeout':'is-dine-in'} collapsed ${selectedOrderIds.has(o.id)?'ring-2 ring-red-300':''}">
             <div class="order-header" onclick="toggleOrderCard('${o.id}')">
                 <input type="checkbox" ${selectedOrderIds.has(o.id)?'checked':''} onclick="event.stopPropagation()"
                     onchange="toggleOrderSelect('${o.id}',this.checked)"
@@ -1666,7 +1694,11 @@ async function loadOrders() {
                 <div class="order-name">${o.customer_name}</div>
                 ${o.is_takeout?'<span style="font-size:10px;font-weight:700;background:#fffbeb;color:#d97706;border:1px solid #f59e0b;padding:2px 7px;border-radius:999px;flex-shrink:0">🥡外帶</span>':''}
                 <span class="text-xs font-bold" style="color:var(--stone);flex-shrink:0">${o.phone}</span>
-                <span class="order-badge ${synced?'synced':'pending'}">${synced?'已完成':'準備中'}</span>
+                <span class="order-badge ${o.status||'confirming'}">${
+  o.status==='confirmed'?'確認完成':
+  o.status==='ended'?'已結束':
+  o.status==='synced'?'確認完成':'確認中'
+}</span>
                 <div class="order-amount">$${o.total_price}</div>
                 <div class="ml-1 text-right flex-shrink-0">
                     ${bTime
@@ -1818,7 +1850,9 @@ async function loadOrders() {
                 </div>
                 <div class="order-actions">
                     <button onclick="openEditOrder('${o.id}')" class="btn btn-ghost btn-sm flex-1 justify-center">修改細項</button>
-                    <button onclick="toggleSync('${o.id}','${o.status}')" class="btn btn-sm flex-[1.5] justify-center ${synced?'btn-ghost':'btn-primary'}">${synced?'↩ 標記未完成':'✓ 標記完成'}</button>
+                    <button onclick="toggleSync('${o.id}','${o.status}')" class="btn btn-sm flex-[1.5] justify-center ${o.status==='confirmed'||o.status==='synced'?'btn-ghost':'btn-primary'} ${o.status==='ended'?'opacity-50 pointer-events-none':''}">
+  ${o.status==='confirmed'||o.status==='synced'?'↩ 退回確認中':o.status==='ended'?'已結束':'✓ 已確認'}
+</button>
                     <button onclick="delOrder('${o.id}')" class="btn btn-danger btn-sm px-3">🗑</button>
                 </div>
             </div>
@@ -1978,9 +2012,10 @@ async function saveBookingTime(id, newTime){
     }
 }
 async function toggleSync(id,cur){
-    await _s.from('orders').update({status:cur==='synced'?'pending':'synced'}).eq('id',id);
-    toast(cur==='synced'?'已標記為準備中':'訂單已完成 ✓');
-    // toggleSync 是明確操作，直接刷新
+    // 確認中 → 確認完成
+    const next = (cur==='confirming'||cur==='pending'||!cur) ? 'confirmed' : 'confirming';
+    await _s.from('orders').update({status:next}).eq('id',id);
+    toast(next==='confirmed'?'✓ 已確認完成':'↩ 已退回確認中');
     if(curOrderView==='calendar') renderCalendar();
     else loadOrders();
 }
@@ -3175,7 +3210,11 @@ function renderReports(orders, setMenuNames=new Set()){
                 <div class="order-status-dot ${synced?'synced':'pending'}"></div>
                 <div class="order-name">${o.customer_name||'—'}</div>
                 <span class="text-xs font-bold" style="color:var(--stone);flex-shrink:0">${o.phone||'—'}</span>
-                <span class="order-badge ${synced?'synced':'pending'}">${synced?'已完成':'準備中'}</span>
+                <span class="order-badge ${o.status||'confirming'}">${
+  o.status==='confirmed'?'確認完成':
+  o.status==='ended'?'已結束':
+  o.status==='synced'?'確認完成':'確認中'
+}</span>
                 <div class="order-amount">$${o.total_price}</div>
                 <div class="ml-1 text-right flex-shrink-0">
                     <div class="order-time-badge">${new Date(o.created_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
@@ -4137,6 +4176,12 @@ function switchOrderView(mode){
     const filterExpand=document.getElementById('filter-expand');
     const btnList=document.getElementById('view-btn-list');
     const btnCal=document.getElementById('view-btn-calendar');
+    const btnEnded=document.getElementById('view-btn-ended');
+
+    // 重置所有按鈕樣式
+    if(btnList) btnList.style.cssText='';
+    if(btnCal) btnCal.style.cssText='';
+    if(btnEnded) btnEnded.style.cssText='border-color:#16a34a;color:#16a34a;background:white;border:1px solid #16a34a';
 
     if(mode==='list'){
         listEl.classList.remove('hidden');
@@ -4144,18 +4189,84 @@ function switchOrderView(mode){
         monthNav.classList.remove('flex');monthNav.classList.add('hidden');
         listFilters.classList.remove('hidden');
         btnList.style.cssText='background:var(--pine);color:white';
-        btnCal.style.cssText='color:#64748b';
         loadOrders();
+    } else if(mode==='ended'){
+        listEl.classList.remove('hidden');
+        calEl.classList.add('hidden');
+        monthNav.classList.remove('flex');monthNav.classList.add('hidden');
+        listFilters.classList.add('hidden');
+        if(filterExpand)filterExpand.classList.add('hidden');
+        if(btnEnded)btnEnded.style.cssText='background:#16a34a;color:white;border-color:#16a34a';
+        loadEndedOrders();
     } else {
         listEl.classList.add('hidden');
         calEl.classList.remove('hidden');
         monthNav.classList.remove('hidden');monthNav.classList.add('flex');
         listFilters.classList.add('hidden');
-        filterExpand.classList.add('hidden'); // 收合展開區
+        if(filterExpand)filterExpand.classList.add('hidden');
         btnCal.style.cssText='background:var(--pine);color:white';
-        btnList.style.cssText='color:#64748b';
         renderCalendar();
     }
+}
+
+// 載入「已完成」訂單（confirmed + ended）
+async function loadEndedOrders(){
+    // 已完成：訂位日期在今天之前的所有訂單
+    const twNow_=new Date(Date.now()+8*3600000);
+    const twToday_=twNow_.toISOString().split('T')[0];
+    const{data}=await _s.from('orders').select('*')
+        .lt('booking_date',twToday_+'T00:00:00+08:00')
+        .order('booking_date',{ascending:false});
+    const el=document.getElementById('order-list');
+    if(!data?.length){
+        el.innerHTML='<div class="col-span-2 empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">沒有已結束的訂單</div></div>';
+        return;
+    }
+    window.ordersRef=data;
+    el.innerHTML=data.map(o=>{
+        const synced=(o.status==='confirmed'||o.status==='synced');
+        let bTime='';
+        if(o.booking_date){
+            const tw=new Date(new Date(o.booking_date).getTime()+8*3600000);
+            bTime=`${tw.getUTCFullYear()}-${String(tw.getUTCMonth()+1).padStart(2,'0')}-${String(tw.getUTCDate()).padStart(2,'0')}T${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`;
+        }
+        const statusLabel=o.status==='ended'?'已結束':'確認完成';
+        const statusBg=o.status==='ended'?'#f1f5f9':'#dcfce7';
+        const statusClr=o.status==='ended'?'#64748b':'#16a34a';
+        return `<div class="order-card completed ${o.is_takeout?'is-takeout':'is-dine-in'} collapsed">
+            <div class="order-header" onclick="toggleOrderCard('${o.id}')">
+                <div class="order-status-dot synced"></div>
+                <div class="order-name">${o.customer_name}</div>
+                ${o.is_takeout?'<span style="font-size:10px;font-weight:700;background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;padding:2px 7px;border-radius:999px;flex-shrink:0">🥡外帶</span>':''}
+                <span class="text-xs font-bold" style="color:var(--stone)">${o.phone||''}</span>
+                <span class="order-badge" style="background:${statusBg};color:${statusClr}">${statusLabel}</span>
+                <div class="order-amount">$${o.total_price}</div>
+                <div class="ml-1 text-right flex-shrink-0">
+                    ${bTime?`<div style="font-size:13px;font-weight:900;color:var(--pine)">📅 ${bTime.slice(5,10).replace('-','/')}${bTime.slice(11,16)!=='00:00'?' '+bTime.slice(11,16):''}</div>`:''}
+                    <div class="order-time-badge" style="opacity:0.6">${new Date(o.created_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
+                </div>
+                <svg class="w-4 h-4 text-slate-300 flex-shrink-0 ml-1" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+            <div class="order-body">
+                <div class="order-section"><div class="order-section-label">📝 顧客備註</div><div style="font-size:12px;color:var(--stone)">${o.note||'無'}</div></div>
+                <div class="order-actions">
+                    <button onclick="toggleSync('${o.id}','${o.status}')" class="btn btn-ghost btn-sm flex-1 justify-center">↩ 退回確認中</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// 自動結束今天之前已確認的訂單（每次進入後台時檢查）
+async function autoEndPastOrders(){
+    const twNow=new Date(Date.now()+8*3600000);
+    const twToday=twNow.toISOString().split('T')[0];
+    // 把訂位日期在今天之前且狀態為 confirmed 的訂單改為 ended
+    const{error}=await _s.from('orders')
+        .update({status:'ended'})
+        .in('status',['confirmed','synced'])
+        .lt('booking_date',twToday+'T00:00:00+08:00');
+    if(!error) console.log('autoEndPastOrders: done');
 }
 
 function calPrevMonth(){
@@ -4446,7 +4557,7 @@ async function openOrderCardModal(orderId){
         </div>
         <div class="px-5 py-4 border-t flex gap-3 flex-shrink-0">
             <button onclick="openEditOrder('${o.id}');document.getElementById('single-order-modal').remove()" class="btn btn-ghost btn-sm flex-1 justify-center">修改細項</button>
-            <button onclick="toggleSync('${o.id}','${o.status}');document.getElementById('single-order-modal').remove();renderCalendar()" class="btn btn-sm flex-[1.5] justify-center ${synced?'btn-ghost':'btn-primary'}">${synced?'↩ 標記未完成':'✓ 標記完成'}</button>
+            <button onclick="toggleSync('${o.id}','${o.status}');document.getElementById('single-order-modal').remove();renderCalendar()" class="btn btn-sm flex-[1.5] justify-center ${o.status==='confirmed'||o.status==='synced'?'btn-ghost':'btn-primary'}">${o.status==='confirmed'||o.status==='synced'?'↩ 退回':'✓ 已確認'}</button>
         </div>
     </div>`;
     document.body.appendChild(overlay);
@@ -4524,7 +4635,7 @@ function renderCalDayBody(orders){
                 <div style="display:flex;gap:8px;margin-top:12px">
                     <button data-oid="${o.id}" data-itakeout="${o.is_takeout?'1':''}" onclick="calToggleTakeout(this)" style="padding:5px 9px;border-radius:8px;border:1.5px solid ${o.is_takeout?'#f59e0b':'var(--border)'};background:${o.is_takeout?'#fff8e6':'#f8fafc'};font-size:11px;font-weight:700;color:${o.is_takeout?'#d97706':'var(--stone)'};cursor:pointer;display:flex;align-items:center;gap:3px;flex-shrink:0">${o.is_takeout?'🥡 外帶':'🍽 內用'}</button>
                     <button onclick="document.getElementById('cal-day-modal').classList.add('hidden');openEditOrder('${o.id}')" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center">修改</button>
-                    <button onclick="toggleSync('${o.id}','${o.status}');document.getElementById('cal-day-modal').classList.add('hidden');renderCalendar()" class="btn btn-sm ${synced?'btn-ghost':'btn-primary'}" style="flex:1.5;justify-content:center">${synced?'↩ 未完成':'✓ 完成'}</button>
+                    <button onclick="toggleSync('${o.id}','${o.status}');document.getElementById('cal-day-modal').classList.add('hidden');renderCalendar()" class="btn btn-sm ${o.status==='confirmed'||o.status==='synced'?'btn-ghost':'btn-primary'}" style="flex:1.5;justify-content:center">${o.status==='confirmed'||o.status==='synced'?'↩ 退回':'✓ 已確認'}</button>
                     <button onclick="confirm2({icon:'🗑',title:'刪除訂單',msg:'確定永久刪除此筆訂單？此操作無法復原。',okText:'刪除',danger:true}).then(ok=>{if(ok){_s.from('orders').delete().eq('id','${o.id}').then(()=>{document.getElementById('cal-day-modal').classList.add('hidden');renderCalendar();toast('訂單已刪除');});}})" class="btn btn-danger btn-sm px-3">🗑</button>
                 </div>
             </div>
@@ -4552,9 +4663,9 @@ loadSidebarLogo();
     const{data:{session}}=await _s.auth.getSession();
     if(session){
         document.getElementById('login-screen').classList.add('hidden');
+        await autoEndPastOrders(); // 自動把過期訂單標為已結束
         switchTab('orders');
     }
-    // 若無 session，login-screen 維持顯示，等使用者登入
 })();
 
 // ── REALTIME：新訂單自動通知 ──
