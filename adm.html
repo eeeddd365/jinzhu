@@ -162,7 +162,7 @@ textarea.f-input{resize:none;line-height:1.6}
 .cal-head{text-align:center;font-size:10px;font-weight:700;padding:6px 0;color:var(--stone)}
 .cal-head.sun{color:#ef4444}.cal-head.sat{color:#3b82f6}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--border)}
-.cal-cell{min-height:56px;padding:4px;cursor:pointer;border-right:1px solid var(--border);border-bottom:1px solid var(--border);transition:background .15s;background:white}
+.cal-cell{height:72px;min-height:72px;max-height:72px;padding:4px;cursor:pointer;border-right:1px solid var(--border);border-bottom:1px solid var(--border);transition:background .15s;background:white;overflow:hidden;box-sizing:border-box}
 .cal-cell:nth-child(7n){border-right:none}
 .cal-cell:active{background:#f0fdf4}
 .cal-cell.today{background:#f0fdf4}
@@ -172,7 +172,7 @@ textarea.f-input{resize:none;line-height:1.6}
 .cal-cell .dn.sun{color:#ef4444}.cal-cell .dn.sat{color:#3b82f6}
 .cal-cnt{font-size:9px;font-weight:900;background:var(--pine);color:white;border-radius:4px;padding:0 4px;margin-bottom:2px;display:inline-block}
 .cal-dots{display:flex;flex-direction:column;gap:1px}
-.cal-dot-item{font-size:8px;font-weight:700;color:var(--pine);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(0,77,64,.06);border-radius:3px;padding:1px 3px}
+.cal-dot-item{font-size:8px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:3px;padding:1px 4px;margin-bottom:1px}
 .order-card.status-confirming{border-left:4px solid #dc2626!important;background:#fff5f5}
 .no-date-bar{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:10px 12px;margin-top:10px}
 .no-date-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
@@ -460,8 +460,16 @@ textarea.f-input{resize:none;line-height:1.6}
           <div class="seg-label">狀態</div>
           <div class="seg-row">
             <button class="seg-btn on" onclick="setSeg('status','all',this)">全部</button>
-            <button class="seg-btn"    onclick="setSeg('status','pending',this)">⏳ 待處理</button>
-            <button class="seg-btn"    onclick="setSeg('status','synced',this)">✅ 已確認</button>
+            <button class="seg-btn" onclick="setSeg('status','confirming',this)" style="font-size:11px">🔴 確認中</button>
+            <button class="seg-btn" onclick="setSeg('status','confirmed',this)" style="font-size:11px">✅ 確認完成</button>
+          </div>
+        </div>
+        <div class="seg-wrap">
+          <div class="seg-label">類型</div>
+          <div class="seg-row">
+            <button class="seg-btn on" onclick="setSeg('type','all',this)">全部</button>
+            <button class="seg-btn" onclick="setSeg('type','dine',this)" style="font-size:11px;color:#16a34a">🍽 內用</button>
+            <button class="seg-btn" onclick="setSeg('type','takeout',this)" style="font-size:11px;color:#2563eb">🥡 外帶</button>
           </div>
         </div>
         <div class="seg-wrap">
@@ -745,13 +753,14 @@ function switchTab(tab,el){
 }
 
 // ── FILTERS ──
-let fStatus='all',fDate='all',curView='list';
+let fStatus='all',fDate='all',fType='all',curView='list';
 function setSeg(type,val,el){
   window.tgHaptic?.select();
   el.closest('.seg-row').querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('on'));
   el.classList.add('on');
   if(type==='status')fStatus=val;
   if(type==='date')fDate=val;
+  if(type==='type')fType=val;
   loadOrders();
 }
 function setView(mode,el){
@@ -780,9 +789,12 @@ async function loadOrders(){
   let qb=_s.from('orders').select('*');
   if(q)qb=qb.or(`customer_name.ilike.%${q}%,phone.ilike.%${q}%`);
   if(fStatus!=='all')qb=qb.eq('status',fStatus);
+  if(fType==='takeout')qb=qb.eq('is_takeout',true);
+  else if(fType==='dine')qb=qb.eq('is_takeout',false);
   if(fDate==='today')qb=qb.gte('booking_date',`${today}T00:00:00+08:00`).lte('booking_date',`${today}T23:59:59+08:00`);
   else if(fDate==='week')qb=qb.gte('booking_date',`${today}T00:00:00+08:00`).lte('booking_date',`${weekEnd}T23:59:59+08:00`);
-  else qb=qb.or(`booking_date.gte.${today}T00:00:00+08:00,booking_date.is.null`);
+  else if(!q) qb=qb.or(`booking_date.gte.${today}T00:00:00+08:00,booking_date.is.null`);
+  // 有搜尋關鍵字時不限日期，讓過去訂單也能搜到
   const{data,error}=await qb;
   if(error){document.getElementById('order-list').innerHTML='<div class="empty-state"><p>載入失敗</p></div>';return;}
   const orders=(data||[]).sort((a,b)=>{
@@ -830,11 +842,12 @@ function orderHtml(o){
   const se=Object.values(singles);
   if(se.length)itemsHtml+=`<div class="single-blk"><div class="single-blk-head">單點</div><div class="single-blk-body">${se.map(({name,flv:f,qty})=>`<div class="item-row"><div class="item-dot"></div><div class="item-name">${name}${f?`<span class="item-flv">[${f}]</span>`:''}</div><div class="item-qty">${qty}</div><span class="item-unit">份</span></div>`).join('')}</div></div>`;
 
-  return`<div class="order-card status-${synced?'confirmed':isEnded?'ended':'confirming'}" id="oc-${o.id}">
+  const cardBorder=o.is_takeout?'border-left:4px solid #2563eb':'border-left:4px solid #16a34a';
+  return`<div class="order-card status-${synced?'confirmed':isEnded?'ended':'confirming'}" id="oc-${o.id}" style="${isConfirming?'border:2px solid #dc2626':cardBorder}">
   <div class="order-header" onclick="toggleOrder('${o.id}')">
     <div class="status-dot ${synced?'confirmed':isEnded?'ended':'confirming'}"></div>
     <div style="flex:1;min-width:0">
-      <div class="order-name">${o.customer_name}</div>
+      <div class="order-name" style="color:${o.is_takeout?'#1d4ed8':isConfirming?'#dc2626':'var(--ink)'}">${o.customer_name}${o.is_takeout?'<span style="font-size:9px;font-weight:700;background:#dbeafe;color:#1d4ed8;border-radius:999px;padding:1px 5px;margin-left:5px">🥡外帶</span>':''}</div>
       <div class="order-meta">${o.phone||'—'}${bStr?' · 📅 '+bStr:''}${o.table_no?' · 桌 '+o.table_no:''}</div>
     </div>
     <div style="text-align:right;flex-shrink:0">
@@ -1282,11 +1295,22 @@ async function renderCal(){
     const ds=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday=ds===todStr;const dow=(firstDay+d-1)%7;const ords=map[ds]||[];
     const nc=!isToday&&dow===0?'sun':!isToday&&dow===6?'sat':'';
-    html+=`<div class="cal-cell ${isToday?'today':''}" onclick="openCalDay('${ds}')">
-      <div class="dn ${isToday?'':nc}">${d}</div>
-      ${ords.length?`<div class="cal-cnt">${ords.length}</div>`:''}
-      <div class="cal-dots">${ords.slice(0,2).map(o=>{const tw=twDate(o.booking_date);const dotStyle=o.is_takeout?'background:rgba(37,99,235,0.08);color:#1d4ed8':'';
-            return`<div class="cal-dot-item" style="${dotStyle}">${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')} ${o.customer_name}${o.is_takeout?'🥡':''}</div>`;}).join('')}${ords.length>2?`<div style="font-size:8px;color:var(--stone);font-weight:700">+${ords.length-2}</div>`:''}</div>
+    const cellBg=isToday?'#f0fdf4':'';
+    html+=`<div class="cal-cell ${isToday?'today':''}" onclick="openCalDay('${ds}')" style="${cellBg?'background:'+cellBg:''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+        <div class="dn ${isToday?'':nc}" style="line-height:1">${d}</div>
+        ${ords.length?`<span style="font-size:8px;font-weight:900;background:var(--pine);color:white;border-radius:999px;padding:0 4px;line-height:14px">${ords.length}</span>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1px;overflow:hidden">
+        ${ords.slice(0,2).map(o=>{
+          const tw=twDate(o.booking_date);
+          const hhmm=String(tw.getUTCHours()).padStart(2,'0')+':'+String(tw.getUTCMinutes()).padStart(2,'0');
+          const bg=o.is_takeout?'rgba(37,99,235,0.1)':'rgba(22,163,74,0.08)';
+          const clr=o.is_takeout?'#1d4ed8':'#15803d';
+          return`<div class="cal-dot-item" style="background:${bg};color:${clr}">${hhmm} ${o.customer_name}</div>`;
+        }).join('')}
+        ${ords.length>2?`<div style="font-size:7px;color:var(--stone);font-weight:700;padding-left:2px">+${ords.length-2}</div>`:''}
+      </div>
     </div>`;
   }
   document.getElementById('cal-cells').innerHTML=html;
