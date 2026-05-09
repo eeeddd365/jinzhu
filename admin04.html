@@ -4238,7 +4238,7 @@ async function loadEndedOrders(){
         const statusLabel=o.status==='ended'?'已結束':'確認完成';
         const statusBg=o.status==='ended'?'#f1f5f9':'#dcfce7';
         const statusClr=o.status==='ended'?'#64748b':'#16a34a';
-        return `<div class="order-card completed ${o.is_takeout?'is-takeout':'is-dine-in'} collapsed">
+        return `<div class="order-card completed ${o.is_takeout?'is-takeout':'is-dine-in'} collapsed" id="order-card-${o.id}">
             <div class="order-header" onclick="toggleOrderCard('${o.id}')">
                 <div class="order-status-dot synced"></div>
                 <div class="order-name">${o.customer_name}</div>
