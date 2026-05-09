@@ -100,7 +100,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--paper);color:var(--i
 .status-dot.pending{background:var(--gold);box-shadow:0 0 5px rgba(184,145,80,.5)}
 .status-dot.synced{background:#10b981}
 .badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-top:3px}
-.badge.pending{background:#fef3c7;color:#d97706}
+.badge.pending{background:#fef3c7;color:#1d4ed8}
 .badge.synced{background:#d1fae5;color:#059669}
 
 /* ORDER BODY */
@@ -173,6 +173,7 @@ textarea.f-input{resize:none;line-height:1.6}
 .cal-cnt{font-size:9px;font-weight:900;background:var(--pine);color:white;border-radius:4px;padding:0 4px;margin-bottom:2px;display:inline-block}
 .cal-dots{display:flex;flex-direction:column;gap:1px}
 .cal-dot-item{font-size:8px;font-weight:700;color:var(--pine);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(0,77,64,.06);border-radius:3px;padding:1px 3px}
+.order-card.status-confirming{border-left:4px solid #dc2626!important;background:#fff5f5}
 .no-date-bar{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:10px 12px;margin-top:10px}
 .no-date-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .no-date-chip{background:white;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;color:#92400e}
@@ -460,7 +461,7 @@ textarea.f-input{resize:none;line-height:1.6}
           <div class="seg-row">
             <button class="seg-btn on" onclick="setSeg('status','all',this)">全部</button>
             <button class="seg-btn"    onclick="setSeg('status','pending',this)">⏳ 待處理</button>
-            <button class="seg-btn"    onclick="setSeg('status','synced',this)">✅ 已完成</button>
+            <button class="seg-btn"    onclick="setSeg('status','synced',this)">✅ 已確認</button>
           </div>
         </div>
         <div class="seg-wrap">
@@ -799,7 +800,9 @@ function renderOrders(orders){
 }
 
 function orderHtml(o){
-  const synced=o.status==='synced';
+  const synced=(o.status==='confirmed'||o.status==='synced');
+  const isConfirming=(!o.status||o.status==='confirming'||o.status==='pending');
+  const isEnded=o.status==='ended';
   let bStr='';
   if(o.booking_date){const tw=twDate(o.booking_date);const hhmm_=String(tw.getUTCHours()).padStart(2,'0')+':'+String(tw.getUTCMinutes()).padStart(2,'0');
     bStr=(tw.getUTCMonth()+1)+'/'+tw.getUTCDate()+(hhmm_!=='00:00'?' '+hhmm_:'');}
@@ -815,16 +818,16 @@ function orderHtml(o){
   const se=Object.values(singles);
   if(se.length)itemsHtml+=`<div class="single-blk"><div class="single-blk-head">單點</div><div class="single-blk-body">${se.map(({name,flv:f,qty})=>`<div class="item-row"><div class="item-dot"></div><div class="item-name">${name}${f?`<span class="item-flv">[${f}]</span>`:''}</div><div class="item-qty">${qty}</div><span class="item-unit">份</span></div>`).join('')}</div></div>`;
 
-  return`<div class="order-card status-${synced?'synced':'pending'}" id="oc-${o.id}">
+  return`<div class="order-card status-${synced?'confirmed':isEnded?'ended':'confirming'}" id="oc-${o.id}">
   <div class="order-header" onclick="toggleOrder('${o.id}')">
-    <div class="status-dot ${synced?'synced':'pending'}"></div>
+    <div class="status-dot ${synced?'confirmed':isEnded?'ended':'confirming'}"></div>
     <div style="flex:1;min-width:0">
       <div class="order-name">${o.customer_name}</div>
       <div class="order-meta">${o.phone||'—'}${bStr?' · 📅 '+bStr:''}${o.table_no?' · 桌 '+o.table_no:''}</div>
     </div>
     <div style="text-align:right;flex-shrink:0">
       <div class="order-amt">$${o.total_price}</div>
-      <div class="badge ${synced?'synced':'pending'}">${synced?'✅ 已完成':'⏳ 待處理'}</div>
+      <div class="badge ${synced?'confirmed':isEnded?'ended':'confirming'}">${synced?'✅ 確認完成':isEnded?'已結束':'⏳ 確認中'}</div>
     </div>
   </div>
   <div class="order-body">
@@ -849,10 +852,10 @@ function orderHtml(o){
 function toggleOrder(id){document.getElementById(`oc-${id}`)?.classList.toggle('open');}
 
 async function toggleStatus(id,cur){
-  const ns=cur==='synced'?'pending':'synced';
+  const ns=cur==='confirmed'?'confirming':'confirmed';
   await _s.from('orders').update({status:ns}).eq('id',id);
   if(ns==='synced') window.tgHaptic?.success(); else window.tgHaptic?.warning();
-  toast(ns==='synced'?'✅ 已完成':'⏳ 標記待處理');
+  toast(ns==='confirmed'?'✅ 確認完成':'⏳ 退回確認中');
   loadOrders();updateKpi();
 }
 async function deleteOrder(id){
@@ -1255,7 +1258,7 @@ async function renderCal(){
     html+=`<div class="cal-cell ${isToday?'today':''}" onclick="openCalDay('${ds}')">
       <div class="dn ${isToday?'':nc}">${d}</div>
       ${ords.length?`<div class="cal-cnt">${ords.length}</div>`:''}
-      <div class="cal-dots">${ords.slice(0,2).map(o=>{const tw=twDate(o.booking_date);const dotStyle=o.is_takeout?'background:rgba(245,158,11,0.15);color:#d97706':'';
+      <div class="cal-dots">${ords.slice(0,2).map(o=>{const tw=twDate(o.booking_date);const dotStyle=o.is_takeout?'background:rgba(37,99,235,0.08);color:#1d4ed8':'';
             return`<div class="cal-dot-item" style="${dotStyle}">${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')} ${o.customer_name}${o.is_takeout?'🥡':''}</div>`;}).join('')}${ords.length>2?`<div style="font-size:8px;color:var(--stone);font-weight:700">+${ords.length-2}</div>`:''}</div>
     </div>`;
   }
@@ -1275,11 +1278,13 @@ async function openCalDay(ds){
     ?'<div class="empty-state"><p style="font-size:13px;font-weight:700">當日無訂單</p></div>'
     :orders.map(o=>{
       const tw=twDate(o.booking_date);const hhmm=`${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`;
-      const synced=o.status==='synced';
+      const synced=(o.status==='confirmed'||o.status==='synced');
+  const isConfirming=(!o.status||o.status==='confirming'||o.status==='pending');
+  const isEnded=o.status==='ended';
       const pax=[o.adult_count>0?`大${o.adult_count}`:'',o.kid_count>0?`小${o.kid_count}`:'',o.child_count>0?`幼${o.child_count}`:''].filter(Boolean).join(' ');
-      return`<div style="background:white;border:1px solid var(--border);border-left:3px solid ${o.is_takeout?'#f59e0b':synced?'#10b981':'var(--gold)'};border-radius:12px;padding:12px 14px;margin-bottom:8px">
+      return`<div style="background:white;border:1px solid var(--border);border-left:3px solid ${o.is_takeout?'#2563eb':synced?'#16a34a':'var(--gold)'};border-radius:12px;padding:12px 14px;margin-bottom:8px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-          <div class="status-dot ${synced?'synced':'pending'}"></div>
+          <div class="status-dot ${synced?'confirmed':isEnded?'ended':'confirming'}"></div>
           <div style="font-weight:900;font-size:14px;flex:1">${o.customer_name}</div>
           <div style="font-family:'Noto Serif TC',serif;font-weight:900;color:var(--gold)">${hhmm}</div>
         </div>
@@ -1373,13 +1378,13 @@ async function fetchReport(){
   document.getElementById('rpt-prepare').innerHTML=`<div style="background:white;border:1px solid var(--border);border-radius:16px;overflow:hidden"><div style="padding:12px 14px;background:#1e293b;display:flex;justify-content:space-between;align-items:center"><span style="color:white;font-weight:700;font-size:13px">🍳 備料總表</span><span style="background:#475569;color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px">${sorted.length} 項</span></div><div style="overflow-y:auto;max-height:50vh">${sorted.map(([k,count],i)=>{const pct=Math.round(count/maxQ*100);return`<div style="padding:10px 14px;border-bottom:1px solid #f8fafc;display:flex;align-items:center;gap:10px"><span style="font-size:11px;font-weight:700;color:#94a3b8;width:20px;flex-shrink:0">${i+1}</span><div style="flex:1"><div style="font-size:13px;font-weight:700;word-break:break-all">${k}</div><div style="height:5px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-top:4px"><div style="height:100%;border-radius:999px;width:${pct}%;background:var(--pine)"></div></div></div><div style="font-family:'Noto Serif TC',serif;font-size:18px;font-weight:900;color:var(--pine);flex-shrink:0">${count}</div></div>`;}).join('')||'<div style="text-align:center;padding:32px;color:var(--stone);font-size:13px;font-weight:700">查無資料</div>'}</div></div>`;
   const setEntries=Object.entries(setCount).sort((a,b)=>b[1]-a[1]);
   document.getElementById('rpt-setmenu').innerHTML=setEntries.length===0?'<div style="text-align:center;padding:32px;color:var(--stone);font-size:13px;font-weight:700">查無套餐</div>':setEntries.map(([name,count])=>`<div style="background:white;border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:8px"><div style="padding:10px 14px;background:rgba(184,145,80,.08);border-bottom:1px solid rgba(184,145,80,.2);display:flex;justify-content:space-between;align-items:center"><span style="font-weight:900;color:var(--pine)">${name}</span><span style="font-family:'Noto Serif TC',serif;font-size:18px;font-weight:900;color:var(--gold)">${count} 套</span></div><div style="padding:8px 14px">${Object.entries(setDetail[name]||{}).map(([sn,sc])=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f8fafc"><span style="font-size:12px;flex:1;font-weight:600">${sn}</span><span style="font-weight:900;color:var(--pine)">${sc} 份</span></div>`).join('')}</div></div>`).join('');
-  document.getElementById('rpt-orders').innerHTML=o.length===0?'<div style="text-align:center;padding:32px;color:var(--stone);font-size:13px;font-weight:700">查無訂單</div>':o.map(ord=>{const tw=ord.booking_date?twDate(ord.booking_date):null;const hhmm=tw?`${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`:'—';const synced=ord.status==='synced';return`<div style="background:white;border:1px solid var(--border);border-left:3px solid ${o.is_takeout?'#f59e0b':synced?'#10b981':'var(--gold)'};border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px"><div class="status-dot ${synced?'synced':'pending'}"></div><div style="flex:1;min-width:0"><div style="font-weight:900;font-size:14px">${ord.customer_name}</div><div style="font-size:12px;color:var(--stone);margin-top:2px">${ord.phone||'—'} · <span style="font-weight:900;color:var(--pine)">$${ord.total_price}</span>${ord.table_no?' · 桌'+ord.table_no:''}</div></div><div style="font-family:'Noto Serif TC',serif;font-weight:900;color:var(--gold);flex-shrink:0">${hhmm}</div></div>`;}).join('');
+  document.getElementById('rpt-orders').innerHTML=o.length===0?'<div style="text-align:center;padding:32px;color:var(--stone);font-size:13px;font-weight:700">查無訂單</div>':o.map(ord=>{const tw=ord.booking_date?twDate(ord.booking_date):null;const hhmm=tw?`${String(tw.getUTCHours()).padStart(2,'0')}:${String(tw.getUTCMinutes()).padStart(2,'0')}`:'—';const synced=ord.status==='synced';return`<div style="background:white;border:1px solid var(--border);border-left:3px solid ${o.is_takeout?'#2563eb':synced?'#16a34a':'var(--gold)'};border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px"><div class="status-dot ${synced?'confirmed':isEnded?'ended':'confirming'}"></div><div style="flex:1;min-width:0"><div style="font-weight:900;font-size:14px">${ord.customer_name}</div><div style="font-size:12px;color:var(--stone);margin-top:2px">${ord.phone||'—'} · <span style="font-weight:900;color:var(--pine)">$${ord.total_price}</span>${ord.table_no?' · 桌'+ord.table_no:''}</div></div><div style="font-family:'Noto Serif TC',serif;font-weight:900;color:var(--gold);flex-shrink:0">${hhmm}</div></div>`;}).join('');
   document.getElementById('rpt-export-btn').style.display='block';
 }
 function exportXls(){
   if(!rptData||typeof XLSX==='undefined'){toast('請先查詢','warn');return;}
   const wb=XLSX.utils.book_new();
-  const rows=rptData.orders.map(o=>({'姓名':o.customer_name,'電話':o.phone,'總額':o.total_price,'桌號':o.table_no,'活動':o.campaign_code,'訂位':o.booking_date,'狀態':o.status==='synced'?'已完成':'待處理','備註':o.note,'後台備註':o.admin_note}));
+  const rows=rptData.orders.map(o=>({'姓名':o.customer_name,'電話':o.phone,'總額':o.total_price,'桌號':o.table_no,'活動':o.campaign_code,'訂位':o.booking_date,'狀態':o.status==='confirmed'||o.status==='synced'?'確認完成':o.status==='ended'?'已結束':'確認中','備註':o.note,'後台備註':o.admin_note}));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'訂單');
   const rows2=Object.entries(rptData.dishCount||{}).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({'品名':k,'數量':v}));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows2),'🍳 備料總表');
