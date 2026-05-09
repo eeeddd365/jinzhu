@@ -488,18 +488,21 @@
         <!-- 常駐工具列 -->
         <div class="flex items-center gap-2 px-3 py-2 border-b border-slate-100 flex-wrap">
             <!-- 檢視切換 -->
-            <div class="flex bg-slate-100 rounded-lg p-0.5 gap-0.5 flex-shrink-0">
-                <button id="view-btn-list" onclick="switchOrderView('list')"
-                    class="px-3 py-1 rounded-md text-xs font-bold transition-all"
-                    style="background:var(--pine);color:white">
-                    📋
-                </button>
-                <button id="view-btn-calendar" onclick="switchOrderView('calendar')"
-                    class="px-3 py-1 rounded-md text-xs font-bold transition-all text-slate-400 hover:text-slate-600">
-                    📅
-                </button>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+                <div class="flex bg-slate-100 rounded-lg p-0.5 gap-0.5">
+                    <button id="view-btn-list" onclick="switchOrderView('list')"
+                        class="px-3 py-1 rounded-md text-xs font-bold transition-all"
+                        style="background:var(--pine);color:white">
+                        📋
+                    </button>
+                    <button id="view-btn-calendar" onclick="switchOrderView('calendar')"
+                        class="px-3 py-1 rounded-md text-xs font-bold transition-all text-slate-400 hover:text-slate-600">
+                        📅
+                    </button>
+                </div>
                 <button id="view-btn-ended" onclick="switchOrderView('ended')"
-                    class="px-3 py-1 rounded-md text-xs font-bold transition-all text-slate-400 hover:text-slate-600">
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex-shrink-0"
+                    style="border-color:#16a34a;color:#16a34a;background:white">
                     ✅ 已完成
                 </button>
             </div>
@@ -1615,6 +1618,11 @@ async function loadOrders() {
     let q=_s.from('orders').select('*').order(sortField,{ascending:sortAsc});
     // booking_asc/desc 時 null 的訂單（沒有訂位日期）排到最後
     if(sortField==='booking_date') q=q.order('created_at',{ascending:false});
+    // 主列表預設排除訂位日期已過去的訂單（已過去的在「已完成」視圖）
+    // 只在沒有手動指定日期篩選時才自動排除
+    if(preset==='all'||preset===''){
+        q=q.or(`booking_date.gte.${twToday}T00:00:00+08:00,booking_date.is.null`);
+    }
     if (search)           q=q.or(`customer_name.ilike.%${search}%,phone.ilike.%${search}%`);
     if (status!=='all')   q=q.eq('status',status);
     if (campaign!=='all') q=q.eq('campaign_code',campaign);
@@ -4171,7 +4179,9 @@ function switchOrderView(mode){
     const btnEnded=document.getElementById('view-btn-ended');
 
     // 重置所有按鈕樣式
-    [btnList,btnCal,btnEnded].forEach(b=>{if(b)b.style.cssText='color:#64748b';});
+    if(btnList) btnList.style.cssText='';
+    if(btnCal) btnCal.style.cssText='';
+    if(btnEnded) btnEnded.style.cssText='border-color:#16a34a;color:#16a34a;background:white;border:1px solid #16a34a';
 
     if(mode==='list'){
         listEl.classList.remove('hidden');
@@ -4186,7 +4196,7 @@ function switchOrderView(mode){
         monthNav.classList.remove('flex');monthNav.classList.add('hidden');
         listFilters.classList.add('hidden');
         if(filterExpand)filterExpand.classList.add('hidden');
-        if(btnEnded)btnEnded.style.cssText='background:#16a34a;color:white';
+        if(btnEnded)btnEnded.style.cssText='background:#16a34a;color:white;border-color:#16a34a';
         loadEndedOrders();
     } else {
         listEl.classList.add('hidden');
