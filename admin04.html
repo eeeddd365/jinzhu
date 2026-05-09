@@ -4201,8 +4201,11 @@ function switchOrderView(mode){
 
 // 載入「已完成」訂單（confirmed + ended）
 async function loadEndedOrders(){
+    // 已完成：訂位日期在今天之前的所有訂單
+    const twNow_=new Date(Date.now()+8*3600000);
+    const twToday_=twNow_.toISOString().split('T')[0];
     const{data}=await _s.from('orders').select('*')
-        .eq('status','ended')
+        .lt('booking_date',twToday_+'T00:00:00+08:00')
         .order('booking_date',{ascending:false});
     const el=document.getElementById('order-list');
     if(!data?.length){
