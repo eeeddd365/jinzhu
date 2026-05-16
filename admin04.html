@@ -2202,12 +2202,22 @@ function openEditPop(itemId,index=-1){
                 else cur+=ch;
             }
             if(cur.trim())subs.push(cur.trim());
-            // 保留 x數量，去掉口味標記
-            prevNames=subs.map(n=>n.replace(/\s*\[.*?\]/g,'').trim());
+            // prevNames：只取品名（不含口味），用於分組匹配
+            prevNames=subs.map(n=>n.replace(/\s*\[.*?\]/g,'').replace(/ x\d+$/,'').trim());
+            // _prevSubFlvs：記錄每個子品項的口味 { 品名: 口味字串 }
+            window._prevSubFlvs={};
+            subs.forEach(n=>{
+                const fM2=n.match(/\[([^\]]+)\]/);
+                const baseN=n.replace(/\s*\[.*?\]/g,'').replace(/ x\d+$/,'').trim();
+                if(fM2) window._prevSubFlvs[baseN]=fM2[1];
+            });
         }
-        // 取口味（方括號內容）
-        const fM=raw.match(/\[([^\]]+)\]/);
-        if(fM)prevFlvs=fM[1].split('/');
+        // 取主品口味（套餐括號 ' (inner)' 之前的 []）
+        {
+            const nameOnly=parsed.inner?raw.slice(0,raw.indexOf(' ('+parsed.inner)):raw;
+            const fM=nameOnly.match(/\[([^\]]+)\]/);
+            if(fM)prevFlvs=fM[1].split('/');
+        }
     }
     else{curEditItem=allMenuItems.find(i=>i.id===itemId);}
     if(!curEditItem)return;
@@ -2277,7 +2287,8 @@ function openEditPop(itemId,index=-1){
                     // 子品項口味
                     const subFlvRels=c.menu_items.item_flavor_relation||[];
                     const subFlvHtml=subFlvRels.length>0&&isM?subFlvRels.map(r=>{
-                        const prevSubFlv=(groupPrev[c.menu_items.name+'_flv_'+r.flavor_groups.id])||'';
+                        // 從 _prevSubFlvs 取回子品項的口味
+                        const prevSubFlv=(window._prevSubFlvs&&window._prevSubFlvs[c.menu_items.name])||'';
                         return '<div style="margin-top:6px"><p style="font-size:9px;color:var(--stone);font-weight:700;margin-bottom:4px">'+r.flavor_groups.name+'</p>'                            +'<div style="display:flex;flex-wrap:wrap;gap:4px">'                            +r.flavor_groups.flavor_options.map(o=>{
                                 const isSel=prevSubFlv===o.option_name;
                                 if(isSel&&curEditPopSels.groups[g.id]){const ex=curEditPopSels.groups[g.id].find(x=>x.name===c.menu_items.name);if(ex)ex['flv_'+r.flavor_groups.id]=o.option_name;}
