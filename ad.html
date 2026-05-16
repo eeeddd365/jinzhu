@@ -3824,9 +3824,10 @@ async function testTgSummaryNotify(){
             .lte('booking_date',`${twToday}T23:59:59+08:00`)
             .order('booking_date',{ascending:true});
 
-        // 2. 待處理（confirming/pending，不限日期）
+        // 2. 待處理（confirming/pending，與主列表邏輯一致：今天以後或無日期）
         const{count:pendingCount}=await _s.from('orders').select('*',{count:'exact',head:true})
-            .in('status',['confirming','pending']);
+            .in('status',['confirming','pending'])
+            .or(`booking_date.gte.${twToday}T00:00:00+08:00,booking_date.is.null`);
 
         // 3. 計算統計
         const todayOrders=orders||[];
@@ -3875,7 +3876,8 @@ async function testTgSummaryNotify(){
         if(pendingCount>0){
             const{data:pendingOrders}=await _s.from('orders').select('*')
                 .in('status',['confirming','pending'])
-                .order('created_at',{ascending:false});
+                .or(`booking_date.gte.${twToday}T00:00:00+08:00,booking_date.is.null`)
+                .order('booking_date',{ascending:true});
             if(pendingOrders?.length>0){
                 msg+=`🔔 待確認訂單
 `;
@@ -4905,10 +4907,11 @@ async function updateOrdersKpi(){
         .select('*',{count:'exact',head:true})
         .gte('booking_date',`${twToday}T00:00:00+08:00`)
         .lte('booking_date',`${twToday}T23:59:59+08:00`);
-    // 尚未處理（status = pending）
+    // 尚未處理（與主列表一致：confirming/pending 且今天以後或無日期）
     const {count:pendingCount} = await _s.from('orders')
         .select('*',{count:'exact',head:true})
-        .in('status',['confirming','pending']);
+        .in('status',['confirming','pending'])
+        .or(`booking_date.gte.${twToday}T00:00:00+08:00,booking_date.is.null`);
     const todayEl=document.getElementById('kpi-today-bookings');
     const pendingEl=document.getElementById('kpi-pending-orders');
     if(todayEl) todayEl.textContent=todayCount??0;
