@@ -2213,9 +2213,10 @@ function openEditPop(itemId,index=-1){
             // _prevSubFlvs：記錄每個子品項的口味 { 品名: 口味字串 }
             window._prevSubFlvs={};
             subs.forEach(n=>{
+                // 前台格式：「品名[口味1/口味2]」，用 / 分隔多個口味組的值
                 const fM2=n.match(/\[([^\]]+)\]/);
                 const baseN=n.replace(/\s*\[.*?\]/g,'').replace(/ x\d+$/,'').trim();
-                if(fM2) window._prevSubFlvs[baseN]=fM2[1];
+                if(fM2) window._prevSubFlvs[baseN]=fM2[1].split('/'); // 存陣列
             });
         }
         // 取主品口味（套餐括號 ' (inner)' 之前的 []）
@@ -2301,19 +2302,42 @@ function openEditPop(itemId,index=-1){
                 } else {
                     // 子品項口味
                     const subFlvRels=c.menu_items.item_flavor_relation||[];
-                    const subFlvHtml=subFlvRels.length>0&&isM?subFlvRels.map(r=>{
-                        // 從 _prevSubFlvs 取回子品項的口味
-                        const prevSubFlv=(window._prevSubFlvs&&window._prevSubFlvs[c.menu_items.name])||'';
-                        return '<div style="margin-top:6px"><p style="font-size:9px;color:var(--stone);font-weight:700;margin-bottom:4px">'+r.flavor_groups.name+'</p>'                            +'<div style="display:flex;flex-wrap:wrap;gap:4px">'                            +r.flavor_groups.flavor_options.map(o=>{
-                                const isSel=prevSubFlv===o.option_name;
-                                if(isSel&&curEditPopSels.groups[g.id]){const ex=curEditPopSels.groups[g.id].find(x=>x.name===c.menu_items.name);if(ex)ex['flv_'+r.flavor_groups.id]=o.option_name;}
-                                return '<div data-gid="'+g.id+'" data-name="'+c.menu_items.name+'" data-fgid="'+r.flavor_groups.id+'" data-fval="'+o.option_name+'"'                                    +' onclick="event.stopPropagation();setEditSubFlv(this)" style="padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid;'                                    +(isSel?'background:var(--pine);color:white;border-color:var(--pine)':'background:white;color:var(--stone);border-color:#e2e8f0')                                    +'">'+o.option_name+'</div>';
-                            }).join('')                            +'</div></div>';
-                    }).join(''):'';
+                    // 取回已選口味（陣列），按口味組反查對應值
+                    const _prevFlvArr=(window._prevSubFlvs&&window._prevSubFlvs[c.menu_items.name])||[];
+                    const _subFlvMap={};
+                    if(_prevFlvArr.length>0){
+                        subFlvRels.forEach(r=>{
+                            const matched=r.flavor_groups.flavor_options.find(o=>_prevFlvArr.includes(o.option_name));
+                            if(matched){
+                                _subFlvMap[r.flavor_groups.id]=matched.option_name;
+                                if(isM&&curEditPopSels.groups[g.id]){
+                                    const ex=curEditPopSels.groups[g.id].find(x=>x.name===c.menu_items.name);
+                                    if(ex)ex['flv_'+r.flavor_groups.id]=matched.option_name;
+                                }
+                            }
+                        });
+                    }
+                    const subFlvHtml=subFlvRels.length>0&&isM
+                        ?'<div style="border-top:1px solid #f0f0f0;margin-top:8px;padding-top:6px;text-align:left">'
+                            +subFlvRels.map(r=>{
+                                const selVal=_subFlvMap[r.flavor_groups.id]||'';
+                                return '<p style="font-size:9px;color:var(--stone);font-weight:700;margin-bottom:4px">'+r.flavor_groups.name+'</p>'
+                                    +'<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">'
+                                    +r.flavor_groups.flavor_options.map(o=>{
+                                        const isSel=selVal===o.option_name;
+                                        return '<div data-gid="'+g.id+'" data-name="'+c.menu_items.name+'" data-fgid="'+r.flavor_groups.id+'" data-fval="'+o.option_name+'"'
+                                            +' onclick="event.stopPropagation();setEditSubFlv(this)" style="padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid;'
+                                            +(isSel?'background:var(--pine);color:white;border-color:var(--pine)':'background:white;color:var(--stone);border-color:#e2e8f0')
+                                            +'">'+o.option_name+'</div>';
+                                    }).join('')
+                                    +'</div>';
+                            }).join('')
+                            +'</div>'
+                        :'';
                     return'<div data-gid="'+g.id+'" data-name="'+c.menu_items.name+'" data-limit="'+limit+'" data-pa="'+pa+'"'
                         +' onclick="setEditPopGroupByData(this)"'
-                        +' class="p-3 border rounded-xl text-[11px] cursor-pointer text-center font-bold '+(isM?'opt-selected':'bg-slate-50')+' '+(stype==='include'?'pointer-events-none opacity-70':'')+'">'                        +c.menu_items.name+priceTag+subFlvHtml+'</div>';
-                }
+                        +' class="p-3 border rounded-xl text-[11px] cursor-pointer text-center font-bold '+(isM?'opt-selected':'bg-slate-50')+' '+(stype==='include'?'pointer-events-none opacity-70':'')+'">'
+                        +c.menu_items.name+priceTag+subFlvHtml+'</div>';       }
             });
             return'<div style="margin-bottom:16px"><p class="text-[10px] font-bold mb-2 uppercase" style="color:var(--pine)">'+g.group_name+' '+typeLabel+'</p><div class="grid grid-cols-2 gap-2">'+pa_items.join('')+'</div></div>';
         }).join('');
