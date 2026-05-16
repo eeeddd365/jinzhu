@@ -1473,6 +1473,8 @@ function parseItemDisplay(rawName){
     while(searchPos<wo.length){
         const pI=wo.indexOf(' (',searchPos);
         if(pI===-1) break;
+        // 確認前面有品名（非空）
+        if(!wo.slice(0,pI).trim()){searchPos=pI+1;continue;}
         // 從 ' (' 後追蹤括號深度
         let depth=1, j=pI+2;
         while(j<wo.length&&depth>0){
@@ -1482,16 +1484,17 @@ function parseItemDisplay(rawName){
         }
         if(depth===0){
             const candidate=wo.slice(pI+2,j-1);
-            // 套餐特徵：括號內含「、」（多個子品項）
-            if(candidate.includes('、')){
+            // 套餐特徵1：括號內含「、」（多個子品項）
+            // 套餐特徵2：括號在字串末尾（單個子品項，如燒湯只選一道）
+            if(candidate.includes('、')||j===wo.length){
                 inner=candidate;
                 break;
             }
         }
         searchPos=pI+1;
     }
-    // isSet：inner 有「、」（多個子品項）
-    const isSet=!!(inner&&inner.includes('、'));
+    // isSet：有找到 inner（含「、」或單個末尾子品項）
+    const isSet=!!(inner);
     // flv：方括號內的口味
     const flvM=rawName.match(/\[([^\]]+)\]/);
     const flv=flvM?flvM[1]:'';
@@ -2395,9 +2398,8 @@ function confirmEditPop(){
     const basePrice=Number(curEditItem.price);
     const adjTotal=Object.values(curEditPopSels.groups).flat().reduce((s,x)=>s+(x.priceAdj||0)*(x.qty||1),0);
     const totalPrice=(basePrice+adjTotal)*qty_;
-    // 套餐品項：gn 如果只有一項（無'、'）也確保格式正確讓 isSet=true
+    // 套餐品項：直接用 gn（parseItemDisplay 已支援單個子品項不需「、」）
     let gnFinal=gn;
-    if(curEditItem.is_set_menu&&gn&&!gn.includes('、')) gnFinal=gn+'、';
     const finalName=curEditItem.name+xQty+(fn?' ['+fn+']':'')+(gnFinal?' ('+gnFinal+')':'');
     if(reEditIndex>-1)editCart[reEditIndex]={name:finalName,price:totalPrice};
     else editCart.push({name:finalName,price:basePrice+adjTotal});
