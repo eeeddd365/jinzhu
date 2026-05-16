@@ -1134,7 +1134,9 @@ function openPop(itemId,editIdx=-1){
       // 解析 prevNames（支援帶 x數量的格式）
       const groupPrevQty={};
       let scan=0;
-      while(scan<prevNames.length){
+      const maxTake_=stype==='include'?sortedContents.length:(slimit>0?slimit:sortedContents.length);
+      let taken_=0;
+      while(scan<prevNames.length && taken_<maxTake_){
         const rawN=prevNames[scan];
         const qM_=rawN.match(/ x(\d+)$/);
         const baseName_=qM_?rawN.replace(/ x\d+$/,'').trim():rawN;
@@ -1142,6 +1144,7 @@ function openPop(itemId,editIdx=-1){
         if(groupItemNames.has(baseName_)){
           groupPrevQty[baseName_]=(groupPrevQty[baseName_]||0)+qty__;
           prevNames.splice(scan,1);
+          taken_++;
         }else{scan++;}
       }
       // 初始化選取狀態
