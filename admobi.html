@@ -734,7 +734,7 @@ async function jumpToOrderId(orderId){
 }
 
 async function updateKpi(){
-  const{count}=await _s.from('orders').select('*',{count:'exact',head:true}).eq('status','pending');
+  const{count}=await _s.from('orders').select('*',{count:'exact',head:true}).in('status',['confirming','pending']);
   document.getElementById('kpi-pending').textContent=count??0;
 }
 
