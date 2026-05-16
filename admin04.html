@@ -2236,13 +2236,12 @@ function openEditPop(itemId,index=-1){
             const limit=g.selection_limit||0;
             const groupItemNames=new Set(sortedContents.map(c=>c.menu_items.name));
             // 從 prevNames 中找屬於這個分組的品項（含數量）
-            // 依序消耗 prevNames，只取屬於本分組的品項
+            // 從 prevNames 找屬於本分組的品項，依序消耗
             const groupPrev={};// name -> qty
             let scan=0;
-            // 計算本分組應該消耗多少 prevNames（limit 或全部）
-            const expectCount=stype==='include'?sortedContents.length:(limit>0?limit:sortedContents.length);
+            const maxTake=stype==='include'?sortedContents.length:(limit>0?limit:sortedContents.length);
             let taken=0;
-            while(scan<prevNames.length && (limit===0||taken<expectCount)){
+            while(scan<prevNames.length && taken<maxTake){
                 const rawN=prevNames[scan];
                 const qM=rawN.match(/ x(\d+)$/);
                 const baseName=qM?rawN.replace(/ x\d+$/,'').trim():rawN;
@@ -2253,8 +2252,6 @@ function openEditPop(itemId,index=-1){
                     taken++;
                 } else {
                     scan++;
-                    // 如果已超過本分組可能的品項範圍，停止
-                    if(scan>expectCount*2) break;
                 }
             }
             // 根據 stype 設定初始選取狀態
