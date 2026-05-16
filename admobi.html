@@ -1089,9 +1089,22 @@ function openPop(itemId,editIdx=-1){
         else cur+=ch;
       }
       if(cur.trim())subs.push(cur.trim());
-      prevNames=subs.map(n=>n.replace(/\s*\[.*?\]/g,'').trim());
+      // prevNames：只取品名，不含口味，用於分組匹配
+      prevNames=subs.map(n=>n.replace(/\s*\[.*?\]/g,'').replace(/ x\d+$/,'').trim());
+      // _prevSubFlvs：記錄子品項口味
+      window._prevSubFlvs={};
+      subs.forEach(n=>{
+        const fM2=n.match(/\[([^\]]+)\]/);
+        const baseN=n.replace(/\s*\[.*?\]/g,'').replace(/ x\d+$/,'').trim();
+        if(fM2) window._prevSubFlvs[baseN]=fM2[1];
+      });
     }
-    const fM=raw.match(/\[([^\]]+)\]/);if(fM)prevFlvs=fM[1].split('/');
+    // 主品口味：從子品項括號前取 []
+    {
+      const nameOnly=parsed.inner?raw.slice(0,raw.indexOf(' ('+parsed.inner)):raw;
+      const fM=nameOnly.match(/\[([^\]]+)\]/);
+      if(fM)prevFlvs=fM[1].split('/');
+    }
   }else{popItem=allMenuItems.find(i=>i.id===itemId);}
   if(!popItem)return;
   const container=document.getElementById('pop-content');container.innerHTML='';
