@@ -316,9 +316,11 @@ async function doLogout(){await _s.auth.signOut();location.reload();}
 async function boot(){
   const{data:{session}}=await _s.auth.getSession();
   if(!session)return;
-  // 確認是 super role
-  const{data:su}=await _s.from('store_users').select('role').eq('user_id',session.user.id).single();
-  if(su?.role!=='Andy'){toast('此帳號沒有超級管理員權限','err');await _s.auth.signOut();return;}
+  // 確認是 Andy role
+  const{data:su,error:suErr}=await _s.from('store_users').select('role').eq('user_id',session.user.id).single();
+  console.log('store_users query:', su, suErr);
+  if(suErr||!su){toast('查不到帳號設定，請確認 store_users 表有此帳號（'+session.user.email+'）','err',5000);await _s.auth.signOut();return;}
+  if(su.role!=='Andy'){toast('此帳號角色為「'+su.role+'」，需要 Andy 角色才能登入','err',5000);await _s.auth.signOut();return;}
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').style.display='flex';
   document.getElementById('cur-email').textContent=session.user.email;
