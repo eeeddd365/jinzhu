@@ -116,6 +116,7 @@ tbody tr:hover td{background:#fafcff;}
       <div class="ni" onclick="go('stores')" id="ni-stores"><span class="ni-icon">🏪</span>店家管理</div>
       <div class="ni" onclick="go('users')" id="ni-users"><span class="ni-icon">👤</span>帳號管理</div>
       <div class="ni" onclick="go('orders')" id="ni-orders"><span class="ni-icon">📋</span>訂單總覽</div>
+      <div class="ni" onclick="go('menu')" id="ni-menu"><span class="ni-icon">🍽</span>菜單管理</div>
 
     </nav>
     <div class="sb-foot">
@@ -268,9 +269,15 @@ tbody tr:hover td{background:#fafcff;}
       <button class="btn btn-g" style="flex:1" onclick="closeModal('resetpw-modal')">取消</button>
       <button class="btn btn-p" style="flex:2" onclick="doResetPw()">更新密碼</button>
     </div>
+
+    <!-- ⑤ 菜單管理 -->
+    <div class="page" id="page-menu">
+      <div class="ph"><div class="pt">菜單管理</div><div class="ps">所有店家共用同一套菜單，在此直接管理</div></div>
+      <div class="iw"><iframe src="admin.html" id="menu-frame"></iframe></div>
+    </div>
+
   </div>
 </div>
-
 <script>
 const SUPA_URL='https://pydlnqriztpzgxbjuohm.supabase.co';
 const SUPA_KEY='sb_publishable_ISKUWOXUR9A-1y81xCOUXg_8-zNle3v';
@@ -353,29 +360,29 @@ function openStoreModal(id=''){
   const s=storesData.find(x=>x.id==id)||{};
   document.getElementById('store-modal-title').textContent=id?'編輯店家':'新增店家';
   document.getElementById('s-id').value=id;
-  ['s-name','s-slug','s-addr','s-phone'].forEach(k=>{
-    const field=k.replace('s-','').replace('-','_');
-    const val=k==='s-name'?s.name:k==='s-slug'?s.slug:k==='s-addr'?s.address:k==='s-phone'?s.phone:k==='s-admin-url'?s.admin_url:s.front_url;
-    document.getElementById(k).value=val||'';
-  });
+  document.getElementById('s-name').value=s.name||'';
+  document.getElementById('s-slug').value=s.slug||'';
+  document.getElementById('s-addr').value=s.address||'';
+  document.getElementById('s-phone').value=s.phone||'';
   document.getElementById('s-sort').value=s.sort_order??0;
-  document.getElementById('s-active').value=s.is_active?'true':'false';
+  document.getElementById('s-active').value=s.is_active!==false?'true':'false';
   document.getElementById('store-modal').classList.add('open');
 }
+
 async function saveStore(){
   const id=document.getElementById('s-id').value;
   const name=document.getElementById('s-name').value.trim();
   if(!name){toast('請填寫店名','warn');return;}
   const payload={
-    name,slug:document.getElementById('s-slug').value.trim()||null,
+    name,
+    slug:document.getElementById('s-slug').value.trim()||null,
     address:document.getElementById('s-addr').value.trim()||null,
     phone:document.getElementById('s-phone').value.trim()||null,
     sort_order:parseInt(document.getElementById('s-sort').value)||0,
-
     is_active:document.getElementById('s-active').value==='true',
   };
   const{error}=id?await _s.from('stores').update(payload).eq('id',id):await _s.from('stores').insert([payload]);
-  if(error){toast('儲存失敗：'+error.message,'err');return;}
+  if(error){toast('儲存失敗：'+error.message+'（請確認 stores 表 RLS 政策）','err',5000);return;}
   toast(id?'店家已更新':'新店家建立成功 ✓');
   closeModal('store-modal');await loadStores();renderStores();
 }
