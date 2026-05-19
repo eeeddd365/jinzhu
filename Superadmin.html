@@ -116,7 +116,7 @@ tbody tr:hover td{background:#fafcff;}
       <div class="ni" onclick="go('stores')" id="ni-stores"><span class="ni-icon">🏪</span>店家管理</div>
       <div class="ni" onclick="go('users')" id="ni-users"><span class="ni-icon">👤</span>帳號管理</div>
       <div class="ni" onclick="go('orders')" id="ni-orders"><span class="ni-icon">📋</span>訂單總覽</div>
-      <div class="ni" onclick="go('menu')" id="ni-menu"><span class="ni-icon">🍽</span>菜單管理</div>
+
     </nav>
     <div class="sb-foot">
       <div class="user-lbl" id="cur-email"></div>
@@ -143,7 +143,7 @@ tbody tr:hover td{background:#fafcff;}
     <!-- ② 店家管理 -->
     <div class="page" id="page-stores">
       <div class="ph"><div class="pt">店家管理</div><div class="ps">新增、編輯各分店基本資訊</div></div>
-      <div class="info-box">現有文心店 ID=1，所有舊資料已屬於 ID=1，完全不影響現有系統。新增店家會自動遞增 ID。</div>
+      <div class="info-box">🏪 <strong>台中文心店（ID=1）</strong>已是預設店家，所有現有訂單與資料均屬此店。新增店家會自動遞增 ID，前台後台系統共用，無需設定網址。</div>
       <div style="margin-bottom:16px;display:flex;justify-content:flex-end">
         <button class="btn btn-p" onclick="openStoreModal()">＋ 新增店家</button>
       </div>
@@ -189,21 +189,7 @@ tbody tr:hover td{background:#fafcff;}
       </div>
     </div>
 
-    <!-- ⑤ 菜單管理 -->
-    <div class="page" id="page-menu">
-      <div class="ph"><div class="pt">菜單管理</div><div class="ps">選擇店家後開啟該店後台管理菜單</div></div>
-      <div class="card" style="margin-bottom:16px">
-        <label class="fl">選擇店家</label>
-        <select class="fi" id="menu-sel" style="width:auto;min-width:220px;margin-top:6px" onchange="openMenuAdmin()">
-          <option value="">— 選擇店家 —</option>
-        </select>
-      </div>
-      <div id="menu-frame-wrap" style="display:none"><div class="iw"><iframe id="menu-frame" src="about:blank"></iframe></div></div>
-      <div id="menu-ph" style="text-align:center;padding:48px;color:var(--stone)">
-        <div style="font-size:2.5rem;margin-bottom:12px">🍽</div>
-        <div style="font-weight:700">請選擇店家</div>
-      </div>
-    </div>
+
   </div>
 </div>
 
@@ -221,8 +207,7 @@ tbody tr:hover td{background:#fafcff;}
       <div class="fg"><label class="fl">電話</label><input class="fi" id="s-phone" placeholder="04-XXXXXXXX"></div>
       <div class="fg"><label class="fl">排序</label><input class="fi" id="s-sort" placeholder="0" type="number"></div>
     </div>
-    <div class="fg"><label class="fl">後台網址（admin.html）</label><input class="fi" id="s-admin-url" placeholder="https://xxx.vercel.app/admin.html"></div>
-    <div class="fg"><label class="fl">前台網址（index.html）</label><input class="fi" id="s-front-url" placeholder="https://xxx.vercel.app/index.html"></div>
+
     <div class="fg"><label class="fl">狀態</label>
       <select class="fi" id="s-active"><option value="true">✅ 營業中</option><option value="false">⏸ 暫停</option></select>
     </div>
@@ -347,7 +332,6 @@ async function loadStores(){
   storesData=data||[];
   const opts=storesData.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   document.getElementById('of-store').innerHTML='<option value="0">全部店家</option>'+opts;
-  document.getElementById('menu-sel').innerHTML='<option value="">— 選擇店家 —</option>'+opts;
   document.getElementById('u-store').innerHTML=opts;
 }
 function renderStores(){
@@ -361,7 +345,6 @@ function renderStores(){
       <span class="s-badge ${s.is_active?'ba':'bi'}">${s.is_active?'✅ 營業中':'⏸ 暫停'}</span>
       <div class="sa">
         <button class="btn btn-g btn-sm" onclick="openStoreModal('${s.id}')">✏️ 編輯</button>
-        ${s.admin_url?`<button class="btn btn-gold btn-sm" onclick="window.open('${s.admin_url}','_blank')">🔗 後台</button>`:''}
         ${s.id>1?`<button class="btn btn-d btn-sm" onclick="delStore(${s.id})">🗑</button>`:'<span style="font-size:10px;color:var(--stone);padding:4px">（主店）</span>'}
       </div>
     </div>`).join('');
@@ -370,7 +353,7 @@ function openStoreModal(id=''){
   const s=storesData.find(x=>x.id==id)||{};
   document.getElementById('store-modal-title').textContent=id?'編輯店家':'新增店家';
   document.getElementById('s-id').value=id;
-  ['s-name','s-slug','s-addr','s-phone','s-admin-url','s-front-url'].forEach(k=>{
+  ['s-name','s-slug','s-addr','s-phone'].forEach(k=>{
     const field=k.replace('s-','').replace('-','_');
     const val=k==='s-name'?s.name:k==='s-slug'?s.slug:k==='s-addr'?s.address:k==='s-phone'?s.phone:k==='s-admin-url'?s.admin_url:s.front_url;
     document.getElementById(k).value=val||'';
@@ -388,8 +371,7 @@ async function saveStore(){
     address:document.getElementById('s-addr').value.trim()||null,
     phone:document.getElementById('s-phone').value.trim()||null,
     sort_order:parseInt(document.getElementById('s-sort').value)||0,
-    admin_url:document.getElementById('s-admin-url').value.trim()||null,
-    front_url:document.getElementById('s-front-url').value.trim()||null,
+
     is_active:document.getElementById('s-active').value==='true',
   };
   const{error}=id?await _s.from('stores').update(payload).eq('id',id):await _s.from('stores').insert([payload]);
@@ -518,8 +500,7 @@ async function loadOverview(){
           <td style="text-align:center;padding:12px 14px;font-weight:900;color:var(--pine)">${d.cnt} 筆</td>
           <td style="text-align:right;padding:12px 14px;font-weight:900;color:var(--gold)">$${d.rev.toLocaleString()}</td>
           <td style="padding:12px 14px;display:flex;gap:6px;justify-content:flex-end">
-            ${s.admin_url?`<button class="btn btn-g btn-sm" onclick="window.open('${s.admin_url}','_blank')">🔗 後台</button>`:''}
-            ${s.front_url?`<button class="btn btn-gold btn-sm" onclick="window.open('${s.front_url}','_blank')">🛒 前台</button>`:''}
+
           </td></tr>`;}).join('')}</tbody>
       </table>`
     :'<div style="text-align:center;padding:24px;color:var(--stone)">請先新增店家</div>';
